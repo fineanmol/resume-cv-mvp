@@ -396,7 +396,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
   // -------------------------------------------------------------
   if (template === 'sidebar') {
     return (
-      <div className="pdf-sheet p-0 font-sans text-slate-800 flex flex-row min-h-[1123px] w-[794px]" style={{ fontSize: `${fontSize}pt` }} id="resume-sheet">
+      <div className="pdf-sheet p-0 font-sans text-slate-800 flex flex-row" style={{ fontSize: `${fontSize}pt` }} id="cover-letter-sheet">
         {/* Left Column - Contact & Highlights */}
         <aside className="w-[230px] bg-slate-50 border-r border-slate-200/60 p-6 flex flex-col gap-6 flex-shrink-0 text-slate-700">
           {avatar && (
