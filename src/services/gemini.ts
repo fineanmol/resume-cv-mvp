@@ -43,7 +43,7 @@ export class GeminiService {
       return JSON.parse(cleaned) as T;
     } catch (jsonErr) {
       console.error("Gemini raw response was:", responseText);
-      throw new Error(`JSON parse failed: ${(jsonErr as Error).message}`);
+      throw new Error(`JSON parse failed: ${(jsonErr as Error).message}`, { cause: jsonErr });
     }
   }
 

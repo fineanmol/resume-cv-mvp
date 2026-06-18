@@ -5,15 +5,23 @@ import type { Auth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
 
+const safeLocalGet = (key: string): string => {
+  try {
+    return (typeof window !== 'undefined' && window.localStorage?.getItem(key)) || "";
+  } catch {
+    return "";
+  }
+};
+
 // Fetch configurations from environment variables or LocalStorage
 export const getFirebaseConfig = () => {
   return {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || localStorage.getItem("FIREBASE_API_KEY") || "",
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || localStorage.getItem("FIREBASE_AUTH_DOMAIN") || "",
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || localStorage.getItem("FIREBASE_PROJECT_ID") || "",
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || localStorage.getItem("FIREBASE_STORAGE_BUCKET") || "",
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || localStorage.getItem("FIREBASE_MESSAGING_SENDER_ID") || "",
-    appId: import.meta.env.VITE_FIREBASE_APP_ID || localStorage.getItem("FIREBASE_APP_ID") || ""
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || safeLocalGet("FIREBASE_API_KEY"),
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || safeLocalGet("FIREBASE_AUTH_DOMAIN"),
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || safeLocalGet("FIREBASE_PROJECT_ID"),
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || safeLocalGet("FIREBASE_STORAGE_BUCKET"),
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || safeLocalGet("FIREBASE_MESSAGING_SENDER_ID"),
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || safeLocalGet("FIREBASE_APP_ID"),
   };
 };
 

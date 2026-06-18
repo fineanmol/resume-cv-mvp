@@ -1,7 +1,26 @@
-// @ts-ignore
 import html2pdf from 'html2pdf.js';
 
-declare const pdfjsLib: any;
+declare const pdfjsLib: {
+  GlobalWorkerOptions: { workerSrc: string };
+  getDocument: (opts: { data: ArrayBuffer }) => { promise: Promise<PdfDoc> };
+  OPS: { paintImageXObject: number; paintJpegXObject: number };
+};
+
+interface PdfDoc {
+  numPages: number;
+  getPage: (n: number) => Promise<PdfPage>;
+}
+
+interface PdfPage {
+  getOperatorList: () => Promise<{ fnArray: number[]; argsArray: unknown[][] }>;
+  objs: { get: (id: string, cb: (obj: PdfImage) => void) => PdfImage | undefined };
+}
+
+interface PdfImage {
+  width: number;
+  height: number;
+  data: Uint8ClampedArray | number[];
+}
 
 // High-performance single-pixel canvas converter to transform oklch color strings to standard rgba strings
 const colorCanvas = document.createElement('canvas');
@@ -19,7 +38,7 @@ function convertOklToRgb(colorStr: string): string {
     colorCtx.fillRect(0, 0, 1, 1);
     const [r, g, b, a] = colorCtx.getImageData(0, 0, 1, 1).data;
     return `rgba(${r}, ${g}, ${b}, ${a / 255})`;
-  } catch (e) {
+  } catch {
     return colorStr;
   }
 }
@@ -40,9 +59,9 @@ function convertElementColors(original: HTMLElement, cloned: HTMLElement) {
   ];
 
   propertiesToConvert.forEach((prop) => {
-    const val = computed[prop as any];
+    const val = computed.getPropertyValue(prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`));
     if (val && (val.includes('oklch') || val.includes('oklab'))) {
-      cloned.style[prop as any] = convertOklToRgb(val);
+      cloned.style.setProperty(prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`), convertOklToRgb(val));
     }
   });
 }
@@ -73,10 +92,10 @@ export class PdfService {
             opList.fnArray[i] === pdfjsLib.OPS.paintImageXObject ||
             opList.fnArray[i] === pdfjsLib.OPS.paintJpegXObject
           ) {
-            const imageObjId = opList.argsArray[i][0];
+            const imageObjId = opList.argsArray[i][0] as string;
 
-            const img = await new Promise<any>((resolve) => {
-              const result = page.objs.get(imageObjId, (obj: any) => {
+            const img = await new Promise<PdfImage>((resolve) => {
+              const result = page.objs.get(imageObjId, (obj: PdfImage) => {
                 resolve(obj);
               });
               if (result) resolve(result);
@@ -151,14 +170,17 @@ export class PdfService {
     clone.style.transition = 'none';
     clone.style.boxShadow = 'none';
     
-    // Position the clone in the active viewport but render it behind the page content
-    clone.style.position = 'fixed';
+    // Position the clone off-screen so html2canvas can capture it without painting over the UI.
+    // Must NOT use negative z-index — html2canvas treats those as invisible and produces a blank page.
+    clone.style.position = 'absolute';
     clone.style.top = '0';
-    clone.style.left = '0';
-    clone.style.zIndex = '-9999';
-    clone.style.width = '794px'; // A4 standard width at 96 DPI
+    clone.style.left = '-9999px';
+    clone.style.zIndex = '0';
+    clone.style.width = '794px'; // A4 width at 96 DPI
     clone.style.height = 'auto';
     clone.style.display = 'block';
+    clone.style.opacity = '1';
+    clone.style.visibility = 'visible';
 
     // Walk the original DOM tree and copy standard RGB colors into the cloned elements to override oklch properties
     convertElementColors(sheetElement as HTMLElement, clone);
@@ -178,11 +200,15 @@ export class PdfService {
       margin: 0,
       filename: filename,
       image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { 
-        scale: 2.0, // High quality scale
-        useCORS: true, 
+      html2canvas: {
+        scale: 2.0,
+        useCORS: true,
         letterRendering: true,
-        logging: false
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 794,
+        windowHeight: 1123,
       },
       jsPDF: { unit: 'pt' as const, format: 'a4' as const, orientation: 'portrait' as const }
     };
@@ -194,7 +220,7 @@ export class PdfService {
       .then(() => {
         document.body.removeChild(clone);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         console.error("PDF download failed:", err);
         document.body.removeChild(clone);
       });
