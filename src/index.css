@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme {
+  --color-editor: #f1f5f9;
+  --color-sidebar: #ffffff;
+  --color-card: #ffffff;
+  --color-brand-accent: #0284c7;
+  --color-brand-accent-hover: #0369a1;
+  --color-border-color: #e2e8f0;
+  --color-input-bg: #f8fafc;
+  --color-text-main: #0f172a;
+  --color-text-muted: #64748b;
+  
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: 'Merriweather', Georgia, serif;
+}
+
+/* Global resets and styles */
+body {
+  background-color: #f1f5f9; /* editor color */
+  color: #0f172a; /* text-main */
+  font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Webkit Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+/* Document sheet containers for A4 page structures */
+.sheet-preview-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-y: auto;
+  padding: 2rem;
+  background-color: #e2e8f0;
+}
+
+.pdf-sheet {
+  background-color: #ffffff;
+  color: #314855;
+  width: 794px; /* A4 width at 96 DPI */
+  min-height: 1123px; /* A4 height at 96 DPI */
+  padding: 40px 50px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  position: relative;
+  font-size: 14px;
+  line-height: 1.5;
+  transform-origin: top center;
+  box-sizing: border-box;
+}
+
+/* Print simulation styles to hide background gradients and ensure high quality printing */
+@media print {
+  body {
+    background: none;
+    color: #000;
+  }
+  .pdf-sheet {
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    min-height: 100%;
+  }
+}
