@@ -4,7 +4,7 @@ export interface LayoutSettings {
   paddingLeftRight: number;
   sectionSpacing: number;
   lineHeight: number;
-  template?: 'navy' | 'serif' | 'sidebar' | 'tech';
+  template?: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive';
   brandColor?: string; // Hex code or Tailwind color suffix
 }
 

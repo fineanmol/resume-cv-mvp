@@ -9,6 +9,50 @@ interface CoverLetterTemplateProps {
   onHighlightChange?: (index: number, field: keyof HighlightItem, value: string) => void;
 }
 
+interface ParagraphProps {
+  text: string;
+  field: 'p1' | 'p2' | 'p3' | 'p4';
+  className?: string;
+  isEditable: boolean;
+  editableClass: string;
+  onFieldChange?: (field: keyof CoverLetterState, value: string) => void;
+  formatMarkdownBold: (text: string) => string;
+}
+
+const Paragraph: React.FC<ParagraphProps> = ({
+  text,
+  field,
+  className,
+  isEditable,
+  editableClass,
+  onFieldChange,
+  formatMarkdownBold,
+}) => {
+  if (isEditable) {
+    return (
+      <p
+        className={`${className || ''} ${editableClass}`}
+        contentEditable={true}
+        suppressContentEditableWarning={true}
+        onBlur={(e) => {
+          const val = e.currentTarget.textContent || '';
+          if (val !== text) {
+            onFieldChange?.(field, val);
+          }
+        }}
+      >
+        {text}
+      </p>
+    );
+  }
+  return (
+    <p
+      className={className}
+      dangerouslySetInnerHTML={{ __html: formatMarkdownBold(text) }}
+    />
+  );
+};
+
 export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = ({
   state,
   isEditable = false,
@@ -64,37 +108,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
 
   const editableClass = isEditable ? "outline-none hover:bg-slate-100/80 focus:bg-slate-100 rounded px-1 -mx-1 transition" : "";
 
-  // Dedicated paragraph renderer to support edit/preview switching
-  const Paragraph: React.FC<{ text: string; field: 'p1' | 'p2' | 'p3' | 'p4'; className?: string }> = ({
-    text,
-    field,
-    className
-  }) => {
-    const currentVal = interpolate(text);
-    if (isEditable) {
-      return (
-        <p
-          className={`${className || ''} ${editableClass}`}
-          contentEditable={true}
-          suppressContentEditableWarning={true}
-          onBlur={(e) => {
-            const val = e.currentTarget.textContent || '';
-            if (val !== currentVal) {
-              onFieldChange?.(field, val);
-            }
-          }}
-        >
-          {currentVal}
-        </p>
-      );
-    }
-    return (
-      <p
-        className={className}
-        dangerouslySetInnerHTML={{ __html: formatMarkdownBold(currentVal) }}
-      />
-    );
-  };
+  const sharedParagraphProps = { isEditable, editableClass, onFieldChange, formatMarkdownBold };
 
   // -------------------------------------------------------------
   // 1. NAVY TEMPLATE (Navy Elegant)
@@ -186,8 +200,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
             {salutation}
           </div>
           
-          <Paragraph text={p1} field="p1" className="text-justify" />
-          <Paragraph text={p2} field="p2" className="text-justify" />
+          <Paragraph text={interpolate(p1)} field="p1" className="text-justify" {...sharedParagraphProps} />
+          <Paragraph text={interpolate(p2)} field="p2" className="text-justify" {...sharedParagraphProps} />
           
           {/* Highlights section inside Navy */}
           {highlights && highlights.length > 0 && (
@@ -218,8 +232,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
             </div>
           )}
 
-          <Paragraph text={p3} field="p3" className="text-justify" />
-          <Paragraph text={p4} field="p4" className="text-justify" />
+          <Paragraph text={interpolate(p3)} field="p3" className="text-justify" {...sharedParagraphProps} />
+          <Paragraph text={interpolate(p4)} field="p4" className="text-justify" {...sharedParagraphProps} />
           
           <div className="pt-4">
             <p>Sincerely,</p>
@@ -326,8 +340,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
             {salutation}
           </div>
           
-          <Paragraph text={p1} field="p1" />
-          <Paragraph text={p2} field="p2" />
+          <Paragraph text={interpolate(p1)} field="p1" {...sharedParagraphProps} />
+          <Paragraph text={interpolate(p2)} field="p2" {...sharedParagraphProps} />
           
           {highlights && highlights.length > 0 && (
             <div className="py-2 text-[11px]" style={spacingStyle}>
@@ -358,8 +372,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
             </div>
           )}
 
-          <Paragraph text={p3} field="p3" />
-          <Paragraph text={p4} field="p4" />
+          <Paragraph text={interpolate(p3)} field="p3" {...sharedParagraphProps} />
+          <Paragraph text={interpolate(p4)} field="p4" {...sharedParagraphProps} />
           
           <div className="pt-4 font-sans text-xs">
             <p>Sincerely,</p>
@@ -510,10 +524,10 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
               {salutation}
             </div>
             
-            <Paragraph text={p1} field="p1" className="text-justify" />
-            <Paragraph text={p2} field="p2" className="text-justify" />
-            <Paragraph text={p3} field="p3" className="text-justify" />
-            <Paragraph text={p4} field="p4" className="text-justify" />
+            <Paragraph text={interpolate(p1)} field="p1" className="text-justify" {...sharedParagraphProps} />
+            <Paragraph text={interpolate(p2)} field="p2" className="text-justify" {...sharedParagraphProps} />
+            <Paragraph text={interpolate(p3)} field="p3" className="text-justify" {...sharedParagraphProps} />
+            <Paragraph text={interpolate(p4)} field="p4" className="text-justify" {...sharedParagraphProps} />
             
             <div className="pt-6">
               <p>Sincerely,</p>
@@ -620,8 +634,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
           &gt; {salutation}
         </div>
         
-        <Paragraph text={p1} field="p1" className="text-justify font-sans" />
-        <Paragraph text={p2} field="p2" className="text-justify font-sans" />
+        <Paragraph text={interpolate(p1)} field="p1" className="text-justify font-sans" {...sharedParagraphProps} />
+        <Paragraph text={interpolate(p2)} field="p2" className="text-justify font-sans" {...sharedParagraphProps} />
         
         {highlights && highlights.length > 0 && (
           <div className="py-2" style={spacingStyle}>
@@ -654,8 +668,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
           </div>
         )}
 
-        <Paragraph text={p3} field="p3" className="text-justify font-sans" />
-        <Paragraph text={p4} field="p4" className="text-justify font-sans" />
+        <Paragraph text={interpolate(p3)} field="p3" className="text-justify font-sans" {...sharedParagraphProps} />
+        <Paragraph text={interpolate(p4)} field="p4" className="text-justify font-sans" {...sharedParagraphProps} />
         
         <div className="pt-4 font-mono text-xs">
           <p>Sincerely,</p>
@@ -671,8 +685,178 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
       </main>
     </div>
   );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 5. CLEAN ATS — single column, no decoration, maximum parser compatibility
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (template === 'ats') {
+    const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    return (
+      <div className="pdf-sheet font-sans text-slate-900" style={sheetStyle} id="cover-letter-sheet">
+        {/* Header */}
+        <header className="mb-6">
+          <CE tag="h1" value={name} isEditable={isEditable} editableClass={editableClass} className="text-xl font-bold text-slate-900" onSave={v => onFieldChange?.('name', v)} />
+          <CE tag="p" value={subtitle} isEditable={isEditable} editableClass={editableClass} className="text-sm text-slate-600 mt-0.5" onSave={v => onFieldChange?.('subtitle', v)} />
+          <div className="flex flex-wrap gap-x-3 text-xs text-slate-600 mt-1.5">
+            {phone && <span>{phone}</span>}
+            {email && <span>| {email}</span>}
+            {location && <span>| {location}</span>}
+            {linkedin && <span>| {linkedin}</span>}
+          </div>
+        </header>
+
+        <p className="text-xs text-slate-600 mb-4">{today}</p>
+
+        <div className="mb-4 text-xs text-slate-800">
+          <CE tag="p" value={companyName ? `Hiring Team, ${companyName}` : 'Hiring Team'} isEditable={isEditable} editableClass={editableClass} className="font-semibold" onSave={v => onFieldChange?.('companyName', v)} />
+          {jobTitle && <CE tag="p" value={`Re: ${jobTitle} Position`} isEditable={isEditable} editableClass={editableClass} className="italic text-slate-600 mt-0.5" onSave={v => onFieldChange?.('jobTitle', v)} />}
+        </div>
+
+        <CE tag="p" value={salutation || `Dear Hiring Manager,`} isEditable={isEditable} editableClass={editableClass} className="text-xs text-slate-800 mb-3" onSave={v => onFieldChange?.('salutation', v)} />
+
+        {[p1, p2, p3, p4].map((para, i) => (
+          para ? (
+            <Paragraph key={i} text={interpolate(para)} field={(['p1','p2','p3','p4'] as const)[i]}
+              className="text-xs text-slate-800 mb-3 leading-relaxed" {...sharedParagraphProps} />
+          ) : null
+        ))}
+
+        {highlights && highlights.length > 0 && (
+          <div className="my-4">
+            <p className="text-xs font-semibold text-slate-800 mb-2">Key Qualifications:</p>
+            <ul className="space-y-1 text-xs text-slate-700">
+              {highlights.map((item, idx) => (
+                <li key={idx} className="flex gap-2">
+                  <span className="text-slate-400 flex-shrink-0">▸</span>
+                  <span>
+                    <strong
+                      className={editableClass} contentEditable={isEditable} suppressContentEditableWarning
+                      onBlur={e => onHighlightChange?.(idx, 'category', e.currentTarget.textContent || '')}
+                    >{item.category}</strong>
+                    {': '}
+                    <span
+                      className={editableClass} contentEditable={isEditable} suppressContentEditableWarning
+                      onBlur={e => onHighlightChange?.(idx, 'text', e.currentTarget.textContent || '')}
+                    >{item.text}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="mt-5 text-xs text-slate-800">
+          <p>Sincerely,</p>
+          <CE tag="p" value={name} isEditable={isEditable} editableClass={editableClass} className="font-bold mt-2 text-slate-900" onSave={v => onFieldChange?.('name', v)} />
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 6. EXECUTIVE — premium branded header, structured highlights table
+  // ═══════════════════════════════════════════════════════════════════════════
+  return (
+    <div className="pdf-sheet font-sans" style={{ ...sheetStyle, color: '#1e293b' }} id="cover-letter-sheet">
+      {/* Branded header */}
+      <header className="text-white px-6 py-5 mb-6 rounded-none"
+        style={{ background: `linear-gradient(135deg, ${brandColor} 0%, ${brandColor}cc 100%)`, margin: `-${paddingTopBottom}mm -${paddingLeftRight}mm 0`, padding: '18px 28px 16px' }}>
+        <div className="flex justify-between items-center gap-4">
+          <div>
+            <CE tag="h1" value={name} isEditable={isEditable}
+              editableClass="outline-none hover:bg-white/10 focus:bg-white/10 rounded px-1 -mx-1 transition"
+              className="text-2xl font-bold text-white tracking-tight" onSave={v => onFieldChange?.('name', v)} />
+            <CE tag="p" value={subtitle} isEditable={isEditable}
+              editableClass="outline-none hover:bg-white/10 focus:bg-white/10 rounded px-1 -mx-1 transition"
+              className="text-xs text-white/80 mt-0.5 uppercase tracking-wider" onSave={v => onFieldChange?.('subtitle', v)} />
+          </div>
+          {avatar && (
+            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/40 flex-shrink-0">
+              <img src={avatar} alt={name} className="w-full h-full object-cover" />
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-x-5 gap-y-0.5 text-[11px] text-white/80 mt-2">
+          {phone && <span>{phone}</span>}
+          {email && <span>• {email}</span>}
+          {location && <span>• {location}</span>}
+          {linkedin && <span>• {linkedin}</span>}
+        </div>
+      </header>
+
+      {/* Addressee */}
+      <div className="mb-4 text-xs text-slate-700">
+        <p className="font-semibold text-slate-900">{companyName || 'Company Name'}</p>
+        <p className="italic">{jobTitle ? `Re: Application for ${jobTitle}` : 'Re: Open Application'}</p>
+      </div>
+
+      <CE tag="p" value={salutation || 'Dear Hiring Manager,'} isEditable={isEditable} editableClass={editableClass}
+        className="text-sm font-semibold text-slate-800 mb-4" onSave={v => onFieldChange?.('salutation', v)} />
+
+      <Paragraph text={interpolate(p1)} field="p1" className="text-xs text-justify mb-3 leading-relaxed" {...sharedParagraphProps} />
+      <Paragraph text={interpolate(p2)} field="p2" className="text-xs text-justify mb-4 leading-relaxed" {...sharedParagraphProps} />
+
+      {highlights && highlights.length > 0 && (
+        <div className="my-4 border border-slate-200 rounded-lg overflow-hidden">
+          <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-white" style={{ background: brandColor }}>
+            Why I Am the Right Fit
+          </div>
+          <div className="divide-y divide-slate-100">
+            {highlights.map((item, idx) => (
+              <div key={idx} className="flex gap-3 px-4 py-2 text-xs">
+                <span
+                  className={`font-bold text-slate-800 w-36 flex-shrink-0 ${editableClass}`}
+                  contentEditable={isEditable} suppressContentEditableWarning
+                  onBlur={e => onHighlightChange?.(idx, 'category', e.currentTarget.textContent || '')}
+                >{item.category}</span>
+                <span
+                  className={`text-slate-600 flex-1 ${editableClass}`}
+                  contentEditable={isEditable} suppressContentEditableWarning
+                  onBlur={e => onHighlightChange?.(idx, 'text', e.currentTarget.textContent || '')}
+                >{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <Paragraph text={interpolate(p3)} field="p3" className="text-xs text-justify mb-3 leading-relaxed" {...sharedParagraphProps} />
+      <Paragraph text={interpolate(p4)} field="p4" className="text-xs text-justify mb-4 leading-relaxed" {...sharedParagraphProps} />
+
+      <div className="mt-5 text-xs text-slate-800">
+        <p>Yours sincerely,</p>
+        <CE tag="p" value={name} isEditable={isEditable} editableClass={editableClass}
+          className="font-bold mt-2 text-slate-900 text-sm" onSave={v => onFieldChange?.('name', v)} />
+        <CE tag="p" value={subtitle} isEditable={isEditable} editableClass={editableClass}
+          className="text-slate-500 text-[11px]" onSave={v => onFieldChange?.('subtitle', v)} />
+      </div>
+    </div>
+  );
 };
 
 function formatMarkdownBold(text: string): string {
   return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
+
+// ─── Inline editable helper for cover letter new templates ───────────────────
+function CE({
+  value, tag = 'span', className, style, isEditable, editableClass, onSave, dangerHtml
+}: {
+  value: string; tag?: 'span' | 'p' | 'h1' | 'h2' | 'h3' | 'strong' | 'div';
+  className?: string; style?: React.CSSProperties;
+  isEditable: boolean; editableClass: string;
+  onSave: (v: string) => void; dangerHtml?: string;
+}) {
+  const Tag = tag;
+  if (isEditable) {
+    return (
+      <Tag className={`${className || ''} ${editableClass}`} style={style}
+        contentEditable={true} suppressContentEditableWarning={true}
+        onBlur={e => { const v = (e.currentTarget as HTMLElement).textContent || ''; if (v !== value) onSave(v); }}>
+        {value}
+      </Tag>
+    );
+  }
+  if (dangerHtml !== undefined) return <Tag className={className} style={style} dangerouslySetInnerHTML={{ __html: dangerHtml }} />;
+  return <Tag className={className} style={style}>{value}</Tag>;
 }
