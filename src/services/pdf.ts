@@ -170,12 +170,14 @@ export class PdfService {
     clone.style.transition = 'none';
     clone.style.boxShadow = 'none';
     
-    // Position the clone off-screen so html2canvas can capture it without painting over the UI.
-    // Must NOT use negative z-index — html2canvas treats those as invisible and produces a blank page.
+    // Position the clone at the top-left (0,0) of the document so html2canvas (with scrollX/scrollY overrides)
+    // can capture it correctly. Set z-index to -9999 and pointer-events to none so it stays completely hidden
+    // behind the application UI and does not intercept any user interactions.
     clone.style.position = 'absolute';
     clone.style.top = '0';
-    clone.style.left = '-9999px';
-    clone.style.zIndex = '0';
+    clone.style.left = '0';
+    clone.style.zIndex = '-9999';
+    clone.style.pointerEvents = 'none';
     clone.style.width = '794px'; // A4 width at 96 DPI
     clone.style.height = 'auto';
     clone.style.display = 'block';
@@ -208,7 +210,6 @@ export class PdfService {
         scrollX: 0,
         scrollY: 0,
         windowWidth: 794,
-        windowHeight: 1123,
       },
       jsPDF: { unit: 'pt' as const, format: 'a4' as const, orientation: 'portrait' as const }
     };
