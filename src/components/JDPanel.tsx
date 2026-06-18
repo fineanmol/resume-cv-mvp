@@ -89,7 +89,7 @@ export const JDPanel: React.FC<JDPanelProps> = ({
           }
         } catch (thirdErr) {
           console.error("All proxies failed:", thirdErr);
-          throw new Error("CORS proxy limit reached. Please copy-paste JD text manually.");
+          throw new Error("CORS proxy limit reached. Please copy-paste JD text manually.", { cause: thirdErr });
         }
       }
 
@@ -118,8 +118,8 @@ export const JDPanel: React.FC<JDPanelProps> = ({
       onJdChange(cleanText);
       showStatus('success', 'Job description scraped successfully!');
       setUrl('');
-    } catch (err: any) {
-      showStatus('error', err.message || 'Scraping failed');
+    } catch (err) {
+      showStatus('error', err instanceof Error ? err.message : 'Scraping failed');
     } finally {
       setScraping(false);
     }

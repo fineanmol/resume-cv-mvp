@@ -1,12 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { LandingPage } from './components/LandingPage';
 import { Dashboard } from './components/Dashboard';
 import { EditorHeader } from './components/EditorHeader';
 import { ResumeForm } from './components/ResumeForm';
 import { CoverLetterForm } from './components/CoverLetterForm';
 import { JDPanel } from './components/JDPanel';
-import { ResumeTemplateRenderer } from './templates/ResumeTemplates';
-import { CoverLetterTemplateRenderer } from './templates/CoverLetterTemplates';
+
+const ResumeTemplateRenderer = lazy(() =>
+  import('./templates/ResumeTemplates').then((m) => ({ default: m.ResumeTemplateRenderer }))
+);
+const CoverLetterTemplateRenderer = lazy(() =>
+  import('./templates/CoverLetterTemplates').then((m) => ({ default: m.CoverLetterTemplateRenderer }))
+);
 import { useUndoRedo } from './hooks/useUndoRedo';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { dbService } from './services/db';
@@ -15,12 +20,19 @@ import { PdfService } from './services/pdf';
 import { DEFAULT_RESUME_STATE } from './config/defaultResume';
 import { DEFAULT_CL_STATE } from './config/defaultCL';
 import type { ResumeState, CoverLetterState } from './types';
+import type { User } from 'firebase/auth';
+
+type LocalUser = { email: string; isLocal: boolean };
+type AuthUser = User | LocalUser;
+
+const isLocalUser = (u: AuthUser): u is LocalUser => 'isLocal' in u;
+const userEmail = (u: AuthUser): string => u.email ?? '';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Sparkles } from 'lucide-react';
 
 export default function App() {
   // Authentication state
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   
   // Workspace navigation
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
@@ -59,9 +71,21 @@ export default function App() {
   const [jobDescription, setJobDescription] = useState(localStorage.getItem("LAST_JD") || "");
   const [aiLoading, setAiLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [sheetOverflow, setSheetOverflow] = useState(false);
 
   // References for PDF export
   const sheetRef = useRef<HTMLDivElement>(null);
+
+  // Detect when the rendered sheet exceeds one A4 page height (1123px)
+  useEffect(() => {
+    const el = sheetRef.current?.querySelector('.pdf-sheet') as HTMLElement | null;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      setSheetOverflow(el.scrollHeight > 1123);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [activeDocId, activeDocType]);
 
   // Save current Gemini Key to LocalStorage
   const handleSaveGeminiKey = (e: React.FormEvent) => {
@@ -71,7 +95,7 @@ export default function App() {
   };
 
   // Log in user
-  const handleAuthSuccess = (authUser: any) => {
+  const handleAuthSuccess = (authUser: AuthUser | null) => {
     setUser(authUser);
   };
 
@@ -107,17 +131,15 @@ export default function App() {
 
   // Load document draft
   const handleSelectDocument = async (id: string, type: 'resume' | 'coverletter') => {
+    if (!user) return;
     setSaveStatus('idle');
+    const uid = userEmail(user);
     if (type === 'resume') {
-      const data = await dbService.getResume(user.email, id);
-      if (data) {
-        resetResume(data);
-      }
+      const data = await dbService.getResume(uid, id);
+      if (data) resetResume(data);
     } else {
-      const data = await dbService.getCoverLetter(user.email, id);
-      if (data) {
-        resetCl(data);
-      }
+      const data = await dbService.getCoverLetter(uid, id);
+      if (data) resetCl(data);
     }
     setActiveDocId(id);
     setActiveDocType(type);
@@ -126,26 +148,28 @@ export default function App() {
   // Create new document draft
   const handleCreateNew = async (
     type: 'resume' | 'coverletter',
-    template: 'navy' | 'serif' | 'sidebar' | 'tech'
+    template: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive'
   ) => {
+    if (!user) return;
+    const uid = userEmail(user);
     const id = `${type}_${Date.now()}`;
     if (type === 'resume') {
-      const stateToSave = { 
-        ...DEFAULT_RESUME_STATE, 
-        id, 
+      const stateToSave = {
+        ...DEFAULT_RESUME_STATE,
+        id,
         title: `New Resume (${new Date().toLocaleDateString()})`,
         layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template }
       };
-      await dbService.saveResume(user.email, id, stateToSave);
+      await dbService.saveResume(uid, id, stateToSave);
       resetResume(stateToSave);
     } else {
-      const stateToSave = { 
-        ...DEFAULT_CL_STATE, 
-        id, 
+      const stateToSave = {
+        ...DEFAULT_CL_STATE,
+        id,
         title: `New Cover Letter (${new Date().toLocaleDateString()})`,
         layoutSettings: { ...DEFAULT_CL_STATE.layoutSettings, template }
       };
-      await dbService.saveCoverLetter(user.email, id, stateToSave);
+      await dbService.saveCoverLetter(uid, id, stateToSave);
       resetCl(stateToSave);
     }
     setActiveDocId(id);
@@ -155,14 +179,15 @@ export default function App() {
   // Debounced auto-save hook
   useEffect(() => {
     if (!activeDocId || !user) return;
-    
-    setSaveStatus('saving');
+
     const timer = setTimeout(async () => {
+      setSaveStatus('saving');
       try {
+        const uid = userEmail(user);
         if (activeDocType === 'resume') {
-          await dbService.saveResume(user.email, activeDocId, resumeState);
+          await dbService.saveResume(uid, activeDocId, resumeState);
         } else {
-          await dbService.saveCoverLetter(user.email, activeDocId, clState);
+          await dbService.saveCoverLetter(uid, activeDocId, clState);
         }
         setSaveStatus('saved');
       } catch {
@@ -182,17 +207,11 @@ export default function App() {
   // Trigger Client-Side PDF Generation
   const handleDownloadPdf = () => {
     if (!sheetRef.current) return;
-    const filename = activeDocType === 'resume' 
+    const filename = activeDocType === 'resume'
       ? `${resumeState.name.replace(/\s+/g, '_')}_Resume.pdf`
       : `${clState.name.replace(/\s+/g, '_')}_Cover_Letter.pdf`;
-    
-    // Reset zoom before printing to prevent styling scales, then restore
-    const currentScale = zoomScale;
-    setZoomScale(1.0);
-    setTimeout(() => {
-      PdfService.downloadPdf(sheetRef.current!, filename);
-      setZoomScale(currentScale);
-    }, 300);
+    // PdfService clones the DOM and strips transform before rendering — no zoom reset needed
+    PdfService.downloadPdf(sheetRef.current, filename);
   };
 
   // AI Document Tailoring
@@ -238,8 +257,8 @@ export default function App() {
           }))
         }));
       }
-    } catch (err: any) {
-      alert(`AI Tailoring failed: ${err.message}`);
+    } catch (err) {
+      alert(`AI Tailoring failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setAiLoading(false);
     }
@@ -280,8 +299,8 @@ export default function App() {
           }))
         }));
       }
-    } catch (err: any) {
-      alert(`AI Keyword injection failed: ${err.message}`);
+    } catch (err) {
+      alert(`AI Keyword injection failed: ${err instanceof Error ? err.message : String(err)}`);
       throw err;
     }
   };
@@ -306,8 +325,8 @@ export default function App() {
         updated[idx] = { ...updated[idx], bullets: improved };
         return { ...prev, resumeExperience: updated };
       });
-    } catch (err: any) {
-      alert(`AI Bullet Improvement failed: ${err.message}`);
+    } catch (err) {
+      alert(`AI Bullet Improvement failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setAiLoading(false);
     }
@@ -356,8 +375,8 @@ export default function App() {
           className="min-h-screen w-full"
         >
           <Dashboard
-            userId={user.email}
-            isLocal={!!user.isLocal}
+            userId={userEmail(user)}
+            isLocal={isLocalUser(user)}
             onSelectDocument={handleSelectDocument}
             onCreateNew={handleCreateNew}
             onLogout={handleLogout}
@@ -463,15 +482,16 @@ export default function App() {
           {/* Center panel: A4 preview canvas */}
           <section className="flex-1 overflow-hidden relative flex flex-col items-center justify-center bg-editor">
             <div className="sheet-preview-container flex-1 w-full relative">
-              <div 
-                style={{ 
-                  transform: `scale(${zoomScale})`, 
+              <div
+                style={{
+                  transform: `scale(${zoomScale})`,
                   transformOrigin: 'top center',
                   transition: 'transform 0.25s ease-out'
                 }}
                 ref={sheetRef}
-                className="flex justify-center"
+                className={`flex justify-center${sheetOverflow ? ' sheet-overflow-active' : ''}`}
               >
+                <Suspense fallback={<div className="w-[794px] h-[1123px] bg-white animate-pulse" />}>
                 {activeDocType === 'resume' ? (
                   <ResumeTemplateRenderer
                     state={resumeState}
@@ -531,6 +551,7 @@ export default function App() {
                     }}
                   />
                 )}
+                </Suspense>
               </div>
             </div>
           </section>

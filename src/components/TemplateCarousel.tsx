@@ -7,9 +7,9 @@ import type { ResumeState, CoverLetterState } from '../types';
 
 interface TemplateCarouselProps {
   docType: 'resume' | 'coverletter';
-  state: any; // ResumeState | CoverLetterState
+  state: ResumeState | CoverLetterState;
   activeTemplate: string;
-  onSelect: (templateId: 'navy' | 'serif' | 'sidebar' | 'tech') => void;
+  onSelect: (templateId: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive') => void;
 }
 
 export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
@@ -23,8 +23,10 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
   const templates = [
     { id: 'navy' as const, name: 'Navy Elegant', desc: 'Modern & Clean' },
     { id: 'serif' as const, name: 'Harvard Serif', desc: 'Classic & Formal' },
-    { id: 'sidebar' as const, name: 'Creative Sidebar', desc: 'Two-Column Profile' },
-    { id: 'tech' as const, name: 'Tech Monospace', desc: 'Developer Coding' }
+    { id: 'sidebar' as const, name: 'Creative Sidebar', desc: 'Two-Column' },
+    { id: 'tech' as const, name: 'Tech Monospace', desc: 'Developer Style' },
+    { id: 'ats' as const, name: 'Clean ATS', desc: 'Max ATS Score' },
+    { id: 'executive' as const, name: 'Executive', desc: 'Premium Header' },
   ];
 
   const scroll = (direction: 'left' | 'right') => {

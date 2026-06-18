@@ -16,9 +16,12 @@ import { CoverLetterTemplateRenderer } from '../templates/CoverLetterTemplates';
 import { DEFAULT_RESUME_STATE } from '../config/defaultResume';
 import { DEFAULT_CL_STATE } from '../config/defaultCL';
 import { Auth } from './Auth';
+import type { User } from 'firebase/auth';
+
+type AuthUser = User | { email: string; isLocal: boolean };
 
 interface LandingPageProps {
-  onAuthSuccess: (user: any) => void;
+  onAuthSuccess: (user: AuthUser | null) => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onAuthSuccess }) => {
@@ -262,7 +265,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onAuthSuccess }) => {
               return (
                 <button
                   key={t}
-                  onClick={() => setPreviewTemplate(t as any)}
+                  onClick={() => setPreviewTemplate(t as 'navy' | 'serif' | 'sidebar' | 'tech')}
                   className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition cursor-pointer ${
                     previewTemplate === t 
                       ? 'border-brand-accent bg-brand-accent/15 text-brand-accent' 
@@ -284,9 +287,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onAuthSuccess }) => {
 
           <div className="transform scale-[0.65] origin-top my-4 shadow-2xl flex justify-center">
             {previewDocType === 'resume' ? (
-              <ResumeTemplateRenderer state={mockResumeState as any} />
+              <ResumeTemplateRenderer state={mockResumeState} />
             ) : (
-              <CoverLetterTemplateRenderer state={mockCoverLetterState as any} />
+              <CoverLetterTemplateRenderer state={mockCoverLetterState} />
             )}
           </div>
           
@@ -364,7 +367,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onAuthSuccess }) => {
                 <X className="w-4 h-4" />
               </button>
 
-              <Auth onAuthSuccess={(usr) => {
+              <Auth onAuthSuccess={(usr: AuthUser | null) => {
                 setShowAuthModal(false);
                 onAuthSuccess(usr);
               }} />

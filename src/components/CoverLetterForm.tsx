@@ -137,11 +137,11 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({
                 />
               </div>
 
-              {['p1', 'p2', 'p3', 'p4'].map((pKey, pIdx) => (
+              {(['p1', 'p2', 'p3', 'p4'] as const).map((pKey, pIdx) => (
                 <div key={pKey}>
                   <label className="block text-[9px] text-text-muted mb-1 uppercase font-semibold">Paragraph {pIdx + 1}</label>
                   <textarea
-                    value={(state as any)[pKey]}
+                    value={state[pKey]}
                     onChange={(e) => onChange(prev => ({ ...prev, [pKey]: e.target.value }))}
                     rows={4}
                     className="w-full bg-input-bg border border-border-color rounded-lg p-2.5 text-xs text-text-main focus:outline-none"
@@ -292,10 +292,10 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({
                 <select
                   value={state.layoutSettings.template || 'navy'}
                   onChange={(e) => {
-                    const val = e.target.value;
+                    const val = e.target.value as 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive';
                     onChange(prev => ({
                       ...prev,
-                      layoutSettings: { ...prev.layoutSettings, template: val as any }
+                      layoutSettings: { ...prev.layoutSettings, template: val }
                     }));
                   }}
                   className="w-full bg-input-bg border border-border-color rounded-lg px-3 py-2 text-xs text-text-main focus:outline-none focus:border-brand-accent"

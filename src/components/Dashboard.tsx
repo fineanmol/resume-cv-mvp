@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { dbService } from '../services/db';
 import type { DocumentMetadata } from '../types';
 import { 
@@ -23,7 +23,7 @@ interface DashboardProps {
   userId: string;
   isLocal: boolean;
   onSelectDocument: (id: string, type: 'resume' | 'coverletter') => void;
-  onCreateNew: (type: 'resume' | 'coverletter', template: 'navy' | 'serif' | 'sidebar' | 'tech') => void;
+  onCreateNew: (type: 'resume' | 'coverletter', template: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive') => void;
   onLogout: () => void;
 }
 
@@ -62,16 +62,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [activeDelete, setActiveDelete] = useState<{ id: string; type: 'resume' | 'coverletter' } | null>(null);
 
-  const loadDrafts = async () => {
+  const loadDrafts = useCallback(async () => {
     setLoading(true);
     const list = await dbService.listDrafts(userId);
     setDrafts(list);
     setLoading(false);
-  };
+  }, [userId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadDrafts();
-  }, [userId]);
+  }, [loadDrafts]);
 
   const handleSignOut = async () => {
     if (auth && !isLocal) {
@@ -87,7 +88,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setIsPickerOpen(true);
   };
 
-  const handleSelectTemplate = (template: 'navy' | 'serif' | 'sidebar' | 'tech') => {
+  const handleSelectTemplate = (template: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive') => {
     setIsPickerOpen(false);
     onCreateNew(pickerDocType, template);
   };

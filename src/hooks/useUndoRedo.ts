@@ -10,7 +10,7 @@ export function useUndoRedo<T>(initialState: T) {
 
   const set = useCallback((newState: T | ((prev: T) => T), skipHistory = false) => {
     setPresent((prevPresent) => {
-      const resolvedState = typeof newState === 'function' ? (newState as Function)(prevPresent) : newState;
+      const resolvedState = typeof newState === 'function' ? (newState as (prev: T) => T)(prevPresent) : newState;
       
       if (skipHistory) {
         return resolvedState;

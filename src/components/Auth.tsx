@@ -75,8 +75,8 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
         } else {
           await signInWithEmailAndPassword(auth, email, password);
         }
-      } catch (err: any) {
-        setError(err.message || 'Authentication failed');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Authentication failed');
       }
     } else {
       // Local Mock Auth Mode

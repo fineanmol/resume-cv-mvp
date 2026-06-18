@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, FileText } from 'lucide-react';
 
@@ -17,10 +17,15 @@ export const RenameModal: React.FC<RenameModalProps> = ({
 }) => {
   const [newTitle, setNewTitle] = useState(currentTitle);
   const [loading, setLoading] = useState(false);
+  const prevIsOpen = useRef(isOpen);
 
+  // Sync title when modal is re-opened with a different document
   useEffect(() => {
-    setNewTitle(currentTitle);
-  }, [currentTitle, isOpen]);
+    if (isOpen && !prevIsOpen.current) {
+      setNewTitle(currentTitle);
+    }
+    prevIsOpen.current = isOpen;
+  }, [isOpen, currentTitle]);
 
   if (!isOpen) return null;
 
