@@ -59,9 +59,11 @@ function convertElementColors(original: HTMLElement, cloned: HTMLElement) {
   ];
 
   propertiesToConvert.forEach((prop) => {
-    const val = computed.getPropertyValue(prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`));
-    if (val && (val.includes('oklch') || val.includes('oklab'))) {
-      cloned.style.setProperty(prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`), convertOklToRgb(val));
+    const cssProp = prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+    const val = computed.getPropertyValue(cssProp);
+    if (val) {
+      const converted = (val.includes('oklch') || val.includes('oklab')) ? convertOklToRgb(val) : val;
+      cloned.style.setProperty(cssProp, converted);
     }
   });
 }
