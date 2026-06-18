@@ -19,7 +19,7 @@ describe('Dashboard Workspace and Draft actions', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (dbService.listDrafts as any).mockResolvedValue(mockDrafts);
+    vi.mocked(dbService.listDrafts).mockResolvedValue(mockDrafts);
   });
 
   it('lists resume and cover letter drafts with correct titles', async () => {
@@ -67,7 +67,7 @@ describe('Dashboard Workspace and Draft actions', () => {
     fireEvent.click(newResumeBtn);
 
     // Template picker should be visible
-    expect(screen.getByText(/Select Resume Template/i)).toBeInTheDocument();
+    expect(screen.getByText(/Select Resume Layout/i)).toBeInTheDocument();
     
     // Choose Navy Elegant
     const navyOption = screen.getByText('Navy Elegant');
@@ -81,8 +81,8 @@ describe('Dashboard Workspace and Draft actions', () => {
     const mockCreate = vi.fn();
     const mockLogout = vi.fn();
 
-    (dbService.renameDraft as any).mockResolvedValue(undefined);
-    (dbService.deleteDraft as any).mockResolvedValue(undefined);
+    vi.mocked(dbService.renameDraft).mockResolvedValue(undefined);
+    vi.mocked(dbService.deleteDraft).mockResolvedValue(undefined);
 
     render(
       <Dashboard
