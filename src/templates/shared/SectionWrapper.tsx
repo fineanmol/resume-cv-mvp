@@ -30,12 +30,12 @@ export interface SectionWrapperProps {
   onLayoutSettingsChange?: (patch: Partial<LayoutSettings>) => void;
 }
 
-export const SectionWrapper: React.FC<SectionWrapperProps> = ({
+export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWrapper({
   id, title, isEditable, align, onAlignChange, onAddEntry, onMoveLeft, onMoveRight, onDeleteSection,
   isActive: propIsActive, onSelect: propOnSelect, onMoveUp: propOnMoveUp, onMoveDown: propOnMoveDown, children,
   skillsStyle, onSkillsStyleChange, onSkillsValueChange,
   layoutSettings, onLayoutSettingsChange,
-}) => {
+}) {
   const context = useContext(ActiveSectionContext);
   const isActive = propIsActive ?? (context?.activeSectionId === id);
   const onSelect = propOnSelect ?? (() => context?.setActiveSectionId(id));
@@ -271,4 +271,4 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
       </div>
     </div>
   );
-};
+});

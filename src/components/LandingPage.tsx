@@ -11,10 +11,9 @@ import {
   X,
   CheckCircle
 } from 'lucide-react';
-import { ResumeTemplateRenderer } from '../templates/ResumeTemplates';
-import { CoverLetterTemplateRenderer } from '../templates/CoverLetterTemplates';
-import { DEFAULT_RESUME_STATE } from '../config/defaultResume';
-import { DEFAULT_CL_STATE } from '../config/defaultCL';
+import { TemplateLayoutPreview } from './TemplateLayoutPreview';
+import { TEMPLATE_CATALOG } from '../config/templates';
+import type { TemplateId } from '../types';
 import { Auth } from './Auth';
 import type { User } from 'firebase/auth';
 
@@ -29,32 +28,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onAuthSuccess }) => {
   
   // Interactive preview gallery state
   const [previewDocType, setPreviewDocType] = useState<'resume' | 'coverletter'>('resume');
-  const [previewTemplate, setPreviewTemplate] = useState<'navy' | 'serif' | 'sidebar' | 'tech'>('navy');
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateId>('navy');
 
-  // Construct state overrides for preview elements
-  const mockResumeState = {
-    ...DEFAULT_RESUME_STATE,
-    layoutSettings: {
-      ...DEFAULT_RESUME_STATE.layoutSettings,
-      template: previewTemplate,
-      fontSize: 9,
-      sectionSpacing: 8,
-      paddingTopBottom: 10,
-      paddingLeftRight: 10,
-    }
-  };
-
-  const mockCoverLetterState = {
-    ...DEFAULT_CL_STATE,
-    layoutSettings: {
-      ...DEFAULT_CL_STATE.layoutSettings,
-      template: previewTemplate,
-      fontSize: 10,
-      sectionSpacing: 10,
-      paddingTopBottom: 12,
-      paddingLeftRight: 12,
-    }
-  };
+  const previewCatalogEntry = TEMPLATE_CATALOG.find((t) => t.id === previewTemplate) ?? TEMPLATE_CATALOG[0];
 
   const handleGetStarted = () => {
     setShowAuthModal(true);
@@ -260,12 +236,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onAuthSuccess }) => {
           </div>
 
           <div className="flex flex-wrap gap-2 justify-center">
-            {['navy', 'serif', 'sidebar', 'tech'].map((t) => {
-              const label = t === 'navy' ? 'Navy Elegant' : t === 'serif' ? 'Harvard Serif' : t === 'sidebar' ? 'Creative Sidebar' : 'Tech Monospace';
+            {(['navy', 'serif', 'sidebar', 'tech'] as const).map((t) => {
+              const label = TEMPLATE_CATALOG.find((entry) => entry.id === t)?.name ?? t;
               return (
                 <button
                   key={t}
-                  onClick={() => setPreviewTemplate(t as 'navy' | 'serif' | 'sidebar' | 'tech')}
+                  onClick={() => setPreviewTemplate(t)}
                   className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition cursor-pointer ${
                     previewTemplate === t 
                       ? 'border-brand-accent bg-brand-accent/15 text-brand-accent' 
@@ -286,11 +262,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onAuthSuccess }) => {
           </div>
 
           <div className="transform scale-[0.65] origin-top my-4 shadow-2xl flex justify-center">
-            {previewDocType === 'resume' ? (
-              <ResumeTemplateRenderer state={mockResumeState} />
-            ) : (
-              <CoverLetterTemplateRenderer state={mockCoverLetterState} />
-            )}
+            <div className="bg-white shadow-2xl rounded-sm overflow-hidden w-[320px] h-[452px]">
+              <TemplateLayoutPreview
+                templateId={previewTemplate}
+                accent={previewCatalogEntry.accent}
+              />
+            </div>
           </div>
           
           <div className="w-full mt-4 text-center">

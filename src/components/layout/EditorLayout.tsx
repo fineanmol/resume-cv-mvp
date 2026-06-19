@@ -1,4 +1,4 @@
-import React, { useState, useCallback, lazy, Suspense, type RefObject } from 'react';
+import React, { useState, useCallback, useRef, useEffect, lazy, Suspense, type RefObject } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -26,8 +26,10 @@ interface EditorLayoutProps {
   isResume: boolean;
   resumeState: ResumeState;
   resumeSet: (updater: ResumeState | ((prev: ResumeState) => ResumeState), skipHistory?: boolean) => void;
+  resumeCommitHistory: () => void;
   clState: CoverLetterState;
   clSet: (updater: CoverLetterState | ((prev: CoverLetterState) => CoverLetterState), skipHistory?: boolean) => void;
+  clCommitHistory: () => void;
   resumeMutations: ResumeMutations;
   clMutations: CoverLetterMutations;
   sidebarOpen: boolean;
@@ -58,8 +60,10 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
   isResume,
   resumeState,
   resumeSet,
+  resumeCommitHistory,
   clState,
   clSet,
+  clCommitHistory,
   resumeMutations,
   clMutations,
   sidebarOpen,
@@ -88,9 +92,18 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
   const [leftWidth, setLeftWidth] = useState(380);
   const [rightWidth, setRightWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
+  const resizeCleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      resizeCleanupRef.current?.();
+      resizeCleanupRef.current = null;
+    };
+  }, []);
 
   const startResizeLeft = useCallback((mouseDownEvent: React.MouseEvent) => {
     mouseDownEvent.preventDefault();
+    resizeCleanupRef.current?.();
     setIsResizing(true);
     const startX = mouseDownEvent.clientX;
     const startWidth = leftWidth;
@@ -105,14 +118,17 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
       setIsResizing(false);
       window.removeEventListener('mousemove', doResize);
       window.removeEventListener('mouseup', stopResize);
+      resizeCleanupRef.current = null;
     };
 
+    resizeCleanupRef.current = stopResize;
     window.addEventListener('mousemove', doResize);
     window.addEventListener('mouseup', stopResize);
   }, [leftWidth]);
 
   const startResizeRight = useCallback((mouseDownEvent: React.MouseEvent) => {
     mouseDownEvent.preventDefault();
+    resizeCleanupRef.current?.();
     setIsResizing(true);
     const startX = mouseDownEvent.clientX;
     const startWidth = rightWidth;
@@ -127,8 +143,10 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
       setIsResizing(false);
       window.removeEventListener('mousemove', doResize);
       window.removeEventListener('mouseup', stopResize);
+      resizeCleanupRef.current = null;
     };
 
+    resizeCleanupRef.current = stopResize;
     window.addEventListener('mousemove', doResize);
     window.addEventListener('mouseup', stopResize);
   }, [rightWidth]);
@@ -152,13 +170,18 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
             <ResumeForm
               state={resumeState}
               onChange={resumeSet}
+              onCommit={resumeCommitHistory}
               onImproveBullet={onImproveBullet}
               aiLoading={aiLoading}
               isOnline={isOnline}
               geminiKey={geminiKey}
             />
           ) : (
-            <CoverLetterForm state={clState} onChange={clSet} />
+            <CoverLetterForm
+              state={clState}
+              onChange={clSet}
+              onCommit={clCommitHistory}
+            />
           )}
         </aside>
       )}

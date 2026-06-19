@@ -1,11 +1,13 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
 import type { ResumeState } from '../../../types';
+import type { UndoRedoSetter } from '../../../hooks/useUndoRedo';
 import { AccordionSection } from '../../ui/AccordionSection';
 
 interface SkillsSectionProps {
   state: ResumeState;
-  onChange: (newState: ResumeState | ((prev: ResumeState) => ResumeState)) => void;
+  onChange: UndoRedoSetter<ResumeState>;
+  onCommit: () => void;
   openSection: string;
   onToggle: (id: string) => void;
 }
@@ -13,6 +15,7 @@ interface SkillsSectionProps {
 export const SkillsSection: React.FC<SkillsSectionProps> = ({
   state,
   onChange,
+  onCommit,
   openSection,
   onToggle,
 }) => (
@@ -31,7 +34,8 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
       className="w-full bg-input-bg border border-border-color rounded-lg p-2.5 text-xs text-text-main focus:outline-none focus:border-brand-accent resize-y"
       placeholder="React, TypeScript, Node.js, AWS, Python, Docker..."
       value={state.resumeSkills}
-      onChange={(e) => onChange((p) => ({ ...p, resumeSkills: e.target.value }))}
+      onChange={(e) => onChange((p) => ({ ...p, resumeSkills: e.target.value }), true)}
+      onBlur={onCommit}
     />
   </AccordionSection>
 );

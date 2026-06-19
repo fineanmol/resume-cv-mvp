@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PdfService } from '../services/pdf';
+import { PdfService, sanitizeCssOklch } from '../services/pdf';
 
 type MockPdfChain = {
   then: (cb: () => void) => MockPdfChain;
@@ -36,6 +36,36 @@ vi.mock('html2pdf.js', () => {
 describe('PdfService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('strips oklch from CSS text', () => {
+    const input = '.foo { color: oklch(0.6 0.2 240); background: oklch(50% 0.1 180 / 0.5); }';
+    const output = sanitizeCssOklch(input);
+    expect(output).not.toMatch(/oklch|oklab/i);
+    expect(output).toContain('.foo');
+  });
+
+  it('resolves SVG currentColor attributes on the PDF clone', async () => {
+    const originalDiv = document.createElement('div');
+    originalDiv.className = 'pdf-sheet';
+    originalDiv.style.color = 'oklch(0.6 0.2 240)';
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'lucide');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke', 'currentColor');
+    svg.appendChild(path);
+    originalDiv.appendChild(svg);
+
+    document.body.appendChild(originalDiv);
+    await PdfService.downloadPdf(originalDiv, 'svg.pdf');
+
+    const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
+    const clonedPath = clonedElement.querySelector('path');
+    expect(clonedPath?.getAttribute('stroke')).toBeTruthy();
+    expect(clonedPath?.getAttribute('stroke')).not.toMatch(/oklch|currentColor/i);
+
+    document.body.removeChild(originalDiv);
   });
 
   it('preserves profile photo decorative SVG in PDF clone', async () => {
@@ -84,7 +114,7 @@ describe('PdfService', () => {
 
     const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
     expect(clonedElement.textContent).toContain('TypeScript');
-    expect(clonedElement.querySelector('[data-skill-index]')).toBeTruthy();
+    expect(clonedElement.querySelector('[data-skill-index]')).toBeNull();
     expect(clonedElement.querySelector('.edit-only')).toBeNull();
 
     document.body.removeChild(originalDiv);

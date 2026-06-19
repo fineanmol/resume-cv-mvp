@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import type React from 'react';
 import type { ResumeState, HeaderStyle } from '../../types';
 import { FONT_CSS } from '../../config/fonts';
@@ -81,7 +81,7 @@ export function useTemplateSetup({
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
 
-  const handleMoveItemUpDown = (sectionId: string, index: number, dir: 'up' | 'down') => {
+  const handleMoveItemUpDown = useCallback((sectionId: string, index: number, dir: 'up' | 'down') => {
     const newIdx = dir === 'up' ? index - 1 : index + 1;
     const swap = (arr: unknown[]): unknown[] => {
       if (newIdx < 0 || newIdx >= arr.length) return arr;
@@ -94,9 +94,9 @@ export function useTemplateSetup({
     else if (sectionId === 'certs') onFieldChange?.('resumeCerts', swap(resumeCerts ?? []) as typeof resumeCerts);
     else if (sectionId === 'achievements') onFieldChange?.('resumeAchievements', swap(resumeAchievements ?? []) as typeof resumeAchievements);
     else if (sectionId === 'languages') onFieldChange?.('resumeLanguages', swap(resumeLanguages ?? []) as typeof resumeLanguages);
-  };
+  }, [onFieldChange, resumeExperience, resumeEducation, resumeCerts, resumeAchievements, resumeLanguages]);
 
-  const handleMoveSectionUpDown = (id: string, dir: 'up' | 'down') => {
+  const handleMoveSectionUpDown = useCallback((id: string, dir: 'up' | 'down') => {
     const leftCol = [...(designerLeftSections ?? [])];
     const rightCol = [...(designerRightSections ?? [])];
     const inLeft = leftCol.includes(id);
@@ -109,16 +109,7 @@ export function useTemplateSetup({
       ...layoutSettings,
       ...(inLeft ? { designerLeftSections: col } : { designerRightSections: col }),
     });
-  };
-
-  const sectionContextValue = {
-    activeSectionId,
-    setActiveSectionId,
-    activeItemId,
-    setActiveItemId,
-    handleMoveSectionUpDown,
-    handleMoveItemUpDown,
-  };
+  }, [designerLeftSections, designerRightSections, onFieldChange, layoutSettings]);
 
   const sheetActiveClass = isEditable
     ? (activeItemId ? 'has-active-item' : activeSectionId ? 'has-active-section' : '')
@@ -148,26 +139,26 @@ export function useTemplateSetup({
     return () => document.removeEventListener(EDITOR_CLEAR_FOCUS_EVENT, handleClearEvent);
   }, [isEditable, clearActive]);
 
-  const handleSectionDragStart = (e: React.DragEvent, sectionId: string) => {
+  const handleSectionDragStart = useCallback((e: React.DragEvent, sectionId: string) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', sectionId);
     setDraggedSectionId(sectionId);
-  };
+  }, []);
 
-  const handleSectionDragOver = (e: React.DragEvent) => {
+  const handleSectionDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-  };
+  }, []);
 
-  const handleDragEnter = (e: React.DragEvent, sectionId: string) => {
+  const handleDragEnter = useCallback((e: React.DragEvent, sectionId: string) => {
     e.preventDefault();
     setDragOverSectionId(sectionId);
-  };
+  }, []);
 
-  const handleDragLeave = () => {
+  const handleDragLeave = useCallback(() => {
     setDragOverSectionId(null);
-  };
+  }, []);
 
-  const handleSectionDrop = (e: React.DragEvent, targetSectionId: string) => {
+  const handleSectionDrop = useCallback((e: React.DragEvent, targetSectionId: string) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverSectionId(null);
@@ -205,9 +196,9 @@ export function useTemplateSetup({
       designerRightSections: rightCol,
     });
     setDraggedSectionId(null);
-  };
+  }, [draggedSectionId, designerLeftSections, designerRightSections, onFieldChange, layoutSettings]);
 
-  const handleColumnDrop = (e: React.DragEvent, targetColumn: 'left' | 'right') => {
+  const handleColumnDrop = useCallback((e: React.DragEvent, targetColumn: 'left' | 'right') => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverSectionId(null);
@@ -236,22 +227,43 @@ export function useTemplateSetup({
       designerRightSections: rightCol,
     });
     setDraggedSectionId(null);
-  };
+  }, [draggedSectionId, designerLeftSections, designerRightSections, onFieldChange, layoutSettings]);
 
-  const dragProps = {
+  const handleDragEnd = useCallback(() => {
+    setDraggedSectionId(null);
+    setDragOverSectionId(null);
+  }, []);
+
+  const sectionContextValue = useMemo(() => ({
+    activeSectionId,
+    setActiveSectionId,
+    activeItemId,
+    setActiveItemId,
+    handleMoveSectionUpDown,
+    handleMoveItemUpDown,
+  }), [activeSectionId, activeItemId, handleMoveSectionUpDown, handleMoveItemUpDown]);
+
+  const dragProps = useMemo(() => ({
     showLayoutBounds: showLayoutBounds ?? false,
     isEditable,
     onDragStart: handleSectionDragStart,
     onDragOver: handleSectionDragOver,
     onDrop: handleSectionDrop,
-    onDragEnd: () => {
-      setDraggedSectionId(null);
-      setDragOverSectionId(null);
-    },
+    onDragEnd: handleDragEnd,
     dragOverId: dragOverSectionId,
     onDragEnter: handleDragEnter,
     onDragLeave: handleDragLeave,
-  };
+  }), [
+    showLayoutBounds,
+    isEditable,
+    handleSectionDragStart,
+    handleSectionDragOver,
+    handleSectionDrop,
+    handleDragEnd,
+    dragOverSectionId,
+    handleDragEnter,
+    handleDragLeave,
+  ]);
 
   const bodyFontCss = FONT_CSS[fontFamily] ?? FONT_CSS.inter;
   const headingFontCss = headingFont ? FONT_CSS[headingFont] : bodyFontCss;
@@ -269,13 +281,18 @@ export function useTemplateSetup({
   const ef = (field: keyof ResumeState) => (v: string) => onFieldChange?.(field, v);
   const showAvatar = showPhoto && !!avatar;
 
-  const headerProps = {
-    name: { value: name, onSave: ef('name') },
-    subtitle: { value: subtitle, onSave: ef('subtitle') },
-    phone: { value: phone, onSave: ef('phone') },
-    email: { value: email, onSave: ef('email') },
-    location: { value: location, onSave: ef('location') },
-    linkedin: { value: linkedin, onSave: ef('linkedin') },
+  const handleLayoutSettingsPatch = useCallback(
+    (patch: Partial<typeof layoutSettings>) => onLayoutSettingsChange?.({ ...layoutSettings, ...patch }),
+    [onLayoutSettingsChange, layoutSettings],
+  );
+
+  const headerProps = useMemo(() => ({
+    name: { value: name, onSave: (v: string) => onFieldChange?.('name', v) },
+    subtitle: { value: subtitle, onSave: (v: string) => onFieldChange?.('subtitle', v) },
+    phone: { value: phone, onSave: (v: string) => onFieldChange?.('phone', v) },
+    email: { value: email, onSave: (v: string) => onFieldChange?.('email', v) },
+    location: { value: location, onSave: (v: string) => onFieldChange?.('location', v) },
+    linkedin: { value: linkedin, onSave: (v: string) => onFieldChange?.('linkedin', v) },
     avatar,
     showAvatar,
     brandColor,
@@ -285,18 +302,21 @@ export function useTemplateSetup({
     ec,
     sectionSpacing,
     layoutSettings,
-    onLayoutSettingsChange: (patch: Partial<typeof layoutSettings>) =>
-      onLayoutSettingsChange?.({ ...layoutSettings, ...patch }),
+    onLayoutSettingsChange: handleLayoutSettingsPatch,
     onAvatarChange: (url: string) => onFieldChange?.('avatar', url),
-  };
+  }), [
+    name, subtitle, phone, email, location, linkedin, avatar, showAvatar,
+    brandColor, headingFontCss, headerStyle, isEditable, ec, sectionSpacing,
+    layoutSettings, handleLayoutSettingsPatch, onFieldChange,
+  ]);
 
-  const badgeStyle = (): React.CSSProperties => ({
+  const badgeStyle = useCallback((): React.CSSProperties => ({
     background: '#ffffff',
     color: '#475569',
     borderColor: '#e2e8f0',
-  });
+  }), []);
 
-  const bottomProps = {
+  const bottomProps = useMemo(() => ({
     resumeCerts,
     resumeAchievements,
     resumeLanguages,
@@ -305,8 +325,7 @@ export function useTemplateSetup({
     ec,
     layoutSettings,
     bulletStyle,
-    onLayoutSettingsChange: (patch: Partial<typeof layoutSettings>) =>
-      onLayoutSettingsChange?.({ ...layoutSettings, ...patch }),
+    onLayoutSettingsChange: handleLayoutSettingsPatch,
     onCertChange,
     onAchievementChange,
     onLanguageChange,
@@ -327,7 +346,15 @@ export function useTemplateSetup({
     achievementsAlign,
     accentColor: brandColor,
     accentColor2,
-  };
+  }), [
+    resumeCerts, resumeAchievements, resumeLanguages, sec, isEditable, ec,
+    layoutSettings, bulletStyle, handleLayoutSettingsPatch, onCertChange,
+    onAchievementChange, onLanguageChange, onAddCert, onDeleteCert,
+    onDuplicateCert, onAddSimilarCert, onAddAchievement, onDeleteAchievement,
+    onDuplicateAchievement, onAddSimilarAchievement, onAddLanguage,
+    onDeleteLanguage, onDuplicateLanguage, onAddSimilarLanguage,
+    onEntryVisibilityChange, certsAlign, achievementsAlign, brandColor, accentColor2,
+  ]);
 
   return {
     template,

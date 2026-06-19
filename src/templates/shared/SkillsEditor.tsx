@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { EditableText } from './EditableText';
 
-export const SkillsEditor: React.FC<{
+export const SkillsEditor = React.memo<{
   value: string;
   isEditable: boolean;
   ec: string;
@@ -10,7 +10,7 @@ export const SkillsEditor: React.FC<{
   defaultBadgeStyle?: React.CSSProperties;
   className?: string;
   skillsStyle?: 'chips' | 'normal';
-}> = ({ value, isEditable, ec, onSave, badgeStyle, defaultBadgeStyle, className = '', skillsStyle = 'chips' }) => {
+}>(function SkillsEditor({ value, isEditable, ec, onSave, badgeStyle, defaultBadgeStyle, className = '', skillsStyle = 'chips' }) {
   const [focusedSkillIdx, setFocusedSkillIdx] = useState<number | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
@@ -268,4 +268,4 @@ export const SkillsEditor: React.FC<{
       </div>
     </div>
   );
-};
+});

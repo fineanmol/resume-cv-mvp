@@ -12,9 +12,9 @@ export interface EditableTextProps {
   href?: string;
 }
 
-export const EditableText: React.FC<EditableTextProps> = ({
+export const EditableText = React.memo<EditableTextProps>(function EditableText({
   value, className, onSave, isEditable, editableClass, tag = 'span', style, dangerousInnerHtml, href,
-}) => {
+}) {
   const Tag = tag;
   if (isEditable) {
     return (
@@ -44,4 +44,4 @@ export const EditableText: React.FC<EditableTextProps> = ({
     return <Tag className={className} style={style} dangerouslySetInnerHTML={{ __html: dangerousInnerHtml }} />;
   }
   return <Tag className={className} style={style}>{value}</Tag>;
-};
+});

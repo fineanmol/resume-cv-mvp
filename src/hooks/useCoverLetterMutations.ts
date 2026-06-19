@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { CoverLetterState, HighlightItem } from '../types';
 
 export type CoverLetterSet = (
@@ -25,5 +25,5 @@ export function useCoverLetterMutations(set: CoverLetterSet) {
     [set]
   );
 
-  return { onFieldChange, onHighlightChange };
+  return useMemo(() => ({ onFieldChange, onHighlightChange }), [onFieldChange, onHighlightChange]);
 }

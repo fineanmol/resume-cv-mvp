@@ -11,6 +11,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ResumeState } from '../../../types';
+import type { UndoRedoSetter } from '../../../hooks/useUndoRedo';
 import { AccordionSection } from '../../ui/AccordionSection';
 import { AddItemButton } from '../../ui/AddItemButton';
 import { ITEM_ANIM } from '../../../constants/animations';
@@ -34,7 +35,8 @@ const ICON_OPTIONS = [
 
 interface AchievementsSectionProps {
   state: ResumeState;
-  onChange: (newState: ResumeState | ((prev: ResumeState) => ResumeState)) => void;
+  onChange: UndoRedoSetter<ResumeState>;
+  onCommit: () => void;
   openSection: string;
   onToggle: (id: string) => void;
 }
@@ -42,17 +44,18 @@ interface AchievementsSectionProps {
 export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
   state,
   onChange,
+  onCommit,
   openSection,
   onToggle,
 }) => {
   const clean = (t: string) => t.replace(/\*\*|\*/g, '');
 
-  const updAch = (idx: number, k: string, v: string) =>
+  const updAch = (idx: number, k: string, v: string, skipHistory = true) =>
     onChange((prev) => {
       const u = [...prev.resumeAchievements];
       u[idx] = { ...u[idx], [k]: clean(v) };
       return { ...prev, resumeAchievements: u };
-    });
+    }, skipHistory);
 
   const addAchievement = () =>
     onChange((prev) => ({
@@ -91,18 +94,21 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
             <input
               value={ach.title}
               onChange={(e) => updAch(idx, 'title', e.target.value)}
+              onBlur={onCommit}
               className="bg-transparent border-b border-transparent hover:border-border-color/30 text-xs font-semibold text-text-main focus:outline-none w-full"
               placeholder="Achievement Title"
             />
             <input
               value={ach.desc}
               onChange={(e) => updAch(idx, 'desc', e.target.value)}
+              onBlur={onCommit}
               className="bg-transparent border-b border-transparent hover:border-border-color/30 text-[11px] text-text-muted focus:outline-none w-full"
               placeholder="Impact / scale (e.g. Increased revenue by 30%)"
             />
             <input
               value={ach.url || ''}
               onChange={(e) => updAch(idx, 'url', e.target.value)}
+              onBlur={onCommit}
               className="bg-transparent border-b border-transparent hover:border-border-color/30 text-[11px] text-text-muted focus:outline-none w-full mt-1"
               placeholder="Link URL (optional)"
             />
@@ -117,7 +123,7 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
                   <button
                     key={opt.key}
                     type="button"
-                    onClick={() => updAch(idx, 'icon', opt.key)}
+                    onClick={() => updAch(idx, 'icon', opt.key, false)}
                     title={opt.key}
                     className={`p-1.5 rounded-lg border transition cursor-pointer flex items-center justify-center ${
                       isSel

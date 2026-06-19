@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Briefcase, Loader, Sparkles } from 'lucide-react';
 import type { ResumeState } from '../../../types';
+import type { UndoRedoSetter } from '../../../hooks/useUndoRedo';
 import { AccordionSection } from '../../ui/AccordionSection';
 import { AddItemButton } from '../../ui/AddItemButton';
 import { BulletEditor } from '../../ui/BulletEditor';
@@ -24,7 +25,8 @@ const DEFAULT_EXPERIENCE = {
 
 interface ExperienceSectionProps {
   state: ResumeState;
-  onChange: (newState: ResumeState | ((prev: ResumeState) => ResumeState)) => void;
+  onChange: UndoRedoSetter<ResumeState>;
+  onCommit: () => void;
   openSection: string;
   onToggle: (id: string) => void;
   onImproveBullet: (idx: number, currentText: string) => Promise<void>;
@@ -35,6 +37,7 @@ interface ExperienceSectionProps {
 export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
   state,
   onChange,
+  onCommit,
   openSection,
   onToggle,
   onImproveBullet,
@@ -45,7 +48,7 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
 
   const clean = (t: string) => t.replace(/\*\*|\*/g, '');
 
-  const updExp = (idx: number, k: string, v: string) =>
+  const updExp = (idx: number, k: string, v: string, skipHistory = true) =>
     onChange((prev) => {
       const u = [...prev.resumeExperience];
       u[idx] = {
@@ -53,7 +56,7 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
         [k]: k === 'bullets' || k === 'url' || k === 'logo' ? v : clean(v),
       };
       return { ...prev, resumeExperience: u };
-    });
+    }, skipHistory);
 
   const addExperience = () =>
     onChange((prev) => ({
@@ -92,12 +95,14 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
               <input
                 value={exp.title}
                 onChange={(e) => updExp(idx, 'title', e.target.value)}
+                onBlur={onCommit}
                 className={inputCls}
                 placeholder="Job Title"
               />
               <input
                 value={exp.company}
                 onChange={(e) => updExp(idx, 'company', e.target.value)}
+                onBlur={onCommit}
                 className={inputCls}
                 placeholder="Company"
               />
@@ -106,12 +111,14 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
               <input
                 value={exp.dates}
                 onChange={(e) => updExp(idx, 'dates', e.target.value)}
+                onBlur={onCommit}
                 className={inputCls}
                 placeholder="Dates"
               />
               <input
                 value={exp.location}
                 onChange={(e) => updExp(idx, 'location', e.target.value)}
+                onBlur={onCommit}
                 className={inputCls}
                 placeholder="Location"
               />
@@ -129,6 +136,7 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
                   <input
                     value={exp.url || ''}
                     onChange={(e) => updExp(idx, 'url', e.target.value)}
+                    onBlur={onCommit}
                     className={inputCls}
                     placeholder="https://company.com"
                   />
@@ -136,7 +144,7 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
                 <ImageUploadField
                   label="Company Logo / Icon"
                   value={exp.logo || ''}
-                  onChange={(logo) => updExp(idx, 'logo', logo)}
+                  onChange={(logo) => updExp(idx, 'logo', logo, false)}
                   placeholderIcon={Briefcase}
                   shape="square"
                   size="sm"
@@ -152,6 +160,7 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
               <BulletEditor
                 value={exp.bullets}
                 onChange={(v) => updExp(idx, 'bullets', v)}
+                onBlur={onCommit}
                 prefixId={`exp-bullet-${idx}`}
                 placeholder="Describe responsibility or achievement... (Use **bold** for emphasis)"
               />

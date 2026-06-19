@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Upload, Loader } from 'lucide-react';
 import type { ResumeState } from '../../../types';
+import type { UndoRedoSetter } from '../../../hooks/useUndoRedo';
 import { PdfService } from '../../../services/pdf';
 import { GeminiService } from '../../../services/gemini';
 import { splitIntoBullets } from '../../../utils/bullets';
 
 interface PdfImportBlockProps {
-  onChange: (newState: ResumeState | ((prev: ResumeState) => ResumeState)) => void;
+  onChange: UndoRedoSetter<ResumeState>;
   geminiKey: string;
 }
 

@@ -25,10 +25,10 @@ export interface ItemWrapperProps {
   brandColor?: string;
 }
 
-export const ItemWrapper: React.FC<ItemWrapperProps> = ({
+export const ItemWrapper = React.memo<ItemWrapperProps>(function ItemWrapper({
   sectionId, index, totalItems, isEditable, onDelete, onMoveUp, onMoveDown,
   onDuplicate, onAddSimilar, children, settingsPanel,
-}) => {
+}) {
   const context = useContext(ActiveSectionContext);
   const [showSettings, setShowSettings] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -146,4 +146,4 @@ export const ItemWrapper: React.FC<ItemWrapperProps> = ({
       </div>
     </div>
   );
-};
+});

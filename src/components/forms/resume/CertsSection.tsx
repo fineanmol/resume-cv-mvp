@@ -12,6 +12,7 @@ import {
   Trophy,
 } from 'lucide-react';
 import type { ResumeState } from '../../../types';
+import type { UndoRedoSetter } from '../../../hooks/useUndoRedo';
 import { AccordionSection } from '../../ui/AccordionSection';
 import { AddItemButton } from '../../ui/AddItemButton';
 import { BulletEditor } from '../../ui/BulletEditor';
@@ -38,7 +39,8 @@ const CERT_ICON_OPTIONS = [
 
 interface CertsSectionProps {
   state: ResumeState;
-  onChange: (newState: ResumeState | ((prev: ResumeState) => ResumeState)) => void;
+  onChange: UndoRedoSetter<ResumeState>;
+  onCommit: () => void;
   openSection: string;
   onToggle: (id: string) => void;
 }
@@ -46,6 +48,7 @@ interface CertsSectionProps {
 export const CertsSection: React.FC<CertsSectionProps> = ({
   state,
   onChange,
+  onCommit,
   openSection,
   onToggle,
 }) => {
@@ -53,12 +56,12 @@ export const CertsSection: React.FC<CertsSectionProps> = ({
 
   const clean = (t: string) => t.replace(/\*\*|\*/g, '');
 
-  const updCert = (idx: number, k: string, v: string) =>
+  const updCert = (idx: number, k: string, v: string, skipHistory = true) =>
     onChange((prev) => {
       const u = [...prev.resumeCerts];
       u[idx] = { ...u[idx], [k]: k === 'url' ? v : clean(v) };
       return { ...prev, resumeCerts: u };
-    });
+    }, skipHistory);
 
   const addCert = () =>
     onChange((prev) => ({
@@ -96,6 +99,7 @@ export const CertsSection: React.FC<CertsSectionProps> = ({
             <input
               value={cert.title}
               onChange={(e) => updCert(idx, 'title', e.target.value)}
+              onBlur={onCommit}
               className="bg-transparent border-b border-transparent hover:border-border-color/30 text-xs font-semibold text-text-main focus:outline-none w-full"
               placeholder="Project / Certification Name"
             />
@@ -112,6 +116,7 @@ export const CertsSection: React.FC<CertsSectionProps> = ({
                   <input
                     value={cert.url || ''}
                     onChange={(e) => updCert(idx, 'url', e.target.value)}
+                    onBlur={onCommit}
                     className={inputCls}
                     placeholder="https://myproject.com"
                   />
@@ -128,7 +133,7 @@ export const CertsSection: React.FC<CertsSectionProps> = ({
                         <button
                           key={opt.key}
                           type="button"
-                          onClick={() => updCert(idx, 'icon', isSel ? '' : opt.key)}
+                          onClick={() => updCert(idx, 'icon', isSel ? '' : opt.key, false)}
                           title={opt.key}
                           className={`p-1 rounded border transition cursor-pointer flex items-center justify-center ${
                             isSel
@@ -150,6 +155,7 @@ export const CertsSection: React.FC<CertsSectionProps> = ({
               <BulletEditor
                 value={cert.desc}
                 onChange={(v) => updCert(idx, 'desc', v)}
+                onBlur={onCommit}
                 prefixId={`cert-bullet-${idx}`}
                 placeholder="Description / Tech Stack / Issuer — e.g. Tech: React, Tailwind"
               />

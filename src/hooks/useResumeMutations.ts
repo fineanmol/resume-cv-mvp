@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import type {
   ResumeState,
   ExperienceItem,
@@ -345,7 +345,7 @@ export function useResumeMutations(set: ResumeSet) {
     [set]
   );
 
-  return {
+  return useMemo(() => ({
     onFieldChange,
     onExperienceChange,
     onAddExperience,
@@ -374,5 +374,34 @@ export function useResumeMutations(set: ResumeSet) {
     onAddSimilarAchievement,
     onDuplicateLanguage,
     onAddSimilarLanguage,
-  };
+  }), [
+    onFieldChange,
+    onExperienceChange,
+    onAddExperience,
+    onDeleteExperience,
+    onEducationChange,
+    onAddEducation,
+    onDeleteEducation,
+    onCertChange,
+    onAddCert,
+    onDeleteCert,
+    onAchievementChange,
+    onAddAchievement,
+    onDeleteAchievement,
+    onLanguageChange,
+    onAddLanguage,
+    onDeleteLanguage,
+    onLayoutSettingsChange,
+    onEntryVisibilityChange,
+    onDuplicateExperience,
+    onAddSimilarExperience,
+    onDuplicateEducation,
+    onAddSimilarEducation,
+    onDuplicateCert,
+    onAddSimilarCert,
+    onDuplicateAchievement,
+    onAddSimilarAchievement,
+    onDuplicateLanguage,
+    onAddSimilarLanguage,
+  ]);
 }

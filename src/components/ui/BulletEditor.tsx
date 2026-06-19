@@ -7,6 +7,7 @@ import {
 interface BulletEditorProps {
   value: string;
   onChange: (newValue: string) => void;
+  onBlur?: () => void;
   prefixId: string;
   placeholder?: string;
 }
@@ -14,6 +15,7 @@ interface BulletEditorProps {
 export const BulletEditor: React.FC<BulletEditorProps> = ({
   value,
   onChange,
+  onBlur,
   prefixId,
   placeholder = 'Add details...',
 }) => {
@@ -34,6 +36,7 @@ export const BulletEditor: React.FC<BulletEditorProps> = ({
               updated[bIdx] = e.target.value;
               onChange(updated.join('\n'));
             }}
+            onBlur={onBlur}
             onKeyDown={createInputBulletKeyDownHandler({
               bullets: arr,
               bIdx,

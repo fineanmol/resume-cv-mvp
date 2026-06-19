@@ -1,21 +1,39 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Toast, ToastType } from '../types';
 
 let _id = 0;
 
 export function useToast() {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const timeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    const timeouts = timeoutsRef.current;
+    return () => {
+      timeouts.forEach(clearTimeout);
+      timeouts.clear();
+    };
+  }, []);
 
   const show = useCallback((message: string, type: ToastType = 'info', duration = 4000) => {
     const id = String(++_id);
     setToasts(prev => [...prev, { id, type, message, duration }]);
     if (duration > 0) {
-      setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration);
+      const timeoutId = setTimeout(() => {
+        timeoutsRef.current.delete(id);
+        setToasts(prev => prev.filter(t => t.id !== id));
+      }, duration);
+      timeoutsRef.current.set(id, timeoutId);
     }
     return id;
   }, []);
 
   const dismiss = useCallback((id: string) => {
+    const timeoutId = timeoutsRef.current.get(id);
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+      timeoutsRef.current.delete(id);
+    }
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 

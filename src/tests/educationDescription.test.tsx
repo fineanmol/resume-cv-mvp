@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { EducationDescription } from '../templates/shared/EducationDescription';
 import { mergeEducationBullets } from '../templates/shared/parseEducationGrade';
-import { ResumeTemplateRenderer } from '../templates/ResumeTemplates';
+import { renderResumeTemplate } from './helpers/renderResumeTemplate';
 import { DEFAULT_RESUME_STATE } from '../config/defaultResume';
 
 describe('mergeEducationBullets', () => {
@@ -52,7 +52,7 @@ describe('EducationDescription', () => {
 });
 
 describe('ResumeTemplates — education canvas uses BulletList enter handling', () => {
-  it('executive education description supports bullet enter key', () => {
+  it('executive education description supports bullet enter key', async () => {
     const onEducationChange = vi.fn();
     const state = {
       ...DEFAULT_RESUME_STATE,
@@ -65,13 +65,11 @@ describe('ResumeTemplates — education canvas uses BulletList enter handling', 
       ],
     };
 
-    render(
-      <ResumeTemplateRenderer
-        state={state}
-        isEditable
-        onEducationChange={onEducationChange}
-      />,
-    );
+    await renderResumeTemplate({
+      state,
+      isEditable: true,
+      onEducationChange,
+    });
 
     const bullet = document.querySelector('[data-bullet-id="edu-0-0"]') as HTMLElement;
     expect(bullet).toBeTruthy();

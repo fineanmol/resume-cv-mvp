@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GraduationCap } from 'lucide-react';
 import type { ResumeState } from '../../../types';
+import type { UndoRedoSetter } from '../../../hooks/useUndoRedo';
 import { AccordionSection } from '../../ui/AccordionSection';
 import { AddItemButton } from '../../ui/AddItemButton';
 import { BulletEditor } from '../../ui/BulletEditor';
@@ -20,7 +21,8 @@ const DEFAULT_EDUCATION = {
 
 interface EducationSectionProps {
   state: ResumeState;
-  onChange: (newState: ResumeState | ((prev: ResumeState) => ResumeState)) => void;
+  onChange: UndoRedoSetter<ResumeState>;
+  onCommit: () => void;
   openSection: string;
   onToggle: (id: string) => void;
 }
@@ -28,6 +30,7 @@ interface EducationSectionProps {
 export const EducationSection: React.FC<EducationSectionProps> = ({
   state,
   onChange,
+  onCommit,
   openSection,
   onToggle,
 }) => {
@@ -35,7 +38,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
 
   const clean = (t: string) => t.replace(/\*\*|\*/g, '');
 
-  const updEdu = (idx: number, k: string, v: string) =>
+  const updEdu = (idx: number, k: string, v: string, skipHistory = true) =>
     onChange((prev) => {
       const u = [...prev.resumeEducation];
       u[idx] = {
@@ -43,7 +46,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
         [k]: k === 'bullets' || k === 'logo' ? v : clean(v),
       };
       return { ...prev, resumeEducation: u };
-    });
+    }, skipHistory);
 
   const addEducation = () =>
     onChange((prev) => ({
@@ -82,12 +85,14 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
               <input
                 value={edu.degree}
                 onChange={(e) => updEdu(idx, 'degree', e.target.value)}
+                onBlur={onCommit}
                 className={inputCls}
                 placeholder="Degree"
               />
               <input
                 value={edu.school}
                 onChange={(e) => updEdu(idx, 'school', e.target.value)}
+                onBlur={onCommit}
                 className={inputCls}
                 placeholder="School"
               />
@@ -96,12 +101,14 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
               <input
                 value={edu.dates}
                 onChange={(e) => updEdu(idx, 'dates', e.target.value)}
+                onBlur={onCommit}
                 className={inputCls}
                 placeholder="Dates"
               />
               <input
                 value={edu.location}
                 onChange={(e) => updEdu(idx, 'location', e.target.value)}
+                onBlur={onCommit}
                 className={inputCls}
                 placeholder="Location"
               />
@@ -115,7 +122,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                 <ImageUploadField
                   label="School Logo / Icon"
                   value={edu.logo || ''}
-                  onChange={(logo) => updEdu(idx, 'logo', logo)}
+                  onChange={(logo) => updEdu(idx, 'logo', logo, false)}
                   placeholderIcon={GraduationCap}
                   shape="square"
                   size="sm"
@@ -131,6 +138,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
               <BulletEditor
                 value={edu.bullets}
                 onChange={(v) => updEdu(idx, 'bullets', v)}
+                onBlur={onCommit}
                 prefixId={`edu-bullet-${idx}`}
                 placeholder="GPA: 3.8/4.0, Relevant coursework, honors..."
               />

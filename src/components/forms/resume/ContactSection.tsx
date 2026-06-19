@@ -1,13 +1,15 @@
 import React from 'react';
 import { User } from 'lucide-react';
 import type { ResumeState } from '../../../types';
+import type { UndoRedoSetter } from '../../../hooks/useUndoRedo';
 import { AccordionSection } from '../../ui/AccordionSection';
 import { ImageUploadField } from '../../ui/ImageUploadField';
 import { fullInputCls, inputCls, labelCls } from '../../../constants/formClasses';
 
 interface ContactSectionProps {
   state: ResumeState;
-  onChange: (newState: ResumeState | ((prev: ResumeState) => ResumeState)) => void;
+  onChange: UndoRedoSetter<ResumeState>;
+  onCommit: () => void;
   openSection: string;
   onToggle: (id: string) => void;
 }
@@ -15,6 +17,7 @@ interface ContactSectionProps {
 export const ContactSection: React.FC<ContactSectionProps> = ({
   state,
   onChange,
+  onCommit,
   openSection,
   onToggle,
 }) => {
@@ -34,7 +37,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
         <input
           className={fullInputCls}
           value={state.name}
-          onChange={(e) => onChange((p) => ({ ...p, name: clean(e.target.value) }))}
+          onChange={(e) => onChange((p) => ({ ...p, name: clean(e.target.value) }), true)}
+          onBlur={onCommit}
         />
       </div>
       <div>
@@ -42,7 +46,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
         <input
           className={fullInputCls}
           value={state.subtitle}
-          onChange={(e) => onChange((p) => ({ ...p, subtitle: clean(e.target.value) }))}
+          onChange={(e) => onChange((p) => ({ ...p, subtitle: clean(e.target.value) }), true)}
+          onBlur={onCommit}
         />
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -51,7 +56,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
           <input
             className={inputCls}
             value={state.phone}
-            onChange={(e) => onChange((p) => ({ ...p, phone: clean(e.target.value) }))}
+            onChange={(e) => onChange((p) => ({ ...p, phone: clean(e.target.value) }), true)}
+            onBlur={onCommit}
           />
         </div>
         <div>
@@ -59,7 +65,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
           <input
             className={inputCls}
             value={state.location}
-            onChange={(e) => onChange((p) => ({ ...p, location: clean(e.target.value) }))}
+            onChange={(e) => onChange((p) => ({ ...p, location: clean(e.target.value) }), true)}
+            onBlur={onCommit}
           />
         </div>
       </div>
@@ -70,7 +77,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
             type="email"
             className={inputCls}
             value={state.email}
-            onChange={(e) => onChange((p) => ({ ...p, email: clean(e.target.value) }))}
+            onChange={(e) => onChange((p) => ({ ...p, email: clean(e.target.value) }), true)}
+            onBlur={onCommit}
           />
         </div>
         <div>
@@ -78,7 +86,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
           <input
             className={inputCls}
             value={state.linkedin}
-            onChange={(e) => onChange((p) => ({ ...p, linkedin: clean(e.target.value) }))}
+            onChange={(e) => onChange((p) => ({ ...p, linkedin: clean(e.target.value) }), true)}
+            onBlur={onCommit}
           />
         </div>
       </div>

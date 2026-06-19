@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Globe, Trash2 } from 'lucide-react';
 import type { ResumeState } from '../../../types';
+import type { UndoRedoSetter } from '../../../hooks/useUndoRedo';
 import { AccordionSection } from '../../ui/AccordionSection';
 import { AddItemButton } from '../../ui/AddItemButton';
 import { ITEM_ANIM } from '../../../constants/animations';
@@ -14,7 +15,8 @@ const DEFAULT_LANGUAGE = {
 
 interface LanguagesSectionProps {
   state: ResumeState;
-  onChange: (newState: ResumeState | ((prev: ResumeState) => ResumeState)) => void;
+  onChange: UndoRedoSetter<ResumeState>;
+  onCommit: () => void;
   openSection: string;
   onToggle: (id: string) => void;
 }
@@ -22,6 +24,7 @@ interface LanguagesSectionProps {
 export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
   state,
   onChange,
+  onCommit,
   openSection,
   onToggle,
 }) => {
@@ -32,7 +35,7 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
       const u = [...prev.resumeLanguages];
       u[idx] = { ...u[idx], [k]: clean(v) };
       return { ...prev, resumeLanguages: u };
-    });
+    }, true);
 
   const addLanguage = () =>
     onChange((prev) => ({
@@ -75,12 +78,14 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
             <input
               value={lang.name}
               onChange={(e) => updLang(idx, 'name', e.target.value)}
+              onBlur={onCommit}
               className={`${inputCls} flex-1`}
               placeholder="Language"
             />
             <input
               value={lang.level}
               onChange={(e) => updLang(idx, 'level', e.target.value)}
+              onBlur={onCommit}
               className={`${inputCls} flex-1`}
               placeholder="Level"
             />

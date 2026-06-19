@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, CheckCircle2, Sparkles } from 'lucide-react';
-import { ResumeTemplateRenderer } from '../templates/ResumeTemplates';
-import { CoverLetterTemplateRenderer } from '../templates/CoverLetterTemplates';
 import type { TemplateId } from '../types';
 import { TEMPLATE_CATALOG } from '../config/templates';
-import { DEFAULT_RESUME_STATE } from '../config/defaultResume';
-import { DEFAULT_CL_STATE } from '../config/defaultCL';
+import { TemplateLayoutPreview } from './TemplateLayoutPreview';
 
 interface TemplatePickerProps {
   isOpen: boolean;
@@ -50,16 +47,6 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
   if (!isOpen) return null;
 
   const tpl = TEMPLATE_CATALOG[idx];
-
-  // Live scaled A4 preview (EnhanceCV carousel uses static thumbnails; this renders the real template).
-  const previewResume = {
-    ...DEFAULT_RESUME_STATE,
-    layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template: tpl.id, brandColor: tpl.accent },
-  };
-  const previewCL = {
-    ...DEFAULT_CL_STATE,
-    layoutSettings: { ...DEFAULT_CL_STATE.layoutSettings, template: tpl.id, brandColor: tpl.accent },
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
@@ -130,17 +117,12 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
                 transition={{ type: 'spring', stiffness: 320, damping: 30 }}
                 className="flex items-start justify-center w-full h-full py-6 px-16"
               >
-                {/* Scaled A4 sheet */}
+                {/* Layout wireframe preview (same as TemplatesModal) */}
                 <div
                   className="bg-white shadow-2xl rounded-sm overflow-hidden pointer-events-none select-none flex-shrink-0"
-                  style={{ width: 397, height: 562 }}   /* 794×1123 at 50% */
+                  style={{ width: 320, height: 452 }}
                 >
-                  <div className="origin-top-left scale-[0.5] w-[794px] h-[1123px]">
-                    {docType === 'resume'
-                      ? <ResumeTemplateRenderer state={previewResume} isEditable={false} />
-                      : <CoverLetterTemplateRenderer state={previewCL} isEditable={false} />
-                    }
-                  </div>
+                  <TemplateLayoutPreview templateId={tpl.id} accent={tpl.accent} />
                 </div>
               </motion.div>
             </AnimatePresence>
