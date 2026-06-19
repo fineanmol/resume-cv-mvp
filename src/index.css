@@ -67,6 +67,35 @@ body {
   transform-origin: top center;
   box-sizing: border-box;
   overflow: visible;
+  --sheet-fs: 10;
+}
+
+/* Design panel font-size slider scales body copy (Tailwind fixed sizes otherwise ignore sheet font-size) */
+.pdf-sheet .text-xs,
+.pdf-sheet .text-\[11px\],
+.pdf-sheet .text-\[10px\],
+.pdf-sheet .text-\[9px\],
+.pdf-sheet .text-\[8px\] {
+  font-size: calc(var(--sheet-fs) * 1pt) !important;
+}
+.pdf-sheet .text-sm,
+.pdf-sheet .text-\[13px\] {
+  font-size: calc(var(--sheet-fs) * 1.2pt) !important;
+}
+.pdf-sheet .text-base {
+  font-size: calc(var(--sheet-fs) * 1.4pt) !important;
+}
+.pdf-sheet .text-lg {
+  font-size: calc(var(--sheet-fs) * 1.8pt) !important;
+}
+.pdf-sheet .text-xl {
+  font-size: calc(var(--sheet-fs) * 2.2pt) !important;
+}
+.pdf-sheet .text-2xl {
+  font-size: calc(var(--sheet-fs) * 2.6pt) !important;
+}
+.pdf-sheet .text-3xl {
+  font-size: calc(var(--sheet-fs) * 3.2pt) !important;
 }
 
 /* Dashed red line after every 1123px to show A4 page boundaries */
@@ -298,6 +327,31 @@ body {
   background-color: transparent !important;
 }
 
+/* Profile photo decorative frame + wave lines (designer header) */
+.photo-frame-dash {
+  animation: photo-frame-dash 3.5s linear infinite;
+}
+
+.photo-wave-dash {
+  animation: photo-wave-dash 16s linear infinite;
+}
+
+.photo-wave-dash-slow {
+  animation: photo-wave-dash 20s linear infinite reverse;
+}
+
+@keyframes photo-frame-dash {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+@keyframes photo-wave-dash {
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+
 @keyframes photo-ring-pulse {
   0%, 100% { opacity: 0.35; transform: scale(1); }
   50% { opacity: 0.65; transform: scale(1.02); }
@@ -311,7 +365,15 @@ body {
   animation: photo-ring-pulse 5s ease-in-out infinite;
 }
 
-/* Ensure sidebar scrollbar is visible and clear */
+/* Sidebar / design panel scroll regions */
+.editor-panel-scroll {
+  min-height: 0;
+  flex: 1 1 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 .bg-sidebar ::-webkit-scrollbar {
   width: 8px !important;
   height: 8px !important;

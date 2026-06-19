@@ -58,7 +58,7 @@ export const EntryIconPicker: React.FC<{
       </button>
       {open && (
         <div
-          className="absolute left-0 top-full mt-1 z-[120] bg-white border border-slate-200 shadow-lg rounded-md p-1.5 grid grid-cols-5 gap-0.5 edit-only w-[9.5rem] max-h-[8.5rem] overflow-y-auto"
+          className="absolute left-0 top-full mt-1 z-[120] bg-white border border-slate-200 shadow-lg rounded-md p-1.5 grid grid-cols-6 gap-0.5 edit-only w-[11rem] max-h-[9.5rem] overflow-y-auto scrollbar-thin"
           onClick={(e) => e.stopPropagation()}
         >
           {icons.map((icon) => (

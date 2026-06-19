@@ -3,7 +3,7 @@ import { Building2, GraduationCap } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
 import { SkillsEditor } from '../../shared/SkillsEditor';
-import { parseEducationGrade } from '../../shared/parseEducationGrade';
+import { EducationDescription } from '../../shared/EducationDescription';
 import { TemplateHeader } from '../../TemplateHeader';
 import { useTemplateRenderContext } from '../useTemplateSetup';
 import {
@@ -170,15 +170,11 @@ export const TechTemplate: React.FC = () => {
             <div className={MH}>// Academic_Profile</div>
             <div className="space-y-3">
               {resumeEducation.map((edu, idx) => {
-                const { gradeText, remaining } = parseEducationGrade(edu.bullets);
                 const showLogo = (layoutSettings?.showEducationLogo ?? true) && showEdu(edu, 'logo');
                 const showDates = (layoutSettings?.showEducationDates ?? true) && showEdu(edu, 'dates');
                 const showLocation = (layoutSettings?.showEducationLocation ?? true) && showEdu(edu, 'location');
                 const showGpa = (layoutSettings?.showEducationGpa ?? true) && showEdu(edu, 'gpa');
                 const showBullets = showEdu(edu, 'bullets');
-                const gpaContent = showGpa ? gradeText : '';
-                const bulletContent = showBullets ? remaining : '';
-                const bulletsDisplay = [gpaContent, bulletContent].filter(Boolean).join('\n');
 
                 return (
                   <ItemWrapper
@@ -216,15 +212,19 @@ export const TechTemplate: React.FC = () => {
                       {showLocation && (
                         <E value={edu.location} isEditable={isEditable} editableClass={ec} className="text-[11px] font-mono text-slate-500 mb-1 block" onSave={v => onEducationChange?.(idx, 'location', v)} />
                       )}
-                      {bulletsDisplay && (
-                        remaining ? (
-                          <BulletList bullets={bulletsDisplay} isEditable={isEditable} editableClass={ec}
-                            onBulletChange={v => onEducationChange?.(idx, 'bullets', v)} className={`text-slate-600 text-${educationAlign}`}
-                            bulletStyle={bulletStyle} brandColor={brandColor} align={educationAlign} prefixId={`edu-${idx}`} />
-                        ) : (
-                          <E tag="p" value={bulletsDisplay} isEditable={isEditable} editableClass={ec} className={`text-slate-600 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
-                        )
-                      )}
+                      <EducationDescription
+                        bullets={edu.bullets}
+                        isEditable={isEditable}
+                        editableClass={ec}
+                        onBulletChange={(v) => onEducationChange?.(idx, 'bullets', v)}
+                        className={`text-slate-600 text-${educationAlign}`}
+                        bulletStyle={bulletStyle}
+                        brandColor={brandColor}
+                        align={educationAlign}
+                        prefixId={`edu-${idx}`}
+                        showGpa={showGpa}
+                        showBullets={showBullets}
+                      />
                     </div>
                   </ItemWrapper>
                 );

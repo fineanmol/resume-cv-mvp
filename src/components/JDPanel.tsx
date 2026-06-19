@@ -126,7 +126,7 @@ export const JDPanel: React.FC<JDPanelProps> = ({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-5 space-y-5 flex flex-col w-full">
+    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 space-y-5 flex flex-col w-full">
       
       {/* 1. JD Link Scraper Input */}
       <div className="space-y-2.5">

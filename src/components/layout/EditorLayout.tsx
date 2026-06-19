@@ -38,6 +38,8 @@ interface EditorLayoutProps {
   setRightTab: (tab: 'design' | 'ats') => void;
   rightPanelOpen: boolean;
   setRightPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  designFocusSection: string | null;
+  onDesignFocusHandled: () => void;
   showSettings: boolean;
   geminiKey: string;
   onGeminiKeyChange: (v: string) => void;
@@ -68,6 +70,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
   setRightTab,
   rightPanelOpen,
   setRightPanelOpen,
+  designFocusSection,
+  onDesignFocusHandled,
   showSettings,
   geminiKey,
   onGeminiKeyChange,
@@ -130,7 +134,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
   }, [rightWidth]);
 
   return (
-    <div className="flex-1 flex overflow-hidden relative">
+    <div className="flex-1 flex overflow-hidden relative min-h-0">
       {showSettings && (
         <SettingsDropdown
           geminiKey={geminiKey}
@@ -142,7 +146,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
       {sidebarOpen && (
         <aside
           style={{ width: `${leftWidth}px` }}
-          className="flex-shrink-0 border-r border-border-color/60 bg-sidebar flex flex-col overflow-hidden"
+          className="flex-shrink-0 border-r border-border-color/60 bg-sidebar flex flex-col overflow-hidden min-h-0 h-full"
         >
           {isResume ? (
             <ResumeForm
@@ -204,7 +208,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
       <motion.aside
         animate={{ width: rightPanelOpen ? rightWidth : 0 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
-        className={`flex-shrink-0 bg-sidebar flex flex-col overflow-hidden relative ${rightPanelOpen ? 'border-l border-border-color/60' : 'border-transparent'}`}
+        className={`flex-shrink-0 bg-sidebar flex flex-col overflow-hidden relative min-h-0 h-full ${rightPanelOpen ? 'border-l border-border-color/60' : 'border-transparent'}`}
       >
         <div className="flex border-b border-border-color/60 flex-shrink-0">
           <button
@@ -222,23 +226,27 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
         </div>
 
         {rightTab === 'design' ? (
-          <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
             {isResume ? (
               <DesignPanel
                 layout={resumeState.layoutSettings}
                 onChange={patch => resumeSet(p => ({ ...p, layoutSettings: { ...p.layoutSettings, ...patch } }))}
                 docType="resume"
+                focusSection={designFocusSection}
+                onFocusHandled={onDesignFocusHandled}
               />
             ) : (
               <DesignPanel
                 layout={clState.layoutSettings}
                 onChange={patch => clSet(p => ({ ...p, layoutSettings: { ...p.layoutSettings, ...patch } }))}
                 docType="coverletter"
+                focusSection={designFocusSection}
+                onFocusHandled={onDesignFocusHandled}
               />
             )}
           </div>
         ) : (
-          <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
             <JDPanel
               jobDescription={jobDescription}
               onJdChange={onJdChange}

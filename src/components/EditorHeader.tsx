@@ -38,6 +38,7 @@ interface EditorHeaderProps {
   onOpenAddSection?: () => void;
   onOpenRearrange?: () => void;
   onOpenDesign?: () => void;
+  designPanelActive?: boolean;
 }
 
 export const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -61,7 +62,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   onOpenTemplates,
   onOpenAddSection,
   onOpenRearrange,
-  onOpenDesign
+  onOpenDesign,
+  designPanelActive,
 }) => {
   return (
     <header className="bg-sidebar border-b border-border-color/60 px-6 py-3.5 flex items-center justify-between shadow-sm flex-shrink-0 z-10">
@@ -132,7 +134,11 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
             </button>
             <button
               onClick={onOpenDesign}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-text-muted hover:text-brand-accent hover:bg-card rounded-md transition text-xs font-semibold cursor-pointer"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition text-xs font-semibold cursor-pointer ${
+                designPanelActive
+                  ? 'bg-brand-accent/15 text-brand-accent ring-1 ring-brand-accent/30'
+                  : 'text-text-muted hover:text-brand-accent hover:bg-card'
+              }`}
               title="Page Design Settings"
             >
               <Palette className="w-3.5 h-3.5" />

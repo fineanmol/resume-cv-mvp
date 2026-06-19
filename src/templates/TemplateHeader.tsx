@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Mail, Phone, MapPin, Settings, Camera, Trash2 } from 'lucide-react';
 import type { HeaderStyle, LayoutSettings } from '../types';
 import { EditableText } from './shared/EditableText';
+import { HeaderWrapper } from './shared/HeaderWrapper';
 import { formatLinkedinUrl } from '../utils/linkedin';
 import {
   PHOTO_SHAPES,
@@ -103,9 +104,11 @@ export const AvatarCircleEditable: React.FC<{
   const shapeClass = getPhotoShapeClass(photoShape);
 
   if (!isEditable) {
+    const borderStyle = border ? { borderColor: border } : { borderColor: 'rgba(255,255,255,0.4)' };
+    const borderClass = border === 'transparent' ? 'border-0' : 'border-2';
     return (
-      <div className={`${size} ${shapeClass} overflow-hidden border-2 flex-shrink-0`}
-        style={border ? { borderColor: border } : { borderColor: 'rgba(255,255,255,0.4)' }}>
+      <div className={`${size} ${shapeClass} overflow-hidden ${borderClass} flex-shrink-0`}
+        style={border !== 'transparent' ? borderStyle : undefined}>
         {src ? (
           <img src={src} alt={name} className="w-full h-full object-cover" />
         ) : (
@@ -142,8 +145,8 @@ export const AvatarCircleEditable: React.FC<{
     >
       <div
         onClick={triggerUpload}
-        className={`${size} ${shapeClass} overflow-hidden border-2 bg-slate-100 flex items-center justify-center cursor-pointer relative hover:border-teal-500 transition-all shadow-sm`}
-        style={border ? { borderColor: border } : { borderColor: 'rgba(200,200,200,0.4)' }}
+        className={`${size} ${shapeClass} overflow-hidden ${border === 'transparent' ? 'border-0' : 'border-2'} bg-slate-100 flex items-center justify-center cursor-pointer relative hover:border-teal-500 transition-all shadow-sm`}
+        style={border && border !== 'transparent' ? { borderColor: border } : border === 'transparent' ? undefined : { borderColor: 'rgba(200,200,200,0.4)' }}
       >
         {src ? (
           <>
@@ -335,219 +338,24 @@ const ContactRow: React.FC<{
 };
 
 export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
-  const [showSettings, setShowSettings] = useState(false);
-  const settingsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!showSettings) return;
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
-        setShowSettings(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [showSettings]);
-
   const lightEc = 'outline-none hover:bg-white/10 focus:bg-white/10 rounded px-1 -mx-1 transition';
   const nameStyle: React.CSSProperties = { fontFamily: p.headingFontCss };
 
-  const handleSettingsChange = (patch: Partial<LayoutSettings>) => {
-    if (p.onLayoutSettingsChange) {
-      p.onLayoutSettingsChange(patch);
-    }
-  };
-
-  const renderSettingsPanel = () => {
-    const ls = p.layoutSettings;
-    if (!ls) return null;
-    const showPhoto = ls.showPhoto ?? true;
-    return (
-      <div
-        ref={settingsRef}
-        className="absolute right-2 top-10 z-[110] w-64 bg-white text-slate-800 border border-slate-200 rounded-xl p-4 shadow-xl text-left font-sans text-xs space-y-4 edit-only"
-        style={{ transformOrigin: 'top right' }}
-      >
-        <div className="font-bold text-slate-900 border-b pb-1.5 flex items-center justify-between">
-          <span>Header Settings</span>
-          <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">×</button>
-        </div>
-
-        {/* 1. Header Style */}
-        <div className="space-y-1">
-          <span className="font-semibold text-slate-500 uppercase tracking-wider text-[9px]">Header Variant</span>
-          <div className="grid grid-cols-5 gap-0.5">
-            {(['centered', 'left', 'banner', 'minimal', 'enhancv'] as HeaderStyle[]).map(style => (
-              <button
-                key={style}
-                onClick={() => handleSettingsChange({ headerStyle: style })}
-                className={`py-1 text-[9px] rounded border cursor-pointer capitalize transition ${ls.headerStyle === style ? 'bg-teal-50 border-teal-500 text-teal-600 font-bold' : 'border-slate-200 hover:bg-slate-50'}`}
-              >
-                {style === 'enhancv' ? 'Enhance' : style}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 2. Settings Toggles */}
-        <div className="space-y-3 pt-3 border-t text-[11px] text-slate-600">
-          <span className="font-semibold text-slate-500 uppercase tracking-wider text-[9px] block">Field Visibility</span>
-          
-          <div className="space-y-2.5">
-            {/* Show Title */}
-            <div className="flex items-center justify-between">
-              <span>Show Title</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={ls.showTitle ?? true}
-                onClick={() => handleSettingsChange({ showTitle: !(ls.showTitle ?? true) })}
-                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  (ls.showTitle ?? true) ? 'bg-teal-500' : 'bg-slate-200'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    (ls.showTitle ?? true) ? 'translate-x-3' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* Show Phone */}
-            <div className="flex items-center justify-between">
-              <span>Show Phone</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={ls.showPhone ?? true}
-                onClick={() => handleSettingsChange({ showPhone: !(ls.showPhone ?? true) })}
-                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  (ls.showPhone ?? true) ? 'bg-teal-500' : 'bg-slate-200'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    (ls.showPhone ?? true) ? 'translate-x-3' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* Show Email */}
-            <div className="flex items-center justify-between">
-              <span>Show Email</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={ls.showEmail ?? true}
-                onClick={() => handleSettingsChange({ showEmail: !(ls.showEmail ?? true) })}
-                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  (ls.showEmail ?? true) ? 'bg-teal-500' : 'bg-slate-200'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    (ls.showEmail ?? true) ? 'translate-x-3' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* Show Location */}
-            <div className="flex items-center justify-between">
-              <span>Show Location</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={ls.showLocation ?? true}
-                onClick={() => handleSettingsChange({ showLocation: !(ls.showLocation ?? true) })}
-                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  (ls.showLocation ?? true) ? 'bg-teal-500' : 'bg-slate-200'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    (ls.showLocation ?? true) ? 'translate-x-3' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* Show Linkedin */}
-            <div className="flex items-center justify-between">
-              <span>Show LinkedIn</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={ls.showLinkedin ?? true}
-                onClick={() => handleSettingsChange({ showLinkedin: !(ls.showLinkedin ?? true) })}
-                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  (ls.showLinkedin ?? true) ? 'bg-teal-500' : 'bg-slate-200'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    (ls.showLinkedin ?? true) ? 'translate-x-3' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* Uppercase Name */}
-            <div className="flex items-center justify-between">
-              <span>Uppercase Name</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={ls.uppercaseName ?? false}
-                onClick={() => handleSettingsChange({ uppercaseName: !(ls.uppercaseName ?? false) })}
-                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  (ls.uppercaseName ?? false) ? 'bg-teal-500' : 'bg-slate-200'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    (ls.uppercaseName ?? false) ? 'translate-x-3' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* Show Profile Photo */}
-            <div className="flex items-center justify-between">
-              <span>Show Profile Photo</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={showPhoto}
-                onClick={() => handleSettingsChange({ showPhoto: !showPhoto })}
-                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  showPhoto ? 'bg-teal-500' : 'bg-slate-200'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    showPhoto ? 'translate-x-3' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-
-            {showPhoto && (
-              <div className="flex items-center justify-between">
-                <span>Photo Style</span>
-                <PhotoShapeSelector
-                  shape={resolvePhotoShape(ls)}
-                  onChange={(shape) => handleSettingsChange(photoShapePatch(shape))}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const headerShell = (
+    className: string,
+    style: React.CSSProperties | undefined,
+    content: React.ReactNode,
+  ) => (
+    <HeaderWrapper
+      isEditable={p.isEditable}
+      layoutSettings={p.layoutSettings}
+      onLayoutSettingsChange={p.onLayoutSettingsChange}
+      className={className}
+      style={style}
+    >
+      {content}
+    </HeaderWrapper>
+  );
 
   const renderHeaderContent = () => {
     const showPhoto = p.layoutSettings?.showPhoto ?? true;
@@ -558,15 +366,14 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
 
     // ── BANNER: full-width colour block ────────────────────────────────────────
     if (p.headerStyle === 'banner') {
-      return (
-        <header 
-          onClick={(e) => { if (p.isEditable) { e.stopPropagation(); p.onSelect?.(); } }}
-          className={`text-white mb-5 relative group ${p.isEditable ? 'cursor-pointer' : ''} ${p.isActive ? 'header-active' : ''}`}
-          style={{
-            background: `linear-gradient(135deg, ${p.brandColor} 0%, ${p.brandColor}cc 100%)`,
-            padding: '20px 28px 16px',
-            margin: '0',
-          }}>
+      return headerShell(
+        'text-white mb-5',
+        {
+          background: `linear-gradient(135deg, ${p.brandColor} 0%, ${p.brandColor}cc 100%)`,
+          padding: '20px 28px 16px',
+          margin: '0',
+        },
+        <>
           <div className="flex justify-between items-start gap-4">
             <div>
               <EditableText value={p.name.value} onSave={p.name.onSave} isEditable={p.isEditable} editableClass={lightEc}
@@ -588,21 +395,7 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
             )}
           </div>
           <ContactRow {...p} cls="flex flex-wrap gap-x-5 gap-y-0.5 text-xs text-white/80 mt-2" />
-
-          {/* Hover Settings Trigger */}
-          {p.isEditable && (
-            <div className={`absolute top-2 right-2 transition-opacity edit-only z-10 ${p.isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
-                className="bg-white/90 hover:bg-white text-slate-700 p-1.5 rounded-full border border-slate-200 shadow-md cursor-pointer transition flex items-center justify-center"
-                title="Header & Layout Settings"
-              >
-                <Settings className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-          {showSettings && renderSettingsPanel()}
-        </header>
+        </>,
       );
     }
 
@@ -613,12 +406,10 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
       const hasLocation = (p.layoutSettings?.showLocation ?? true) && !!(p.location?.value && p.location.value.trim());
       const hasLinkedin = (p.layoutSettings?.showLinkedin ?? true) && !!(p.linkedin?.value && p.linkedin.value.trim());
 
-      return (
-        <header 
-          onClick={(e) => { if (p.isEditable) { e.stopPropagation(); p.onSelect?.(); } }}
-          className={`flex justify-between items-start border-b pb-5 mb-5 gap-6 relative group ${p.isEditable ? 'cursor-pointer' : ''} ${p.isActive ? 'header-active' : ''}`}
-          style={{ borderColor: `${p.brandColor}30` }}
-        >
+      return headerShell(
+        'flex justify-between items-start border-b pb-5 mb-5 gap-6',
+        { borderColor: `${p.brandColor}30` },
+        <>
           <div className="flex-1 min-w-0">
             <div>
               <EditableText value={p.name.value} onSave={p.name.onSave} isEditable={p.isEditable} editableClass={p.ec}
@@ -628,8 +419,6 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
                   className="block text-sm font-semibold uppercase mt-1.5 tracking-wide text-slate-500" />
               )}
             </div>
-            
-            {/* 2x2 Grid for Contact Details */}
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 mt-4 text-[11px] text-slate-600 max-w-[550px]">
               {hasEmail && (
                 <span className="flex items-center gap-1.5 min-w-0">
@@ -677,31 +466,16 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
               onLayoutSettingsChange={p.onLayoutSettingsChange}
             />
           )}
-
-          {/* Hover Settings Trigger */}
-          {p.isEditable && (
-            <div className={`absolute top-2 right-2 transition-opacity edit-only z-10 ${p.isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
-                className="bg-white/90 hover:bg-white text-slate-700 p-1.5 rounded-full border border-slate-200 shadow-md cursor-pointer transition flex items-center justify-center"
-                title="Header & Layout Settings"
-              >
-                <Settings className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-          {showSettings && renderSettingsPanel()}
-        </header>
+        </>,
       );
     }
 
     // ── LEFT: name left, contact right, optional photo ─────────────────────────
     if (p.headerStyle === 'left') {
-      return (
-        <header 
-          onClick={(e) => { if (p.isEditable) { e.stopPropagation(); p.onSelect?.(); } }}
-          className={`flex justify-between items-start border-b-2 pb-4 mb-4 gap-4 relative group ${p.isEditable ? 'cursor-pointer' : ''} ${p.isActive ? 'header-active' : ''}`}
-          style={{ borderColor: p.brandColor }}>
+      return headerShell(
+        'flex justify-between items-start border-b-2 pb-4 mb-4 gap-4',
+        { borderColor: p.brandColor },
+        <>
           <div className="flex-1">
             <div>
               <EditableText value={p.name.value} onSave={p.name.onSave} isEditable={p.isEditable} editableClass={p.ec}
@@ -725,31 +499,16 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
               onLayoutSettingsChange={p.onLayoutSettingsChange}
             />
           )}
-
-          {/* Hover Settings Trigger */}
-          {p.isEditable && (
-            <div className={`absolute top-2 right-2 transition-opacity edit-only z-10 ${p.isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
-                className="bg-white/90 hover:bg-white text-slate-700 p-1.5 rounded-full border border-slate-200 shadow-md cursor-pointer transition flex items-center justify-center"
-                title="Header & Layout Settings"
-              >
-                <Settings className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-          {showSettings && renderSettingsPanel()}
-        </header>
+        </>,
       );
     }
 
     // ── MINIMAL: just name + subtitle, no border, optional small photo ──────────
     if (p.headerStyle === 'minimal') {
-      return (
-        <header 
-          onClick={(e) => { if (p.isEditable) { e.stopPropagation(); p.onSelect?.(); } }}
-          className={`mb-5 relative group ${p.isEditable ? 'cursor-pointer' : ''} ${p.isActive ? 'header-active' : ''}`}
-        >
+      return headerShell(
+        'mb-5',
+        undefined,
+        <>
           <div className="flex items-center gap-3">
             {showPhoto && (
               <AvatarCircleEditable
@@ -773,31 +532,15 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
             </div>
           </div>
           <ContactRow {...p} cls="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 mt-2" />
-
-          {/* Hover Settings Trigger */}
-          {p.isEditable && (
-            <div className={`absolute top-2 right-2 transition-opacity edit-only z-10 ${p.isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
-                className="bg-white/90 hover:bg-white text-slate-700 p-1.5 rounded-full border border-slate-200 shadow-md cursor-pointer transition flex items-center justify-center"
-                title="Header & Layout Settings"
-              >
-                <Settings className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-          {showSettings && renderSettingsPanel()}
-        </header>
+        </>,
       );
     }
 
     // ── CENTERED (default): name/subtitle centred, optional photo above ─────────
-    return (
-      <header 
-        onClick={(e) => { if (p.isEditable) { e.stopPropagation(); p.onSelect?.(); } }}
-        className={`text-center border-b-2 pb-4 mb-4 relative group ${p.isEditable ? 'cursor-pointer' : ''} ${p.isActive ? 'header-active' : ''}`}
-        style={{ borderColor: p.brandColor }}
-      >
+    return headerShell(
+      'text-center border-b-2 pb-4 mb-4',
+      { borderColor: p.brandColor },
+      <>
         {showPhoto && (
           <div className="flex justify-center mb-2">
             <AvatarCircleEditable
@@ -819,21 +562,7 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
             className="block text-sm text-slate-500 uppercase mt-1 tracking-wide" />
         )}
         <ContactRow {...p} cls="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-slate-600 mt-3" />
-
-        {/* Hover Settings Trigger */}
-        {p.isEditable && (
-          <div className={`absolute top-2 right-2 transition-opacity edit-only z-10 ${p.isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
-              className="bg-white/90 hover:bg-white text-slate-700 p-1.5 rounded-full border border-slate-200 shadow-md cursor-pointer transition flex items-center justify-center"
-              title="Header & Layout Settings"
-            >
-              <Settings className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-        {showSettings && renderSettingsPanel()}
-      </header>
+      </>,
     );
   };
 

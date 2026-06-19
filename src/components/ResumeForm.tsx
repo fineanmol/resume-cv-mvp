@@ -31,7 +31,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
   const toggle = (s: string) => setOpenSection((p) => (p === s ? '' : s));
 
   return (
-    <div className="w-full flex-1 flex flex-col overflow-y-auto p-5 space-y-5">
+    <div className="w-full min-h-0 flex-1 flex flex-col overflow-y-auto overscroll-contain p-5 space-y-5">
       <PdfImportBlock onChange={onChange} geminiKey={geminiKey} />
 
       <div className="space-y-3">

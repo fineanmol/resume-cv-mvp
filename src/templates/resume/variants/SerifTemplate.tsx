@@ -3,6 +3,7 @@ import { Building2, GraduationCap } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
 import { SkillsEditor } from '../../shared/SkillsEditor';
+import { EducationDescription } from '../../shared/EducationDescription';
 import { parseEducationGrade } from '../../shared/parseEducationGrade';
 import { TemplateHeader } from '../../TemplateHeader';
 import { useTemplateRenderContext } from '../useTemplateSetup';
@@ -144,7 +145,7 @@ export const SerifTemplate: React.FC = () => {
             <h3 className={H}>Education</h3>
             <div className="space-y-3">
               {resumeEducation.map((edu, idx) => {
-                const { gradeText, remaining } = parseEducationGrade(edu.bullets);
+                const { gradeText } = parseEducationGrade(edu.bullets);
                 return (
                   <ItemWrapper
                     key={idx} sectionId="education" index={idx} totalItems={resumeEducation.length}
@@ -173,13 +174,18 @@ export const SerifTemplate: React.FC = () => {
                             <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
                           </div>
                         )}
-                        {remaining ? (
-                          <BulletList bullets={remaining} isEditable={isEditable} editableClass={ec}
-                            onBulletChange={v => onEducationChange?.(idx, 'bullets', v)} className="text-slate-700 mt-1"
-                            bulletStyle={bulletStyle} brandColor={brandColor} align={educationAlign} />
-                        ) : (
-                          <E tag="p" value={edu.bullets} isEditable={isEditable} editableClass={ec} className={`text-slate-700 mt-1 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
-                        )}
+                        <EducationDescription
+                          bullets={edu.bullets}
+                          isEditable={isEditable}
+                          editableClass={ec}
+                          onBulletChange={(v) => onEducationChange?.(idx, 'bullets', v)}
+                          className="text-slate-700 mt-1"
+                          bulletStyle={bulletStyle}
+                          brandColor={brandColor}
+                          align={educationAlign}
+                          prefixId={`edu-${idx}`}
+                          splitGpa
+                        />
                       </div>
                       {showEduGpa && gradeText && (
                         <div className="flex items-center gap-2 flex-shrink-0 self-stretch mt-1">

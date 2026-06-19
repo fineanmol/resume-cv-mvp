@@ -4,6 +4,9 @@ import { resolvePhotoShape } from '../../utils/photoShape';
 import { AvatarCircleEditable } from '../TemplateHeader';
 import { PhotoDecorativeFrame } from './PhotoDecorativeFrame';
 
+/** Gap between photo edge and dashed ring (px) */
+const FRAME_GAP = 4;
+
 export const ProfilePhotoWithWaves: React.FC<{
   avatar: string;
   name?: string;
@@ -13,37 +16,32 @@ export const ProfilePhotoWithWaves: React.FC<{
   onAvatarChange?: (url: string) => void;
   layoutSettings?: LayoutSettings;
   onLayoutSettingsChange?: (settings: Partial<LayoutSettings>) => void;
+  /** Tailwind size classes for the photo, e.g. w-32 h-32 */
+  size?: string;
 }> = ({
   avatar,
   name = 'Profile',
   brandColor,
-  accentColor2 = '#eab308',
   isEditable = false,
   onAvatarChange,
   layoutSettings,
   onLayoutSettingsChange,
+  size = 'w-32 h-32',
 }) => {
   const photoShape = resolvePhotoShape(layoutSettings);
 
   return (
-    <div className="relative w-28 h-28 flex items-center justify-center flex-shrink-0">
-      <svg className="absolute inset-0 w-full h-full opacity-20 overflow-visible pointer-events-none" viewBox="0 0 100 100" fill="none">
-        <path d="M-20,40 Q15,15 50,40 T120,40" stroke={accentColor2} strokeWidth="1" strokeDasharray="3 3" />
-        <path d="M-20,50 Q25,30 60,50 T120,50" stroke={brandColor} strokeWidth="0.75" />
-        <path d="M-20,60 Q35,45 70,60 T120,60" stroke={accentColor2} strokeWidth="0.5" />
-      </svg>
-
-      <div className="relative flex-shrink-0">
-        <PhotoDecorativeFrame
-          shape={photoShape}
-          brandColor={brandColor}
-        />
-
+    <div
+      className={`relative flex-shrink-0 box-content overflow-visible z-[2] ${size}`}
+      style={{ padding: FRAME_GAP }}
+    >
+      <PhotoDecorativeFrame shape={photoShape} brandColor={brandColor} />
+      <div className={`relative z-[1] ${size}`}>
         <AvatarCircleEditable
           src={avatar}
           name={name}
-          size="w-24 h-24"
-          border="#ffffff"
+          size={size}
+          border="transparent"
           isEditable={isEditable}
           onAvatarChange={onAvatarChange}
           layoutSettings={layoutSettings}

@@ -24,6 +24,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
       role="switch"
       id={id}
       aria-checked={checked}
+      aria-label={label}
       onClick={() => onChange(!checked)}
       className={`relative rounded-full transition cursor-pointer flex-shrink-0 ${
         compact ? 'w-7 h-4' : 'w-9 h-5'

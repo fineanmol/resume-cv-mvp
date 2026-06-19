@@ -33,6 +33,8 @@ interface DesignPanelProps {
   layout: LayoutSettings & { columnGap?: number };
   onChange: (patch: Partial<LayoutSettings & { columnGap?: number }>) => void;
   docType: 'resume' | 'coverletter';
+  focusSection?: string | null;
+  onFocusHandled?: () => void;
 }
 
 const ColorPicker: React.FC<{
@@ -110,7 +112,9 @@ const Slider: React.FC<{
       <span className="font-mono">{value}{unit}</span>
     </div>
     <input
-      type="range" min={min} max={max} step={step} value={value}
+      type="range"
+      aria-label={label}
+      min={min} max={max} step={step} value={value}
       onChange={e => onChange(parse(e.target.value))}
       className="w-full accent-brand-accent h-1.5 rounded-full"
     />
@@ -159,21 +163,48 @@ const AlignmentPicker: React.FC<{
   </div>
 );
 
-export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docType }) => {
+export const DesignPanel: React.FC<DesignPanelProps> = ({
+  layout,
+  onChange,
+  docType,
+  focusSection,
+  onFocusHandled,
+}) => {
   const [open, setOpen] = useState<string>('template');
-  const toggle = (s: string) => setOpen(p => p === s ? '' : s);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const activeOpen = focusSection ?? open;
+  const toggle = (s: string) => {
+    onFocusHandled?.();
+    setOpen(p => p === s ? '' : s);
+  };
+
+  React.useEffect(() => {
+    if (!focusSection) return;
+    const t = window.setTimeout(() => {
+      setOpen(focusSection);
+      scrollRef.current?.querySelector(`#design-section-${focusSection}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+      onFocusHandled?.();
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [focusSection, onFocusHandled]);
 
   const brand   = layout.brandColor   ?? '#314855';
   const accent2 = layout.accentColor2 ?? '#0284c7';
 
   return (
-    <div className="flex-1 overflow-y-auto p-3.5 pb-24 space-y-3 w-full flex flex-col">
+    <div
+      ref={scrollRef}
+      className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3.5 pb-32 space-y-3 w-full flex flex-col"
+    >
 
       <AccordionSection
         id="template"
         icon={Layout}
         label="Template"
-        openSection={open}
+        openSection={activeOpen}
         onToggle={toggle}
         variant="design"
         bodyClassName="p-3 border-t border-border-color/40 grid grid-cols-2 gap-2"
@@ -209,7 +240,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
         id="colours"
         icon={Palette}
         label="Colours"
-        openSection={open}
+        openSection={activeOpen}
         onToggle={toggle}
         variant="design"
         bodyClassName="p-3 border-t border-border-color/40 space-y-4"
@@ -222,7 +253,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
         id="typography"
         icon={Type}
         label="Typography"
-        openSection={open}
+        openSection={activeOpen}
         onToggle={toggle}
         variant="design"
         bodyClassName="p-3 border-t border-border-color/40 grid grid-cols-2 gap-4"
@@ -235,7 +266,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
         id="header"
         icon={Layout}
         label="Header Style"
-        openSection={open}
+        openSection={activeOpen}
         onToggle={toggle}
         variant="design"
         bodyClassName="p-3 border-t border-border-color/40 space-y-3"
@@ -260,22 +291,16 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
           })}
         </div>
 
-        <div className="border-t border-border-color/30 pt-3 space-y-2.5">
-          <span className="block text-[9px] text-text-muted uppercase font-bold tracking-wider">Field Visibility</span>
-          <ToggleSwitch label="Show Title" checked={layout.showTitle ?? true} onChange={v => onChange({ showTitle: v })} />
-          <ToggleSwitch label="Show Phone" checked={layout.showPhone ?? true} onChange={v => onChange({ showPhone: v })} />
-          <ToggleSwitch label="Show Email" checked={layout.showEmail ?? true} onChange={v => onChange({ showEmail: v })} />
-          <ToggleSwitch label="Show Location" checked={layout.showLocation ?? true} onChange={v => onChange({ showLocation: v })} />
-          <ToggleSwitch label="Show LinkedIn" checked={layout.showLinkedin ?? true} onChange={v => onChange({ showLinkedin: v })} />
-          <ToggleSwitch label="Uppercase Name" checked={layout.uppercaseName ?? false} onChange={v => onChange({ uppercaseName: v })} />
-        </div>
+        <p className="text-[10px] text-text-muted leading-relaxed border-t border-border-color/30 pt-3">
+          Contact field visibility, photo, and uppercase name are in the document header gear on the canvas.
+        </p>
       </AccordionSection>
 
       <AccordionSection
         id="spacing"
         icon={SlidersHorizontal}
         label="Spacing"
-        openSection={open}
+        openSection={activeOpen}
         onToggle={toggle}
         variant="design"
         bodyClassName="p-3 border-t border-border-color/40 space-y-3"
@@ -285,8 +310,17 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
         <Slider label="Pad Top/Bottom" value={layout.paddingTopBottom} unit="mm" min={6} max={25} step={1} onChange={v => onChange({ paddingTopBottom: v })} parse={parseInt} />
         <Slider label="Pad Left/Right" value={layout.paddingLeftRight} unit="mm" min={6} max={25} step={1} onChange={v => onChange({ paddingLeftRight: v })} parse={parseInt} />
         <Slider label="Section Gap" value={layout.sectionSpacing} unit="px" min={4} max={28} step={1} onChange={v => onChange({ sectionSpacing: v })} parse={parseInt} />
-        {docType === 'resume' && layout.columnGap !== undefined && (
-          <Slider label="Column Gap" value={layout.columnGap} unit="px" min={8} max={30} step={1} onChange={v => onChange({ columnGap: v })} parse={parseInt} />
+        {docType === 'resume' && (layout.template ?? 'navy') === 'designer' && (
+          <Slider
+            label="Column Gap"
+            value={layout.columnGap ?? 16}
+            unit="px"
+            min={8}
+            max={30}
+            step={1}
+            onChange={v => onChange({ columnGap: v })}
+            parse={parseInt}
+          />
         )}
       </AccordionSection>
 
@@ -295,7 +329,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
           id="bullets"
           icon={List}
           label="Bullet Style"
-          openSection={open}
+          openSection={activeOpen}
           onToggle={toggle}
           variant="design"
           bodyClassName="p-3 border-t border-border-color/40 grid grid-cols-2 gap-1.5"
@@ -325,7 +359,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
           id="skillsStyle"
           icon={Tag}
           label="Skills Style"
-          openSection={open}
+          openSection={activeOpen}
           onToggle={toggle}
           variant="design"
           bodyClassName="p-3 border-t border-border-color/40 grid grid-cols-2 gap-1.5"
@@ -359,7 +393,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
         id="textAlignment"
         icon={AlignLeft}
         label="Text Alignment"
-        openSection={open}
+        openSection={activeOpen}
         onToggle={toggle}
         variant="design"
         bodyClassName="p-3 border-t border-border-color/40 space-y-4"
@@ -375,14 +409,13 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
         id="photo"
         icon={Image}
         label="Photo"
-        openSection={open}
+        openSection={activeOpen}
         onToggle={toggle}
         variant="design"
         bodyClassName="p-3 border-t border-border-color/40"
       >
-        <ToggleSwitch label="Show photo on document" checked={layout.showPhoto ?? true} onChange={v => onChange({ showPhoto: v })} />
-        <p className="text-[10px] text-text-muted mt-2 leading-relaxed">
-          Only visible in templates with a photo area (Sidebar, Executive, Modern Designer). Upload via Import PDF or edit directly.
+        <p className="text-[10px] text-text-muted leading-relaxed">
+          Show or hide the profile photo and pick its shape using the gear icon on the document header in the canvas preview.
         </p>
       </AccordionSection>
 
@@ -391,7 +424,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
           id="layout-outlines"
           icon={Layers}
           label="Layout Outlines"
-          openSection={open}
+          openSection={activeOpen}
           onToggle={toggle}
           variant="design"
           bodyClassName="p-3 border-t border-border-color/40 space-y-3"

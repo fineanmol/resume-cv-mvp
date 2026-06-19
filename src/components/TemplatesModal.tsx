@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { X, Sparkles, CheckCircle2 } from 'lucide-react';
-import { ResumeTemplateRenderer } from '../templates/ResumeTemplates';
-import { CoverLetterTemplateRenderer } from '../templates/CoverLetterTemplates';
-import type { TemplateId, ResumeState, CoverLetterState, ResumeLayoutSettings } from '../types';
+import type { TemplateId, ResumeState, CoverLetterState } from '../types';
 import { TEMPLATE_CATALOG } from '../config/templates';
 import { Modal } from './ui/Modal';
+import { TemplateLayoutPreview } from './TemplateLayoutPreview';
 
 interface TemplatesModalProps {
   isOpen: boolean;
@@ -21,32 +20,32 @@ const TemplatesModalBody: React.FC<Omit<TemplatesModalProps, 'isOpen'>> = ({
   currentTemplate,
   onSelectTemplate,
   docType,
-  documentState,
 }) => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<TemplateId>(currentTemplate);
 
-  const currentTemplateObj = TEMPLATE_CATALOG.find(t => t.id === selectedTemplateId) || TEMPLATE_CATALOG[0];
+  const currentTemplateObj = useMemo(
+    () => TEMPLATE_CATALOG.find((t) => t.id === selectedTemplateId) ?? TEMPLATE_CATALOG[0],
+    [selectedTemplateId],
+  );
 
-  // Live A4 preview: renders the full template with real documentState
-  const previewLayout: ResumeLayoutSettings = {
-    ...(documentState.layoutSettings as ResumeLayoutSettings),
-    template: selectedTemplateId,
-    brandColor: currentTemplateObj.accent,
-  };
+  const handleSelect = useCallback((id: TemplateId) => {
+    setSelectedTemplateId(id);
+  }, []);
 
   const handleApply = () => {
     onSelectTemplate(selectedTemplateId);
     onClose();
   };
 
+  const previewAccent = currentTemplateObj.accent;
+
   return (
     <>
-      {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border-color/60 flex-shrink-0">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-brand-accent animate-pulse" />
           <span className="text-xs font-bold text-brand-accent uppercase tracking-wider">
-            Choose Resume Template
+            Choose {docType === 'resume' ? 'Resume' : 'Cover Letter'} Template
           </span>
         </div>
         <button
@@ -58,10 +57,8 @@ const TemplatesModalBody: React.FC<Omit<TemplatesModalProps, 'isOpen'>> = ({
         </button>
       </div>
 
-      {/* Two-Pane Body */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Pane - Templates Grid list */}
-        <div className="w-1/2 overflow-y-auto p-6 border-r border-border-color/60 space-y-4 scrollbar-none">
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        <div className="w-1/2 overflow-y-auto p-6 border-r border-border-color/60 space-y-4 scrollbar-none min-h-0">
           <h3 className="text-sm font-bold text-text-main mb-4">Available Layouts</h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -70,19 +67,31 @@ const TemplatesModalBody: React.FC<Omit<TemplatesModalProps, 'isOpen'>> = ({
               return (
                 <div
                   key={t.id}
-                  onClick={() => setSelectedTemplateId(t.id)}
-                  className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 relative flex flex-col justify-between h-[130px] ${
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleSelect(t.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelect(t.id);
+                    }
+                  }}
+                  className={`border rounded-xl p-3 cursor-pointer transition-colors relative flex flex-col gap-2 ${
                     isActive
                       ? 'border-brand-accent bg-brand-accent/5 ring-1 ring-brand-accent'
                       : 'border-border-color/60 hover:border-brand-accent/50 bg-card/25 hover:bg-card/45'
                   }`}
                 >
-                  <div className="space-y-1">
+                  <div className="h-[72px] rounded-lg overflow-hidden border border-border-color/40 bg-white">
+                    <TemplateLayoutPreview templateId={t.id} accent={t.accent} />
+                  </div>
+
+                  <div className="space-y-0.5">
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="text-xs font-bold text-text-main">{t.name}</h4>
                       {t.badge && (
                         <span
-                          className="text-[8px] font-bold px-1.5 py-0.5 rounded-full text-white"
+                          className="text-[8px] font-bold px-1.5 py-0.5 rounded-full text-white flex-shrink-0"
                           style={{ background: t.accent }}
                         >
                           {t.badge}
@@ -93,7 +102,7 @@ const TemplatesModalBody: React.FC<Omit<TemplatesModalProps, 'isOpen'>> = ({
                     <p className="text-[10px] text-text-muted leading-relaxed line-clamp-2">{t.desc}</p>
                   </div>
 
-                  <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.accent }} />
                       <span className="text-[9px] text-text-muted font-mono">{t.accent}</span>
@@ -106,46 +115,31 @@ const TemplatesModalBody: React.FC<Omit<TemplatesModalProps, 'isOpen'>> = ({
           </div>
         </div>
 
-        {/* Right Pane - Full-fledged Live A4 Preview */}
-        <div className="w-1/2 bg-[#dde3ec]/60 overflow-hidden flex items-center justify-center p-6 relative">
+        <div className="w-1/2 bg-[#dde3ec]/60 overflow-hidden flex items-center justify-center p-6 relative min-h-0">
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest absolute top-4 left-6 z-10 bg-white/80 backdrop-blur px-2.5 py-1 rounded-md shadow-sm border border-slate-200">
-            Live Preview
+            Layout Preview
           </div>
 
           <div className="flex flex-col items-center gap-3">
             <div
-              className="bg-white shadow-2xl rounded-sm overflow-hidden select-none origin-center"
-              style={{ width: 437, height: 618 }}
+              className="bg-white shadow-2xl rounded-sm overflow-hidden select-none w-[320px] h-[452px]"
             >
-              <div className="origin-top-left scale-[0.55] w-[794px] h-[1123px]">
-                {docType === 'resume' ? (
-                  <ResumeTemplateRenderer
-                    state={{ ...(documentState as ResumeState), layoutSettings: previewLayout }}
-                    isEditable={false}
-                  />
-                ) : (
-                  <CoverLetterTemplateRenderer
-                    state={{ ...(documentState as CoverLetterState), layoutSettings: previewLayout }}
-                    isEditable={false}
-                  />
-                )}
-              </div>
+              <TemplateLayoutPreview templateId={selectedTemplateId} accent={previewAccent} />
             </div>
 
             <div className="flex items-center gap-2 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-slate-200">
               <span
                 className="w-3 h-3 rounded-full flex-shrink-0 ring-1 ring-black/10"
-                style={{ background: currentTemplateObj.accent }}
+                style={{ background: previewAccent }}
                 aria-hidden
               />
               <span className="text-xs font-bold text-slate-700">{currentTemplateObj.name}</span>
-              <span className="text-[10px] text-slate-400 font-mono">{currentTemplateObj.accent}</span>
+              <span className="text-[10px] text-slate-400 font-mono">{previewAccent}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Footer */}
       <div className="flex justify-end gap-3 px-6 py-4 border-t border-border-color/60 bg-sidebar flex-shrink-0">
         <button
           type="button"

@@ -38,6 +38,58 @@ describe('PdfService', () => {
     vi.clearAllMocks();
   });
 
+  it('preserves profile photo decorative SVG in PDF clone', async () => {
+    const originalDiv = document.createElement('div');
+    originalDiv.className = 'pdf-sheet';
+
+    const frame = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    frame.setAttribute('class', 'profile-photo-frame pdf-keep');
+    frame.setAttribute('data-pdf-keep', '');
+    originalDiv.appendChild(frame);
+
+    const waves = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    waves.setAttribute('class', 'profile-photo-waves pdf-keep');
+    originalDiv.appendChild(waves);
+
+    document.body.appendChild(originalDiv);
+    await PdfService.downloadPdf(originalDiv, 'test_output.pdf');
+
+    const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
+    expect(clonedElement.querySelector('.profile-photo-frame')).toBeTruthy();
+    expect(clonedElement.querySelector('.profile-photo-waves')).toBeTruthy();
+
+    document.body.removeChild(originalDiv);
+  });
+
+  it('preserves skill chip text in PDF clone', async () => {
+    const originalDiv = document.createElement('div');
+    originalDiv.className = 'pdf-sheet';
+
+    const chip = document.createElement('span');
+    chip.className = 'inline-flex px-2 py-0.5 rounded-full border';
+    const skillText = document.createElement('span');
+    skillText.setAttribute('data-skill-index', '0');
+    skillText.textContent = 'TypeScript';
+    chip.appendChild(skillText);
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'edit-only';
+    addBtn.textContent = '+';
+
+    originalDiv.appendChild(chip);
+    originalDiv.appendChild(addBtn);
+
+    document.body.appendChild(originalDiv);
+    await PdfService.downloadPdf(originalDiv, 'skills.pdf');
+
+    const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
+    expect(clonedElement.textContent).toContain('TypeScript');
+    expect(clonedElement.querySelector('[data-skill-index]')).toBeTruthy();
+    expect(clonedElement.querySelector('.edit-only')).toBeNull();
+
+    document.body.removeChild(originalDiv);
+  });
+
   it('correctly sets up and executes pdf generation by stripping edit controls and resolving oklch colors', async () => {
     // Setup mock element in JSDOM
     const originalDiv = document.createElement('div');

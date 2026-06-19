@@ -54,6 +54,7 @@ export default function App() {
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [rightTab,       setRightTab]       = useState<'design' | 'ats'>('design');
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [designFocusSection, setDesignFocusSection] = useState<string | null>(null);
 
   const [jobDescription, setJobDescription] = useState(() => localStorage.getItem('LAST_JD') ?? '');
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
@@ -145,14 +146,19 @@ export default function App() {
     localStorage.setItem('LAST_JD', text);
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (!sheetRef.current) return;
     dispatchClearEditorFocus();
     const filename = activeDocType === 'resume'
       ? `${resume.state.name.replace(/\s+/g, '_')}_Resume.pdf`
       : `${cl.state.name.replace(/\s+/g, '_')}_Cover_Letter.pdf`;
-    PdfService.downloadPdf(sheetRef.current, filename);
     toast.info('Preparing PDF download…');
+    try {
+      await PdfService.downloadPdf(sheetRef.current, filename);
+      toast.success('PDF downloaded.');
+    } catch {
+      toast.error('PDF download failed. Please try again.');
+    }
   };
 
   const handleSelectDocument = async (id: string, type: DocType) => {
@@ -261,10 +267,13 @@ export default function App() {
             onOpenDesign={() => {
               setRightPanelOpen(true);
               setRightTab('design');
+              setDesignFocusSection('spacing');
             }}
+            designPanelActive={rightPanelOpen && rightTab === 'design'}
           />
 
-          <EditorLayout
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <EditorLayout
             isResume={isResume}
             resumeState={resume.state}
             resumeSet={resume.set}
@@ -280,6 +289,8 @@ export default function App() {
             setRightTab={setRightTab}
             rightPanelOpen={rightPanelOpen}
             setRightPanelOpen={setRightPanelOpen}
+            designFocusSection={designFocusSection}
+            onDesignFocusHandled={() => setDesignFocusSection(null)}
             showSettings={showSettings}
             geminiKey={geminiKey}
             onGeminiKeyChange={setGeminiKey}
@@ -293,6 +304,7 @@ export default function App() {
             onInjectKeyword={ai.injectKeyword}
             onAiTailor={ai.tailorDocument}
           />
+          </div>
         </motion.div>
       </AnimatePresence>
 

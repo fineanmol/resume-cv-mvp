@@ -8,7 +8,10 @@ import { BulletList } from '../../shared/BulletList';
 import { SkillsEditor } from '../../shared/SkillsEditor';
 import { EntryIconPicker } from '../../shared/EntryIconPicker';
 import { getDynamicAchievementIcon, getDynamicProjectIcon } from '../../shared/templateIconHelpers';
+import { HeaderWaveLines } from '../../shared/HeaderWaveLines';
 import { formatLinkedinUrl } from '../../../utils/linkedin';
+import { EducationDescription } from '../../shared/EducationDescription';
+import { HeaderWrapper } from '../../shared/HeaderWrapper';
 import { parseEducationGrade } from '../../shared/parseEducationGrade';
 import { getLanguageBubbleCount } from '../../../utils/languageLevel';
 import { useTemplateRenderContext } from '../useTemplateSetup';
@@ -211,7 +214,7 @@ export const DesignerTemplate: React.FC = () => {
                 <h3 className={H} style={{ borderColor: brandColor, color: brandColor }}>Education</h3>
                 <div className="space-y-3">
                   {resumeEducation.map((edu, idx) => {
-                    const { gradeText, remaining } = parseEducationGrade(edu.bullets);
+                    const { gradeText } = parseEducationGrade(edu.bullets);
                     const showLogo = (layoutSettings?.showEducationLogo ?? true) && showEdu(edu, 'logo');
                     const showDates = (layoutSettings?.showEducationDates ?? true) && showEdu(edu, 'dates');
                     const showLocation = (layoutSettings?.showEducationLocation ?? true) && showEdu(edu, 'location');
@@ -259,13 +262,19 @@ export const DesignerTemplate: React.FC = () => {
                                 )}
                               </div>
                             )}
-                            {showBullets && remaining ? (
-                              <BulletList bullets={remaining} isEditable={isEditable} editableClass={ec}
-                                onBulletChange={v => onEducationChange?.(idx, 'bullets', v)} className={`text-slate-600 leading-relaxed text-${educationAlign}`}
-                                bulletStyle={bulletStyle} brandColor={brandColor} align={educationAlign} prefixId={`edu-${idx}`} />
-                            ) : showBullets ? (
-                              <E tag="p" value={edu.bullets} isEditable={isEditable} editableClass={ec} className={`text-slate-600 leading-relaxed text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
-                            ) : null}
+                            <EducationDescription
+                              bullets={edu.bullets}
+                              isEditable={isEditable}
+                              editableClass={ec}
+                              onBulletChange={(v) => onEducationChange?.(idx, 'bullets', v)}
+                              className={`text-slate-600 leading-relaxed text-${educationAlign}`}
+                              bulletStyle={bulletStyle}
+                              brandColor={brandColor}
+                              align={educationAlign}
+                              prefixId={`edu-${idx}`}
+                              showBullets={showBullets}
+                              splitGpa
+                            />
                           </div>
                           {showGpa && gradeText && (
                             <div className="flex items-center gap-2 h-full flex-shrink-0 self-stretch mt-1">
@@ -474,8 +483,19 @@ export const DesignerTemplate: React.FC = () => {
   return (
     <div className={`pdf-sheet text-slate-800 font-sans ${sheetActiveClass}`} style={sheetStyle} id="resume-sheet"
       onClick={(e) => { if (e.target === e.currentTarget && isEditable) clearActive(); }}>
-      <header className="flex justify-between items-start border-b pb-4 mb-4" style={{ borderColor: `${brandColor}40` }}>
-        <div className="flex-1">
+      <HeaderWrapper
+        isEditable={isEditable}
+        layoutSettings={layoutSettings}
+        onLayoutSettingsChange={(patch) => onLayoutSettingsChange?.({ ...layoutSettings, ...patch })}
+        className="flex justify-between items-start border-b pb-4 mb-4 overflow-visible"
+        style={{ borderColor: `${brandColor}40` }}
+      >
+        <HeaderWaveLines
+          brandColor={brandColor}
+          accentColor2={accentColor2}
+          sheetPaddingRightMm={layoutSettings?.paddingLeftRight ?? 12}
+        />
+        <div className="flex-1 relative z-[1] min-w-0">
           <E tag="h1" value={name} isEditable={isEditable} editableClass={ec}
             className={`text-3xl font-extrabold tracking-tight ${uppercaseName ? 'uppercase' : ''}`}
             style={{ color: brandColor, fontFamily: headingFontCss }} onSave={ef('name')} />
@@ -486,26 +506,26 @@ export const DesignerTemplate: React.FC = () => {
 
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3.5 text-[10px] text-slate-500 font-medium">
             {hasPhone && (
-              <span className="flex items-center gap-1.5">
-                <Phone className="w-3 h-3 text-slate-400" />
+              <span className="inline-flex items-center gap-1.5 align-middle">
+                <Phone className="w-3 h-3 text-slate-400 flex-shrink-0 inline-block" aria-hidden />
                 <E value={phone} isEditable={isEditable} editableClass={ec} onSave={ef('phone')} />
               </span>
             )}
             {hasEmail && (
-              <span className="flex items-center gap-1.5">
-                <Mail className="w-3 h-3 text-slate-400" />
+              <span className="inline-flex items-center gap-1.5 align-middle">
+                <Mail className="w-3 h-3 text-slate-400 flex-shrink-0 inline-block" aria-hidden />
                 <E value={email} isEditable={isEditable} editableClass={ec} onSave={ef('email')} />
               </span>
             )}
             {hasLinkedin && (
-              <span className="flex items-center gap-1.5">
-                <span className="text-slate-400 flex items-center justify-center w-3 h-3"><LI /></span>
+              <span className="inline-flex items-center gap-1.5 align-middle">
+                <span className="text-slate-400 inline-flex items-center justify-center w-3 h-3 flex-shrink-0" aria-hidden><LI /></span>
                 <E value={linkedin} isEditable={isEditable} editableClass={ec} href={formatLinkedinUrl(linkedin)} onSave={ef('linkedin')} />
               </span>
             )}
             {hasLocation && (
-              <span className="flex items-center gap-1.5">
-                <MapPin className="w-3 h-3 text-slate-400" />
+              <span className="inline-flex items-center gap-1.5 align-middle">
+                <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0 inline-block" aria-hidden />
                 <E value={location} isEditable={isEditable} editableClass={ec} onSave={ef('location')} />
               </span>
             )}
@@ -523,9 +543,13 @@ export const DesignerTemplate: React.FC = () => {
             onLayoutSettingsChange={onLayoutSettingsChange}
           />
         )}
-      </header>
+      </HeaderWrapper>
 
-      <div className="grid grid-cols-[1.4fr_1fr] gap-6 mt-4">
+      <div
+        data-testid="designer-column-grid"
+        className="grid grid-cols-[1.4fr_1fr] mt-4"
+        style={{ gap: `${layoutSettings?.columnGap ?? 16}px` }}
+      >
         <div
           className={`designer-column space-y-4 min-h-[150px] transition-all duration-200 ${showLayoutBounds ? 'border-2 border-dashed border-slate-200 p-2 rounded-xl bg-slate-50/5' : ''}`}
           onDragOver={(e) => handleSectionDragOver(e)}

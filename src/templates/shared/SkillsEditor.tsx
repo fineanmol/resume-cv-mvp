@@ -158,7 +158,7 @@ export const SkillsEditor: React.FC<{
               onDragOver={(e) => handleDragOver(e, i)}
               onDrop={(e) => handleDrop(e, i)}
               onDragEnd={resetDrag}
-              className={`${chipBase} pl-2 pr-1.5 relative group/chip edit-only transition-[box-shadow,opacity] duration-100 ${
+              className={`${chipBase} pl-2 pr-1.5 relative group/chip transition-[box-shadow,opacity] duration-100 ${
                 isFocused ? 'border-teal-400 ring-1 ring-teal-400/30' : 'hover:border-slate-300'
               } ${focusedSkillIdx === null ? 'cursor-grab active:cursor-grabbing' : 'cursor-text'} ${chipDropClass(i)}`}
               style={baseStyle}
@@ -229,7 +229,7 @@ export const SkillsEditor: React.FC<{
                   list.splice(i, 1);
                   onSave(list.join(', '));
                 }}
-                className="text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 rounded-full flex items-center justify-center opacity-0 overflow-hidden transition-[width,height,opacity,margin] duration-150 font-bold text-[9px] cursor-pointer shrink-0 w-0 h-0 ml-0 group-hover/chip:w-3.5 group-hover/chip:h-3.5 group-hover/chip:opacity-100 group-hover/chip:ml-1"
+                className="edit-only text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 rounded-full flex items-center justify-center opacity-0 overflow-hidden transition-[width,height,opacity,margin] duration-150 font-bold text-[9px] cursor-pointer shrink-0 w-0 h-0 ml-0 group-hover/chip:w-3.5 group-hover/chip:h-3.5 group-hover/chip:opacity-100 group-hover/chip:ml-1"
                 title="Remove skill"
                 type="button"
               >
@@ -243,7 +243,7 @@ export const SkillsEditor: React.FC<{
           <span
             onDragOver={(e) => handleDragOver(e, skillsList.length)}
             onDrop={(e) => handleDrop(e, skillsList.length)}
-            className={`inline-flex items-center justify-center min-w-[28px] min-h-[22px] rounded-md border-2 border-dashed transition-colors ${
+            className={`edit-only inline-flex items-center justify-center min-w-[28px] min-h-[22px] rounded-md border-2 border-dashed transition-colors ${
               overIdx === skillsList.length
                 ? 'border-teal-500 bg-teal-50 text-teal-600'
                 : 'border-slate-200 text-slate-300'

@@ -14,7 +14,7 @@ import {
 } from '../shared';
 import { ExperienceEntrySettings, EducationEntrySettings } from '../../shared/entrySettings';
 import { isEntryFieldVisible } from '../../../utils/entryVisibility';
-import { parseEducationGrade } from '../../shared/parseEducationGrade';
+import { EducationDescription } from '../../shared/EducationDescription';
 
 export const NavyTemplate: React.FC = () => {
   const {
@@ -170,15 +170,11 @@ export const NavyTemplate: React.FC = () => {
               <h3 className={H} style={{ color: brandColor, borderColor: `${brandColor}40` }}>Education</h3>
               <div className="space-y-3">
                 {resumeEducation.map((edu, idx) => {
-                  const { gradeText, remaining } = parseEducationGrade(edu.bullets);
                   const showLogo = (layoutSettings?.showEducationLogo ?? true) && showEdu(edu, 'logo');
                   const showDates = (layoutSettings?.showEducationDates ?? true) && showEdu(edu, 'dates');
                   const showLocation = (layoutSettings?.showEducationLocation ?? true) && showEdu(edu, 'location');
                   const showGpa = (layoutSettings?.showEducationGpa ?? true) && showEdu(edu, 'gpa');
                   const showBullets = showEdu(edu, 'bullets');
-                  const gpaContent = showGpa ? gradeText : '';
-                  const bulletContent = showBullets ? remaining : '';
-                  const bulletsDisplay = [gpaContent, bulletContent].filter(Boolean).join('\n');
 
                   return (
                   <ItemWrapper
@@ -218,11 +214,19 @@ export const NavyTemplate: React.FC = () => {
                           )}
                         </div>
                       )}
-                      {bulletsDisplay && (
-                        <BulletList bullets={bulletsDisplay} isEditable={isEditable} editableClass={ec}
-                          onBulletChange={v => onEducationChange?.(idx, 'bullets', v)} className={`text-slate-700 text-${educationAlign}`}
-                          bulletStyle={bulletStyle} brandColor={brandColor} align={educationAlign} prefixId={`edu-${idx}`} />
-                      )}
+                      <EducationDescription
+                        bullets={edu.bullets}
+                        isEditable={isEditable}
+                        editableClass={ec}
+                        onBulletChange={(v) => onEducationChange?.(idx, 'bullets', v)}
+                        className={`text-slate-700 text-${educationAlign}`}
+                        bulletStyle={bulletStyle}
+                        brandColor={brandColor}
+                        align={educationAlign}
+                        prefixId={`edu-${idx}`}
+                        showGpa={showGpa}
+                        showBullets={showBullets}
+                      />
                     </div>
                   </ItemWrapper>
                   );

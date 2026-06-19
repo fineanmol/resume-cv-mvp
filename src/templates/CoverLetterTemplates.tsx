@@ -84,6 +84,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
     lineHeight: lineHeight,
     color: '#334155',
     fontFamily: bodyFontCss,
+    ['--sheet-fs' as string]: String(fontSize),
   };
 
   const spacingStyle: React.CSSProperties = {

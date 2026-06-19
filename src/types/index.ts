@@ -7,6 +7,8 @@ export interface LayoutSettings {
   paddingLeftRight: number;
   sectionSpacing: number;
   lineHeight: number;
+  /** Gap between designer template left/right columns (px) */
+  columnGap?: number;
   template?: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer';
   brandColor?: string;        // primary accent (headers, borders, bullets)
   accentColor2?: string;      // secondary accent (badges, highlights)

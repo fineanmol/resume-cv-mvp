@@ -522,4 +522,65 @@ describe('ResumeTemplates — editable integration', () => {
   });
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// RESUME — design panel spacing applied to canvas
+// ─────────────────────────────────────────────────────────────────────────────
+describe('ResumeTemplates — header settings toolbar', () => {
+  it('designer template shows header settings gear when editable', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'designer' })} isEditable />
+    );
+    expect(container.querySelector('header [title="Header Settings"]')).toBeTruthy();
+  });
+
+  it('navy template shows header settings gear when editable', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'navy' })} isEditable />
+    );
+    expect(container.querySelector('header [title="Header Settings"]')).toBeTruthy();
+  });
+});
+
+describe('ResumeTemplates — design panel spacing settings applied to sheet', () => {
+  it('fontSize sets pdf-sheet fontSize and --sheet-fs variable', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'navy', fontSize: 12 })} />
+    );
+    const sheet = container.querySelector('.pdf-sheet') as HTMLElement;
+    expect(sheet.style.fontSize).toBe('12pt');
+    expect(sheet.style.getPropertyValue('--sheet-fs')).toBe('12');
+  });
+
+  it('lineHeight sets pdf-sheet lineHeight', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'navy', lineHeight: 1.65 })} />
+    );
+    const sheet = container.querySelector('.pdf-sheet') as HTMLElement;
+    expect(sheet.style.lineHeight).toBe('1.65');
+  });
+
+  it('padding sets pdf-sheet padding in mm', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'navy', paddingTopBottom: 20, paddingLeftRight: 18 })} />
+    );
+    const sheet = container.querySelector('.pdf-sheet') as HTMLElement;
+    expect(sheet.style.padding).toBe('20mm 18mm');
+  });
+
+  it('sectionSpacing sets marginBottom on section blocks', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'navy', sectionSpacing: 22 })} />
+    );
+    const section = container.querySelector('section') as HTMLElement;
+    expect(section?.style.marginBottom).toBe('22px');
+  });
+
+  it('columnGap sets gap on designer column grid', () => {
+    const { getByTestId } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'designer', columnGap: 28 })} />
+    );
+    expect(getByTestId('designer-column-grid').style.gap).toBe('28px');
+  });
+});
+
 

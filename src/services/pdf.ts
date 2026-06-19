@@ -44,26 +44,60 @@ function convertOklToRgb(colorStr: string): string {
   }
 }
 
-function resolveOklchColors(original: HTMLElement, cloned: HTMLElement) {
-  const computed = window.getComputedStyle(original);
-  const colorProps = [
-    'color',
-    'background-color',
-    'border-color',
-    'border-top-color',
-    'border-bottom-color',
-    'border-left-color',
-    'border-right-color',
-    'fill',
-    'stroke'
-  ];
+/** Copy colors and typography from the live preview onto the clone (not layout box-model). */
+const PDF_INLINE_PROPS = [
+  'color',
+  'background-color',
+  'border-top-color',
+  'border-right-color',
+  'border-bottom-color',
+  'border-left-color',
+  'font-size',
+  'font-family',
+  'font-weight',
+  'font-style',
+  'line-height',
+  'letter-spacing',
+  'text-align',
+  'fill',
+  'stroke',
+];
 
-  colorProps.forEach((prop) => {
+function inlineComputedStyles(source: HTMLElement, target: HTMLElement) {
+  const computed = window.getComputedStyle(source);
+  PDF_INLINE_PROPS.forEach((prop) => {
     const val = computed.getPropertyValue(prop);
-    if (val && (val.includes('oklch') || val.includes('oklab'))) {
-      const resolved = convertOklToRgb(val);
-      cloned.style.setProperty(prop, resolved);
+    if (!val) return;
+    if (prop === 'fill' || prop === 'stroke' || prop.includes('color')) {
+      const resolved = val.includes('oklch') || val.includes('oklab') ? convertOklToRgb(val) : val;
+      target.style.setProperty(prop, resolved);
+    } else {
+      target.style.setProperty(prop, val);
     }
+  });
+}
+
+function syncComputedStyles(sourceRoot: Element, cloneRoot: Element) {
+  if (sourceRoot instanceof HTMLElement && cloneRoot instanceof HTMLElement) {
+    inlineComputedStyles(sourceRoot, cloneRoot);
+  }
+
+  const sourceChildren = Array.from(sourceRoot.children);
+  const cloneChildren = Array.from(cloneRoot.children);
+  for (let i = 0; i < sourceChildren.length; i++) {
+    if (cloneChildren[i]) {
+      syncComputedStyles(sourceChildren[i], cloneChildren[i]);
+    }
+  }
+}
+
+function prepareSkillChipsForPdf(clone: HTMLElement) {
+  clone.querySelectorAll('[data-skill-index]').forEach((el) => {
+    el.removeAttribute('contenteditable');
+    el.removeAttribute('suppresscontenteditablewarning');
+    const chip = el.parentElement;
+    chip?.querySelector('button')?.remove();
+    chip?.classList.remove('edit-only');
   });
 }
 
@@ -154,7 +188,7 @@ export class PdfService {
     return null;
   }
 
-  public static async downloadPdf(element: HTMLElement, filename: string): Promise<void> {
+  public static downloadPdf(element: HTMLElement, filename: string): Promise<void> {
     const sheetElement = (element.querySelector('.pdf-sheet') || element) as HTMLElement;
 
     // Create a hidden wrapper positioned at (0,0) with a negative z-index to stay invisible to the user.
@@ -178,7 +212,7 @@ export class PdfService {
 
     // Remove in-editor focus/backdrop classes so PDF shows all sections equally
     stripEditorFocusClasses(clone);
-    
+
     // Resolve relative image src attributes to absolute URLs so they load correctly inside the about:blank iframe
     clone.querySelectorAll('img').forEach((img) => {
       const src = img.getAttribute('src');
@@ -187,9 +221,18 @@ export class PdfService {
       }
     });
 
+    // Copy computed styles from the live preview while DOM trees still match
+    syncComputedStyles(sheetElement, clone);
+
+    prepareSkillChipsForPdf(clone);
+
     // Remove edit-only UI elements completely to prevent rendering them in the PDF
-    clone.querySelectorAll('.edit-only, [data-pdf-hide], button').forEach((el) => {
+    clone.querySelectorAll('.edit-only, [data-pdf-hide]').forEach((el) => {
       el.remove();
+    });
+    // Strip edit-only class from decorative assets that must appear in PDF (photo frame, waves)
+    clone.querySelectorAll('.pdf-keep, [data-pdf-keep]').forEach((el) => {
+      el.classList.remove('edit-only');
     });
 
     // Clean up edit-mode outline spacing, transition, and padding classes to prevent layout shift distortions in PDF
@@ -243,12 +286,10 @@ export class PdfService {
     clone.style.width = '794px';
     
     const originalHeight = sheetElement.offsetHeight || 1123;
-    const pageCount = Math.max(1, Math.ceil(originalHeight / 1123));
-    const targetHeight = pageCount * 1122;
-    
-    clone.style.height = `${targetHeight}px`;
-    clone.style.minHeight = `${targetHeight}px`;
-    clone.style.maxHeight = `${targetHeight}px`;
+
+    clone.style.height = 'auto';
+    clone.style.minHeight = `${originalHeight}px`;
+    clone.style.maxHeight = 'none';
     if (clone.style.display === 'none') {
       clone.style.display = 'block';
     }
@@ -259,18 +300,12 @@ export class PdfService {
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
 
-    // Resolve Tailwind v4 OKLCH colors to standard RGB/RGBA colors directly on the cloned elements in the DOM
-    resolveOklchColors(clone, clone);
-    clone.querySelectorAll('*').forEach((el) => {
-      resolveOklchColors(el as HTMLElement, el as HTMLElement);
-    });
-
     const opt = {
       margin: 0,
       filename,
       image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: {
-        scale: 4,
+        scale: 2,
         useCORS: true,
         letterRendering: true,
         logging: false,
@@ -363,6 +398,36 @@ export class PdfService {
                 padding: 0 !important;
                 margin: 0 !important;
               }
+              .photo-frame-dash,
+              .photo-wave-dash,
+              .photo-wave-dash-slow {
+                animation: none !important;
+                transform: none !important;
+              }
+              .profile-photo-waves {
+                opacity: 0.35 !important;
+              }
+              .pdf-sheet span.inline-flex,
+              .pdf-sheet .inline-flex.items-center,
+              .pdf-sheet .flex.items-center {
+                display: inline-flex !important;
+                align-items: center !important;
+                vertical-align: middle !important;
+              }
+              .pdf-sheet li.flex.items-center {
+                display: flex !important;
+                align-items: center !important;
+              }
+              .pdf-sheet svg {
+                display: inline-block !important;
+                vertical-align: middle !important;
+                flex-shrink: 0 !important;
+              }
+              .pdf-sheet [class*="lucide"] {
+                display: inline-block !important;
+                vertical-align: middle !important;
+                flex-shrink: 0 !important;
+              }
             `;
             clonedDoc.head.appendChild(style);
           }
@@ -371,18 +436,21 @@ export class PdfService {
       jsPDF: { unit: 'pt' as const, format: 'a4' as const, orientation: 'portrait' as const },
     };
 
-    html2pdf()
+    return html2pdf()
       .set(opt)
       .from(clone)
       .save()
       .then(() => {
-        document.body.removeChild(wrapper);
+        if (document.body.contains(wrapper)) {
+          document.body.removeChild(wrapper);
+        }
       })
       .catch((err: unknown) => {
         console.error('PDF download failed:', err);
         if (document.body.contains(wrapper)) {
           document.body.removeChild(wrapper);
         }
+        throw err;
       });
   }
 }

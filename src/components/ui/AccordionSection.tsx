@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SectionHeader } from '../SectionHeader';
-import { SECTION_ANIM, SECTION_ANIM_DESIGN } from '../../constants/animations';
+import { SECTION_ANIM } from '../../constants/animations';
 import { sectionShellCls } from '../../constants/formClasses';
 
 interface AccordionSectionProps {
@@ -14,9 +14,12 @@ interface AccordionSectionProps {
   children: React.ReactNode;
   /** Inner padding wrapper classes (default: form section body) */
   bodyClassName?: string;
-  /** Use slightly faster animation (DesignPanel) */
+  /** Design panel: instant expand, no height clip (avoids cutting sliders) */
   variant?: 'form' | 'design';
 }
+
+const designShellCls =
+  'border border-border-color/50 rounded-xl overflow-visible bg-card/10';
 
 export const AccordionSection: React.FC<AccordionSectionProps> = ({
   id,
@@ -29,11 +32,14 @@ export const AccordionSection: React.FC<AccordionSectionProps> = ({
   bodyClassName = 'p-4 border-t border-border-color/40',
   variant = 'form',
 }) => {
-  const anim = variant === 'design' ? SECTION_ANIM_DESIGN : SECTION_ANIM;
   const isOpen = openSection === id;
+  const isDesign = variant === 'design';
 
   return (
-    <div className={sectionShellCls}>
+    <div
+      id={isDesign ? `design-section-${id}` : undefined}
+      className={isDesign ? designShellCls : sectionShellCls}
+    >
       <SectionHeader
         id={id}
         icon={icon}
@@ -42,13 +48,19 @@ export const AccordionSection: React.FC<AccordionSectionProps> = ({
         openSection={openSection}
         onToggle={onToggle}
       />
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div key={id} {...anim} style={{ overflow: 'hidden' }}>
-            <div className={bodyClassName}>{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isDesign ? (
+        isOpen ? (
+          <div className={bodyClassName}>{children}</div>
+        ) : null
+      ) : (
+        <AnimatePresence initial={false}>
+          {isOpen && (
+            <motion.div key={id} {...SECTION_ANIM} style={{ overflow: 'hidden' }}>
+              <div className={bodyClassName}>{children}</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </div>
   );
 };

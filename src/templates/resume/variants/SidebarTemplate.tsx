@@ -3,7 +3,8 @@ import { Phone, Mail, MapPin, Building2, GraduationCap } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
 import { SkillsEditor } from '../../shared/SkillsEditor';
-import { parseEducationGrade } from '../../shared/parseEducationGrade';
+import { EducationDescription } from '../../shared/EducationDescription';
+import { HeaderWrapper } from '../../shared/HeaderWrapper';
 import { formatLinkedinUrl } from '../../../utils/linkedin';
 import { AvatarCircleEditable } from '../../TemplateHeader';
 import { useTemplateRenderContext } from '../useTemplateSetup';
@@ -191,7 +192,13 @@ export const SidebarTemplate: React.FC = () => {
       </aside>
 
       <main className="flex-1 p-6" style={{ lineHeight, fontFamily: bodyFontCss }}>
-        <header className="mb-4 pb-3 border-b-2" style={{ borderColor: brandColor }}>
+        <HeaderWrapper
+          isEditable={isEditable}
+          layoutSettings={layoutSettings}
+          onLayoutSettingsChange={(patch) => onLayoutSettingsChange?.({ ...layoutSettings, ...patch })}
+          className="mb-4 pb-3 border-b-2"
+          style={{ borderColor: brandColor }}
+        >
           <E tag="h1" value={name} isEditable={isEditable} editableClass={ec}
             className={`text-3xl font-extrabold tracking-tight ${uppercaseName ? 'uppercase' : ''}`}
             style={{ color: brandColor, fontFamily: headingFontCss }} onSave={ef('name')} />
@@ -199,7 +206,7 @@ export const SidebarTemplate: React.FC = () => {
             <E tag="p" value={subtitle} isEditable={isEditable} editableClass={ec}
               className="text-sm font-medium text-slate-500 uppercase mt-1 tracking-wide" onSave={ef('subtitle')} />
           )}
-        </header>
+        </HeaderWrapper>
 
         {(resumeSummary || isEditable) && (
           <SectionWrapper
@@ -301,15 +308,11 @@ export const SidebarTemplate: React.FC = () => {
               <h3 className={SH} style={{ borderColor: `${brandColor}40`, color: brandColor }}>Education</h3>
               <div className="space-y-3">
                 {resumeEducation.map((edu, idx) => {
-                  const { gradeText, remaining } = parseEducationGrade(edu.bullets);
                   const showLogo = (layoutSettings?.showEducationLogo ?? true) && showEdu(edu, 'logo');
                   const showDates = (layoutSettings?.showEducationDates ?? true) && showEdu(edu, 'dates');
                   const showLocation = (layoutSettings?.showEducationLocation ?? true) && showEdu(edu, 'location');
                   const showGpa = (layoutSettings?.showEducationGpa ?? true) && showEdu(edu, 'gpa');
                   const showBullets = showEdu(edu, 'bullets');
-                  const gpaContent = showGpa ? gradeText : '';
-                  const bulletContent = showBullets ? remaining : '';
-                  const bulletsDisplay = [gpaContent, bulletContent].filter(Boolean).join('\n');
 
                   return (
                     <ItemWrapper
@@ -349,15 +352,19 @@ export const SidebarTemplate: React.FC = () => {
                             )}
                           </div>
                         )}
-                        {bulletsDisplay && (
-                          remaining ? (
-                            <BulletList bullets={bulletsDisplay} isEditable={isEditable} editableClass={ec}
-                              onBulletChange={v => onEducationChange?.(idx, 'bullets', v)} className={`text-slate-600 text-${educationAlign}`}
-                              bulletStyle={bulletStyle} brandColor={brandColor} align={educationAlign} prefixId={`edu-${idx}`} />
-                          ) : (
-                            <E tag="p" value={bulletsDisplay} isEditable={isEditable} editableClass={ec} className={`text-slate-600 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
-                          )
-                        )}
+                        <EducationDescription
+                          bullets={edu.bullets}
+                          isEditable={isEditable}
+                          editableClass={ec}
+                          onBulletChange={(v) => onEducationChange?.(idx, 'bullets', v)}
+                          className={`text-slate-600 text-${educationAlign}`}
+                          bulletStyle={bulletStyle}
+                          brandColor={brandColor}
+                          align={educationAlign}
+                          prefixId={`edu-${idx}`}
+                          showGpa={showGpa}
+                          showBullets={showBullets}
+                        />
                       </div>
                     </ItemWrapper>
                   );

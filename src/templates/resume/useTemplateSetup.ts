@@ -58,7 +58,7 @@ export function useTemplateSetup({
 
   const {
     fontSize, paddingTopBottom, paddingLeftRight, sectionSpacing,
-    lineHeight, template = 'navy', brandColor = '#314855',
+    lineHeight, columnGap = 16, template = 'navy', brandColor = '#314855',
     accentColor2,
     fontFamily = 'inter',
     headingFont,
@@ -262,6 +262,7 @@ export function useTemplateSetup({
     lineHeight,
     color: '#334155',
     fontFamily: bodyFontCss,
+    ['--sheet-fs' as string]: String(fontSize),
   };
   const sec: React.CSSProperties = { marginBottom: `${sectionSpacing}px` };
   const ec = isEditable ? 'outline-none hover:bg-slate-100/80 focus:bg-slate-100 rounded px-1 -mx-1 transition' : '';
@@ -360,6 +361,7 @@ export function useTemplateSetup({
     designerLeftSections,
     designerRightSections,
     lineHeight,
+    columnGap,
     sectionContextValue,
     sheetActiveClass,
     clearActive,

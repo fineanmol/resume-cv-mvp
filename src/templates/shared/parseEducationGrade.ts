@@ -26,3 +26,14 @@ export const parseEducationGrade = (bullets: string) => {
 
   return { gradeText, gradeType, remaining: remainingBullets.join('\n') };
 };
+
+const GRADE_LINE_RE = /^(GPA|Grade|Medalist)\s*[:-]?/i;
+
+/** Recombine GPA/grade prefix lines with updated coursework bullets after canvas edits. */
+export function mergeEducationBullets(originalBullets: string, updatedRemaining: string): string {
+  const prefixLines = (originalBullets ? originalBullets.split(/\r?\n/) : []).filter((line) =>
+    GRADE_LINE_RE.test(line.trim()),
+  );
+  const remainingLines = updatedRemaining.split('\n');
+  return [...prefixLines, ...remainingLines].join('\n');
+};
