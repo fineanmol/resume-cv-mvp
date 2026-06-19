@@ -111,6 +111,9 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
     avatar, showAvatar, brandColor, headingFontCss,
     headerStyle: headerStyle as import('../types').HeaderStyle,
     isEditable, ec: editableClass, sectionSpacing,
+    layoutSettings,
+    onLayoutSettingsChange: (patch: any) => onFieldChange?.('layoutSettings', { ...layoutSettings, ...patch }),
+    onAvatarChange: (url: string) => onFieldChange?.('avatar', url)
   };
 
   // accentColor2 is available for future highlight/badge styling in CL templates

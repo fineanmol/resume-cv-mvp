@@ -210,3 +210,87 @@ body {
     print-color-adjust: exact !important;
   }
 }
+
+/* Active focus backdrop dimming & elevated highlighted states */
+.pdf-sheet.has-active-section .group\/section:not(.section-active),
+.pdf-sheet.has-active-section header:not(.header-active),
+.pdf-sheet.has-active-item .group\/section:not(.section-active),
+.pdf-sheet.has-active-item header:not(.header-active) {
+  opacity: 0.35;
+  filter: blur(0.3px);
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+/* Active section — clean white card lift (Enhance-CV style) */
+.pdf-sheet.has-active-section .section-active {
+  opacity: 1 !important;
+  filter: none !important;
+  background-color: #ffffff !important;
+  border: 1px solid #d1d5db !important; /* gray-300 */
+  border-radius: 6px !important;
+  box-shadow: 0 4px 16px -4px rgba(0,0,0,0.12), 0 2px 8px -2px rgba(0,0,0,0.06) !important;
+  z-index: 30;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* When an item is focused, drop the section card border */
+.pdf-sheet.has-active-item .section-active {
+  opacity: 1 !important;
+  filter: none !important;
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+}
+
+/* Dim non-active items within the active section when an item is focused */
+.pdf-sheet.has-active-item .section-active .group\/item:not(.item-active) {
+  opacity: 0.35;
+  filter: blur(0.3px);
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+/* Active item — mint teal highlight (Enhance-CV #60d5ba) */
+.pdf-sheet.has-active-item .section-active .item-active {
+  opacity: 1 !important;
+  filter: none !important;
+  background-color: #ffffff !important;
+  border: 1px solid #60d5ba !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 10px -2px rgba(96,213,186,0.25), 0 1px 4px -1px rgba(0,0,0,0.06) !important;
+  position: relative;
+  z-index: 45;
+}
+
+/* Active header */
+.pdf-sheet.has-active-section .header-active {
+  opacity: 1 !important;
+  filter: none !important;
+  background-color: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 16px -4px rgba(0,0,0,0.12) !important;
+  z-index: 30;
+}
+
+/* Suppress outer section hover outline when hovering an inner list item */
+.group\/section:hover:has(.group\/item:hover) {
+  border-color: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Ensure sidebar scrollbar is visible and clear */
+.bg-sidebar ::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+.bg-sidebar ::-webkit-scrollbar-track {
+  background: #f8fafc !important;
+}
+.bg-sidebar ::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 4px !important;
+}
+.bg-sidebar ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
+}
+

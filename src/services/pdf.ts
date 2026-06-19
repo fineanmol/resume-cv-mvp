@@ -153,12 +153,7 @@ export class PdfService {
     return null;
   }
 
-  public static downloadPdf(element: HTMLElement, filename: string): void {
-    if (!html2pdf) {
-      alert("PDF downloader package is not available.");
-      return;
-    }
-
+  public static async downloadPdf(element: HTMLElement, filename: string): Promise<void> {
     const sheetElement = (element.querySelector('.pdf-sheet') || element) as HTMLElement;
 
     // Create a hidden wrapper positioned at (0,0) with a negative z-index to stay invisible to the user.
@@ -177,7 +172,7 @@ export class PdfService {
       'box-sizing: border-box',
     ].join(';');
 
-    // Clone and strip all transforms/shadows so html2canvas sees a plain A4 element
+    // Clone the sheet element
     const clone = sheetElement.cloneNode(true) as HTMLElement;
     
     // Resolve relative image src attributes to absolute URLs so they load correctly inside the about:blank iframe
@@ -186,6 +181,11 @@ export class PdfService {
       if (src && !src.startsWith('data:') && !src.startsWith('http:') && !src.startsWith('https:')) {
         (img as HTMLImageElement).src = new URL(src, window.location.href).href;
       }
+    });
+
+    // Remove edit-only UI elements completely to prevent rendering them in the PDF
+    clone.querySelectorAll('.edit-only, [data-pdf-hide], button').forEach((el) => {
+      el.remove();
     });
 
     // Clean up edit-mode outline spacing, transition, and padding classes to prevent layout shift distortions in PDF
@@ -228,29 +228,20 @@ export class PdfService {
       }
     });
 
-    // Resolve Tailwind v4 OKLCH colors to standard RGB/RGBA colors on the clone
-    resolveOklchColors(sheetElement, clone);
-    const origEls = sheetElement.querySelectorAll('*');
-    const cloneEls = clone.querySelectorAll('*');
-    for (let i = 0; i < origEls.length; i++) {
-      if (origEls[i] && cloneEls[i]) {
-        resolveOklchColors(origEls[i] as HTMLElement, cloneEls[i] as HTMLElement);
-      }
-    }
-
-    // Override specific layout properties for PDF generation while keeping original inline styles (like fonts, padding)
+    // Override specific layout properties for PDF generation while keeping original styles
     clone.style.transform = 'none';
     clone.style.transition = 'none';
     clone.style.boxShadow = 'none';
     clone.style.position = 'relative';
     clone.style.left = '0px';
     clone.style.top = '0px';
-    // Positive z-index so html2canvas (which renders the clone specifically) does not skip it
     clone.style.zIndex = '9999';
     clone.style.width = '794px';
+    
     const originalHeight = sheetElement.offsetHeight || 1123;
     const pageCount = Math.max(1, Math.ceil(originalHeight / 1123));
     const targetHeight = pageCount * 1122;
+    
     clone.style.height = `${targetHeight}px`;
     clone.style.minHeight = `${targetHeight}px`;
     clone.style.maxHeight = `${targetHeight}px`;
@@ -263,6 +254,12 @@ export class PdfService {
 
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
+
+    // Resolve Tailwind v4 OKLCH colors to standard RGB/RGBA colors directly on the cloned elements in the DOM
+    resolveOklchColors(clone, clone);
+    clone.querySelectorAll('*').forEach((el) => {
+      resolveOklchColors(el as HTMLElement, el as HTMLElement);
+    });
 
     const opt = {
       margin: 0,
@@ -342,9 +339,6 @@ export class PdfService {
                 background-color: transparent !important;
                 box-shadow: none !important;
               }
-              [class*="group/draggable"] > div {
-                display: none !important;
-              }
               .designer-column {
                 border: none !important;
                 padding: 0 !important;
@@ -368,7 +362,9 @@ export class PdfService {
       })
       .catch((err: unknown) => {
         console.error('PDF download failed:', err);
-        document.body.removeChild(wrapper);
+        if (document.body.contains(wrapper)) {
+          document.body.removeChild(wrapper);
+        }
       });
   }
 }

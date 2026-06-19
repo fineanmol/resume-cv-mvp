@@ -21,6 +21,7 @@ const HEADER_STYLES: { id: HeaderStyle; label: string; desc: string }[] = [
   { id: 'left',     label: 'Left Align', desc: 'Name left, contact right' },
   { id: 'banner',   label: 'Full Banner',desc: 'Coloured full-width header' },
   { id: 'minimal',  label: 'Minimal',    desc: 'Name only, no border' },
+  { id: 'enhancv',  label: 'Enhance CV',  desc: 'Modern split grid style' },
 ];
 
 const BULLET_STYLES: { id: LayoutSettings['bulletStyle']; label: string; preview: string }[] = [
@@ -146,7 +147,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
   const accent2 = layout.accentColor2 ?? '#0284c7';
 
   return (
-    <div className="flex-1 overflow-y-auto p-3.5 space-y-3 w-full flex flex-col">
+    <div className="flex-1 overflow-y-auto p-3.5 pb-24 space-y-3 w-full flex flex-col">
 
         {/* ── TEMPLATE ──────────────────────────────────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
@@ -222,24 +223,108 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
           <AnimatePresence initial={false}>
             {open === 'header' && (
               <motion.div key="header" {...SECTION_ANIM} style={{ overflow: 'hidden' }}>
-                <div className="p-3 border-t border-border-color/40 grid grid-cols-2 gap-1.5">
-                  {HEADER_STYLES.map(h => {
-                    const isActive = (layout.headerStyle ?? 'centered') === h.id;
-                    return (
+                <div className="p-3 border-t border-border-color/40 space-y-3">
+                  <div className="grid grid-cols-2 gap-1.5 mb-2">
+                    {HEADER_STYLES.map(h => {
+                      const isActive = (layout.headerStyle ?? 'centered') === h.id;
+                      return (
+                        <button
+                          key={h.id}
+                          onClick={() => onChange({ headerStyle: h.id })}
+                          className={`px-2 py-2 rounded-lg border text-left transition cursor-pointer ${
+                            isActive
+                              ? 'border-brand-accent bg-brand-accent/8 text-brand-accent'
+                              : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                          }`}
+                        >
+                          <span className="block text-[10px] font-bold">{h.label}</span>
+                          <span className="block text-[9px] opacity-70 leading-tight">{h.desc}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="border-t border-border-color/30 pt-3 space-y-2.5">
+                    <span className="block text-[9px] text-text-muted uppercase font-bold tracking-wider">Field Visibility</span>
+                    
+                    {/* Show Title */}
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="text-xs text-text-main font-medium">Show Title</span>
                       <button
-                        key={h.id}
-                        onClick={() => onChange({ headerStyle: h.id })}
-                        className={`px-2 py-2 rounded-lg border text-left transition cursor-pointer ${
-                          isActive
-                            ? 'border-brand-accent bg-brand-accent/8 text-brand-accent'
-                            : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
-                        }`}
+                        role="switch"
+                        aria-checked={layout.showTitle ?? true}
+                        onClick={() => onChange({ showTitle: !(layout.showTitle ?? true) })}
+                        className={`relative w-9 h-5 rounded-full transition cursor-pointer ${(layout.showTitle ?? true) ? 'bg-brand-accent' : 'bg-border-color'}`}
                       >
-                        <span className="block text-[10px] font-bold">{h.label}</span>
-                        <span className="block text-[9px] opacity-70 leading-tight">{h.desc}</span>
+                        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${(layout.showTitle ?? true) ? 'left-4' : 'left-0.5'}`} />
                       </button>
-                    );
-                  })}
+                    </label>
+
+                    {/* Show Phone */}
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="text-xs text-text-main font-medium">Show Phone</span>
+                      <button
+                        role="switch"
+                        aria-checked={layout.showPhone ?? true}
+                        onClick={() => onChange({ showPhone: !(layout.showPhone ?? true) })}
+                        className={`relative w-9 h-5 rounded-full transition cursor-pointer ${(layout.showPhone ?? true) ? 'bg-brand-accent' : 'bg-border-color'}`}
+                      >
+                        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${(layout.showPhone ?? true) ? 'left-4' : 'left-0.5'}`} />
+                      </button>
+                    </label>
+
+                    {/* Show Email */}
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="text-xs text-text-main font-medium">Show Email</span>
+                      <button
+                        role="switch"
+                        aria-checked={layout.showEmail ?? true}
+                        onClick={() => onChange({ showEmail: !(layout.showEmail ?? true) })}
+                        className={`relative w-9 h-5 rounded-full transition cursor-pointer ${(layout.showEmail ?? true) ? 'bg-brand-accent' : 'bg-border-color'}`}
+                      >
+                        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${(layout.showEmail ?? true) ? 'left-4' : 'left-0.5'}`} />
+                      </button>
+                    </label>
+
+                    {/* Show Location */}
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="text-xs text-text-main font-medium">Show Location</span>
+                      <button
+                        role="switch"
+                        aria-checked={layout.showLocation ?? true}
+                        onClick={() => onChange({ showLocation: !(layout.showLocation ?? true) })}
+                        className={`relative w-9 h-5 rounded-full transition cursor-pointer ${(layout.showLocation ?? true) ? 'bg-brand-accent' : 'bg-border-color'}`}
+                      >
+                        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${(layout.showLocation ?? true) ? 'left-4' : 'left-0.5'}`} />
+                      </button>
+                    </label>
+
+                    {/* Show LinkedIn */}
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="text-xs text-text-main font-medium">Show LinkedIn</span>
+                      <button
+                        role="switch"
+                        aria-checked={layout.showLinkedin ?? true}
+                        onClick={() => onChange({ showLinkedin: !(layout.showLinkedin ?? true) })}
+                        className={`relative w-9 h-5 rounded-full transition cursor-pointer ${(layout.showLinkedin ?? true) ? 'bg-brand-accent' : 'bg-border-color'}`}
+                      >
+                        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${(layout.showLinkedin ?? true) ? 'left-4' : 'left-0.5'}`} />
+                      </button>
+                    </label>
+
+                    {/* Uppercase Name */}
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="text-xs text-text-main font-medium">Uppercase Name</span>
+                      <button
+                        role="switch"
+                        aria-checked={layout.uppercaseName ?? false}
+                        onClick={() => onChange({ uppercaseName: !(layout.uppercaseName ?? false) })}
+                        className={`relative w-9 h-5 rounded-full transition cursor-pointer ${(layout.uppercaseName ?? false) ? 'bg-brand-accent' : 'bg-border-color'}`}
+                      >
+                        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${(layout.uppercaseName ?? false) ? 'left-4' : 'left-0.5'}`} />
+                      </button>
+                    </label>
+                  </div>
                 </div>
               </motion.div>
             )}

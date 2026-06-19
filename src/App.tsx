@@ -6,6 +6,9 @@ import { LandingPage } from './components/LandingPage';
 import { Dashboard } from './components/Dashboard';
 import { EditorHeader } from './components/EditorHeader';
 import { ResumeForm } from './components/ResumeForm';
+import { AddSectionModal } from './components/AddSectionModal';
+import { RearrangeSectionsModal } from './components/RearrangeSectionsModal';
+import { TemplatesModal } from './components/TemplatesModal';
 import { CoverLetterForm } from './components/CoverLetterForm';
 import { JDPanel } from './components/JDPanel';
 import { DesignPanel } from './components/DesignPanel';
@@ -99,6 +102,12 @@ export default function App() {
   const [geminiKey,    setGeminiKey]    = useState(() => localStorage.getItem('GEMINI_API_KEY') ?? '');
   const [showSettings, setShowSettings] = useState(false);
   const [zoomScale,    setZoomScale]    = useState(0.85);
+  const [sidebarOpen,  setSidebarOpen]  = useState(true);
+
+  // Modals state
+  const [showAddSectionModal, setShowAddSectionModal] = useState(false);
+  const [showRearrangeModal, setShowRearrangeModal] = useState(false);
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [rightTab,     setRightTab]     = useState<'design' | 'ats'>('design');
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   
@@ -377,6 +386,16 @@ export default function App() {
             showSettings={showSettings} setShowSettings={setShowSettings}
             onDownload={handleDownloadPdf}
             onBack={() => setActiveDocId(null)}
+            sidebarOpen={sidebarOpen}
+            onToggleSidebar={() => setSidebarOpen(p => !p)}
+            isResume={isResume}
+            onOpenTemplates={() => setShowTemplatesModal(true)}
+            onOpenAddSection={() => setShowAddSectionModal(true)}
+            onOpenRearrange={() => setShowRearrangeModal(true)}
+            onOpenDesign={() => {
+              setRightPanelOpen(true);
+              setRightTab('design');
+            }}
           />
 
           {/* ── Three-panel editor layout ───────────────────────── */}
@@ -390,30 +409,34 @@ export default function App() {
             )}
 
             {/* LEFT — Content form (sections) */}
-            <aside
-              style={{ width: `${leftWidth}px` }}
-              className="flex-shrink-0 border-r border-border-color/60 bg-sidebar flex flex-col overflow-hidden"
-            >
-              {isResume ? (
-                <ResumeForm
-                  state={resume.state}
-                  onChange={resume.set}
-                  onImproveBullet={ai.improveBullet}
-                  aiLoading={ai.aiLoading}
-                  isOnline={isOnline}
-                  geminiKey={geminiKey}
-                />
-              ) : (
-                <CoverLetterForm state={cl.state} onChange={cl.set} />
-              )}
-            </aside>
+            {sidebarOpen && (
+              <aside
+                style={{ width: `${leftWidth}px` }}
+                className="flex-shrink-0 border-r border-border-color/60 bg-sidebar flex flex-col overflow-hidden"
+              >
+                {isResume ? (
+                  <ResumeForm
+                    state={resume.state}
+                    onChange={resume.set}
+                    onImproveBullet={ai.improveBullet}
+                    aiLoading={ai.aiLoading}
+                    isOnline={isOnline}
+                    geminiKey={geminiKey}
+                  />
+                ) : (
+                  <CoverLetterForm state={cl.state} onChange={cl.set} />
+                )}
+              </aside>
+            )}
 
             {/* Resize handle for left panel */}
-            <div
-              onMouseDown={startResizeLeft}
-              className="w-[4px] hover:w-[6px] h-full cursor-col-resize bg-border-color/10 hover:bg-brand-accent/50 transition-colors flex-shrink-0 z-40 relative select-none"
-              title="Drag to resize panel"
-            />
+            {sidebarOpen && (
+              <div
+                onMouseDown={startResizeLeft}
+                className="w-[4px] hover:w-[6px] h-full cursor-col-resize bg-border-color/10 hover:bg-brand-accent/50 transition-colors flex-shrink-0 z-40 relative select-none"
+                title="Drag to resize panel"
+              />
+            )}
 
             {/* CENTRE — Live A4 preview (always visible, no modal) */}
             <section className="flex-1 overflow-hidden relative flex flex-col bg-[#dde3ec]">
@@ -434,6 +457,17 @@ export default function App() {
                         onCertChange={(i, f, v) => resume.set(p => { const u = [...p.resumeCerts]; u[i] = { ...u[i], [f]: v }; return { ...p, resumeCerts: u }; })}
                         onAchievementChange={(i, f, v) => resume.set(p => { const u = [...p.resumeAchievements]; u[i] = { ...u[i], [f]: v }; return { ...p, resumeAchievements: u }; })}
                         onLanguageChange={(i, f, v) => resume.set(p => { const u = [...p.resumeLanguages]; u[i] = { ...u[i], [f]: v }; return { ...p, resumeLanguages: u }; })}
+                        onLayoutSettingsChange={(patch) => resume.set(p => ({ ...p, layoutSettings: { ...p.layoutSettings, ...patch } }))}
+                        onAddExperience={() => resume.set(p => ({ ...p, resumeExperience: [...p.resumeExperience, { company: 'New Company', title: 'New Position', dates: '2026 - Present', location: 'City, Country', bullets: '• Accomplished X using Y.\n• Led team of Z.' }] }))}
+                        onDeleteExperience={(idx) => resume.set(p => ({ ...p, resumeExperience: p.resumeExperience.filter((_, i) => i !== idx) }))}
+                        onAddEducation={() => resume.set(p => ({ ...p, resumeEducation: [...p.resumeEducation, { school: 'New University', degree: 'Degree Name', dates: '2022 - 2026', location: 'City, Country', bullets: 'GPA: 3.8/4.0' }] }))}
+                        onDeleteEducation={(idx) => resume.set(p => ({ ...p, resumeEducation: p.resumeEducation.filter((_, i) => i !== idx) }))}
+                        onAddCert={() => resume.set(p => ({ ...p, resumeCerts: [...(p.resumeCerts || []), { title: 'New Project/Cert', desc: 'Description of project/cert' }] }))}
+                        onDeleteCert={(idx) => resume.set(p => ({ ...p, resumeCerts: p.resumeCerts.filter((_, i) => i !== idx) }))}
+                        onAddAchievement={() => resume.set(p => ({ ...p, resumeAchievements: [...(p.resumeAchievements || []), { title: 'New Achievement', desc: 'Detail of achievement', icon: 'star' }] }))}
+                        onDeleteAchievement={(idx) => resume.set(p => ({ ...p, resumeAchievements: p.resumeAchievements.filter((_, i) => i !== idx) }))}
+                        onAddLanguage={() => resume.set(p => ({ ...p, resumeLanguages: [...(p.resumeLanguages || []), { name: 'Language', level: 'Native' }] }))}
+                        onDeleteLanguage={(idx) => resume.set(p => ({ ...p, resumeLanguages: p.resumeLanguages.filter((_, i) => i !== idx) }))}
                       />
                     ) : (
                       <CoverLetterTemplateRenderer
@@ -525,6 +559,81 @@ export default function App() {
             </button>
           </div>
         </motion.div>
+      </AnimatePresence>
+      <AnimatePresence>
+        {showAddSectionModal && isResume && (
+          <AddSectionModal
+            isOpen={showAddSectionModal}
+            onClose={() => setShowAddSectionModal(false)}
+            activeSections={[
+              ...(resume.state.layoutSettings.designerLeftSections || []),
+              ...(resume.state.layoutSettings.designerRightSections || [])
+            ]}
+            onAddSection={(sectionId) => {
+              resume.set(p => {
+                const right = [...(p.layoutSettings.designerRightSections || [])];
+                if (!right.includes(sectionId)) {
+                  right.push(sectionId);
+                }
+                return {
+                  ...p,
+                  layoutSettings: {
+                    ...p.layoutSettings,
+                    designerRightSections: right
+                  }
+                };
+              }, true);
+            }}
+          />
+        )}
+
+        {showRearrangeModal && isResume && (
+          <RearrangeSectionsModal
+            isOpen={showRearrangeModal}
+            onClose={() => setShowRearrangeModal(false)}
+            leftSections={resume.state.layoutSettings.designerLeftSections || []}
+            rightSections={resume.state.layoutSettings.designerRightSections || []}
+            onSave={(left, right) => {
+              resume.set(p => ({
+                ...p,
+                layoutSettings: {
+                  ...p.layoutSettings,
+                  designerLeftSections: left,
+                  designerRightSections: right
+                }
+              }), true);
+            }}
+          />
+        )}
+
+        {showTemplatesModal && (
+          <TemplatesModal
+            isOpen={showTemplatesModal}
+            onClose={() => setShowTemplatesModal(false)}
+            currentTemplate={isResume ? (resume.state.layoutSettings.template ?? 'navy') : (cl.state.layoutSettings.template ?? 'navy')}
+            onSelectTemplate={(templateId) => {
+              if (isResume) {
+                resume.set(p => ({
+                  ...p,
+                  layoutSettings: {
+                    ...p.layoutSettings,
+                    template: templateId
+                  }
+                }), true);
+              } else {
+                cl.set(p => ({
+                  ...p,
+                  layoutSettings: {
+                    ...p.layoutSettings,
+                    template: templateId
+                  }
+                }), true);
+              }
+            }}
+            docType={activeDocType ?? 'resume'}
+            documentState={isResume ? resume.state : cl.state}
+          />
+        )}
       </AnimatePresence>
       <ToastContainer toasts={toast.toasts} dismiss={toast.dismiss} />
     </>

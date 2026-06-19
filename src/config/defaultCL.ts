@@ -53,5 +53,12 @@ export const DEFAULT_CL_STATE: CoverLetterState = {
     headingFont: 'inter',
     headerStyle: 'centered',
     showPhoto: true,
+    roundPhoto: true,
+    showPhone: true,
+    showEmail: true,
+    showLocation: true,
+    showLinkedin: true,
+    showTitle: true,
+    uppercaseName: false,
   }
 };

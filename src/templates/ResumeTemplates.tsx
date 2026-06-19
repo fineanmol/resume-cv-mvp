@@ -1,6 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useContext, createContext } from 'react';
 import type { ResumeState, ExperienceItem, EducationItem, CertItem, AchievementItem, LanguageItem } from '../types';
-import { Star, Award, Phone, Mail, MapPin, ExternalLink, Trophy, Target, Terminal } from 'lucide-react';
+import {
+  Star, Award, Phone, Mail, MapPin, ExternalLink, Trophy, Target, Terminal, Flag, Check,
+  Plus, Settings, Trash2, ArrowLeft, ArrowRight, AlignLeft, AlignCenter, AlignRight, AlignJustify,
+  ArrowUp, ArrowDown, Briefcase, Code, Book, Globe, Upload, Building2, GraduationCap
+} from 'lucide-react';
+
+export const ActiveSectionContext = createContext<{
+  activeSectionId: string | null;
+  setActiveSectionId: (id: string | null) => void;
+  activeItemId: string | null;
+  setActiveItemId: (id: string | null) => void;
+  handleMoveSectionUpDown: (id: string, dir: 'up' | 'down') => void;
+  handleMoveItemUpDown: (sectionId: string, index: number, dir: 'up' | 'down') => void;
+} | null>(null);
 import { FONT_CSS } from '../config/fonts';
 import { TemplateHeader, formatLinkedinUrl } from './TemplateHeader';
 import { splitIntoBullets } from '../utils/bullets';
@@ -14,6 +27,19 @@ interface ResumeTemplateProps {
   onCertChange?: (index: number, field: keyof CertItem, value: string) => void;
   onAchievementChange?: (index: number, field: keyof AchievementItem, value: string) => void;
   onLanguageChange?: (index: number, field: keyof LanguageItem, value: string) => void;
+  // Add/Delete callbacks (passed from App.tsx)
+  onAddExperience?: () => void;
+  onDeleteExperience?: (index: number) => void;
+  onAddEducation?: () => void;
+  onDeleteEducation?: (index: number) => void;
+  onAddCert?: () => void;
+  onDeleteCert?: (index: number) => void;
+  onAddAchievement?: () => void;
+  onDeleteAchievement?: (index: number) => void;
+  onAddLanguage?: () => void;
+  onDeleteLanguage?: (index: number) => void;
+  // Layout settings
+  onLayoutSettingsChange?: (patch: Partial<any>) => void;
 }
 
 // ─── Shared editable span ────────────────────────────────────────────────────
@@ -154,6 +180,154 @@ const WorkLink: React.FC<{ url?: string; brandColor?: string }> = ({ url, brandC
   );
 };
 
+// ─── Achievement Icon Rendering ────────────────────────────────────────────────
+export const renderAchievementIcon = (iconName?: string, accentColor?: string, className = "w-3 h-3 flex-shrink-0 mt-0.5") => {
+  const color = accentColor || "#314855";
+  const bgStyle = {
+    backgroundColor: `${color}15`,
+    padding: '4px',
+    borderRadius: '6px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: color,
+    width: '20px',
+    height: '20px',
+    flexShrink: 0
+  };
+  const fill = `${color}cc`;
+  let iconNode: React.ReactNode;
+  switch (iconName) {
+    case 'star':    iconNode = <Star className="w-3.5 h-3.5" fill={fill} stroke={color} strokeWidth={2} />; break;
+    case 'award':   iconNode = <Award className="w-3.5 h-3.5" fill={fill} stroke={color} strokeWidth={2} />; break;
+    case 'trophy':  iconNode = <Trophy className="w-3.5 h-3.5" fill={fill} stroke={color} strokeWidth={2} />; break;
+    case 'target':  iconNode = <Target className="w-3.5 h-3.5" stroke={color} strokeWidth={2.5} />; break;
+    case 'terminal':iconNode = <Terminal className="w-3.5 h-3.5" stroke={color} strokeWidth={2.5} />; break;
+    case 'flag':    iconNode = <Flag className="w-3.5 h-3.5" fill={fill} stroke={color} strokeWidth={2} />; break;
+    case 'check':   iconNode = <Check className="w-3.5 h-3.5" stroke={color} strokeWidth={3} />; break;
+    default:        iconNode = <Star className="w-3.5 h-3.5" fill={fill} stroke={color} strokeWidth={2} />;
+  }
+  return (
+    <span style={bgStyle} className={`${className} !mt-0 !p-1 inline-flex items-center justify-center`}>
+      {iconNode}
+    </span>
+  );
+};
+
+export const getDynamicAchievementIcon = (idx: number, title: string, customIcon?: string, accentColor?: string, className = "w-3 h-3 flex-shrink-0 mt-0.5") => {
+  const validIcons = ['star', 'award', 'trophy', 'target', 'terminal', 'flag', 'check'];
+  if (customIcon && validIcons.includes(customIcon)) return renderAchievementIcon(customIcon, accentColor, className);
+  const t = title.toLowerCase();
+  if (t.includes('rockstar') || t.includes('award') || t.includes('first') || t.includes('place') || t.includes('won')) return renderAchievementIcon('trophy', accentColor, className);
+  if (t.includes('medal') || t.includes('bronze') || t.includes('silver') || t.includes('gold') || t.includes('academic') || t.includes('score')) return renderAchievementIcon('award', accentColor, className);
+  if (t.includes('hackathon') || t.includes('participat') || t.includes('world') || t.includes('smart')) return renderAchievementIcon('target', accentColor, className);
+  if (t.includes('digitalocean') || t.includes('github') || t.includes('open source') || t.includes('event') || t.includes('code') || t.includes('hacktoberfest')) return renderAchievementIcon('terminal', accentColor, className);
+  switch (idx % 4) {
+    case 0: return renderAchievementIcon('trophy', accentColor, className);
+    case 1: return renderAchievementIcon('award', accentColor, className);
+    case 2: return renderAchievementIcon('target', accentColor, className);
+    default: return renderAchievementIcon('terminal', accentColor, className);
+  }
+};
+
+const AchievementIconPicker: React.FC<{
+  currentIcon: string;
+  onChange: (icon: string) => void;
+  isEditable: boolean;
+  accentColor?: string;
+}> = ({ currentIcon, onChange, isEditable, accentColor }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [open]);
+  const icons = ['star', 'award', 'trophy', 'target', 'terminal', 'flag', 'check'] as const;
+  if (!isEditable) return getDynamicAchievementIcon(0, '', currentIcon, accentColor, "w-3 h-3 flex-shrink-0 mt-0.5");
+  return (
+    <div className="relative inline-block edit-only" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="hover:scale-125 transition flex-shrink-0 mt-0.5 flex items-center justify-center border border-slate-200 bg-slate-50 hover:bg-slate-100 p-0.5 rounded cursor-pointer"
+        type="button" title="Change Icon"
+      >
+        {getDynamicAchievementIcon(0, '', currentIcon, accentColor, "w-3.5 h-3.5")}
+      </button>
+      {open && (
+        <div className="absolute left-0 top-6 z-40 bg-white border border-slate-200 shadow-lg rounded-md p-1.5 flex gap-1 edit-only">
+          {icons.map(icon => (
+            <button key={icon} type="button"
+              onClick={() => { onChange(icon); setOpen(false); }}
+              className={`p-1 hover:bg-slate-100 rounded cursor-pointer transition-colors ${currentIcon === icon ? 'bg-slate-100' : ''}`}
+            >
+              {getDynamicAchievementIcon(0, '', icon, accentColor, "w-3.5 h-3.5")}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Project Icon Rendering ────────────────────────────────────────────────────
+export const renderProjectIcon = (iconName?: string, accentColor?: string, className = "w-3 h-3 flex-shrink-0 mt-0.5") => {
+  const color = accentColor || "#314855";
+  const bgStyle = {
+    backgroundColor: `${color}15`,
+    padding: '4px',
+    borderRadius: '6px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: color,
+    width: '20px',
+    height: '20px',
+    flexShrink: 0
+  };
+  const fill = `${color}cc`;
+  let iconNode: React.ReactNode;
+  switch (iconName) {
+    case 'briefcase': iconNode = <Briefcase className="w-3.5 h-3.5" fill={fill} stroke={color} strokeWidth={2} />; break;
+    case 'code':      iconNode = <Code className="w-3.5 h-3.5" stroke={color} strokeWidth={2.5} />; break;
+    case 'book':      iconNode = <Book className="w-3.5 h-3.5" fill={fill} stroke={color} strokeWidth={2} />; break;
+    case 'globe':     iconNode = <Globe className="w-3.5 h-3.5" stroke={color} strokeWidth={2.5} />; break;
+    case 'star':      iconNode = <Star className="w-3.5 h-3.5" fill={fill} stroke={color} strokeWidth={2} />; break;
+    case 'award':     iconNode = <Award className="w-3.5 h-3.5" fill={fill} stroke={color} strokeWidth={2} />; break;
+    case 'trophy':    iconNode = <Trophy className="w-3.5 h-3.5" fill={fill} stroke={color} strokeWidth={2} />; break;
+    case 'target':    iconNode = <Target className="w-3.5 h-3.5" stroke={color} strokeWidth={2.5} />; break;
+    case 'terminal':  iconNode = <Terminal className="w-3.5 h-3.5" stroke={color} strokeWidth={2.5} />; break;
+    case 'flag':      iconNode = <Flag className="w-3.5 h-3.5" fill={fill} stroke={color} strokeWidth={2} />; break;
+    case 'check':     iconNode = <Check className="w-3.5 h-3.5" stroke={color} strokeWidth={3} />; break;
+    default:          iconNode = <Briefcase className="w-3.5 h-3.5" fill={fill} stroke={color} strokeWidth={2} />;
+  }
+  return (
+    <span style={bgStyle} className={`${className} !mt-0 !p-1 inline-flex items-center justify-center`}>
+      {iconNode}
+    </span>
+  );
+};
+
+export const getDynamicProjectIcon = (idx: number, title: string, customIcon?: string, accentColor?: string, className = "w-3 h-3 flex-shrink-0 mt-0.5") => {
+  const validIcons = ['briefcase', 'code', 'book', 'globe', 'star', 'award', 'trophy', 'target', 'terminal', 'flag', 'check'];
+  if (customIcon && validIcons.includes(customIcon)) return renderProjectIcon(customIcon, accentColor, className);
+  const t = title.toLowerCase();
+  if (t.includes('web') || t.includes('app') || t.includes('site') || t.includes('portfolio') || t.includes('online')) return renderProjectIcon('globe', accentColor, className);
+  if (t.includes('code') || t.includes('software') || t.includes('program') || t.includes('develop') || t.includes('system')) return renderProjectIcon('code', accentColor, className);
+  if (t.includes('cert') || t.includes('course') || t.includes('degree') || t.includes('train') || t.includes('learn')) return renderProjectIcon('book', accentColor, className);
+  if (t.includes('work') || t.includes('job') || t.includes('company') || t.includes('client') || t.includes('consult')) return renderProjectIcon('briefcase', accentColor, className);
+  switch (idx % 4) {
+    case 0: return renderProjectIcon('briefcase', accentColor, className);
+    case 1: return renderProjectIcon('code', accentColor, className);
+    case 2: return renderProjectIcon('book', accentColor, className);
+    default: return renderProjectIcon('globe', accentColor, className);
+  }
+};
+
+
 const SkillsEditor: React.FC<{
   value: string;
   isEditable: boolean;
@@ -164,22 +338,23 @@ const SkillsEditor: React.FC<{
   badgeStyle: (i: number) => React.CSSProperties;
   defaultBadgeStyle?: React.CSSProperties;
   className?: string;
-  editClassName?: string;
   skillsStyle?: 'chips' | 'normal';
-}> = ({ value, isEditable, ec, onSave, accentColor2, brandColor, badgeStyle, defaultBadgeStyle, className = '', editClassName = '', skillsStyle = 'chips' }) => {
-  const [editing, setEditing] = useState(false);
+}> = ({ value, isEditable, ec, onSave, accentColor2, brandColor, badgeStyle, defaultBadgeStyle, className = '', skillsStyle = 'chips' }) => {
+  const [focusedSkillIdx, setFocusedSkillIdx] = useState<number | null>(null);
   const skillsList = value ? value.split(',').map(s => s.trim()).filter(Boolean) : [];
 
+  // Focus a newly added "New Skill" chip
   useEffect(() => {
-    if (editing) {
-      const el = document.querySelector('.skills-editable-area[contenteditable="true"]') as HTMLElement | null;
+    if (!isEditable) return;
+    const idx = skillsList.length - 1;
+    if (idx >= 0 && skillsList[idx] === 'New Skill') {
+      const el = document.querySelector(`[data-skill-index="${idx}"]`) as HTMLElement | null;
       if (el) {
         el.focus();
         try {
           const range = document.createRange();
           const sel = window.getSelection();
           range.selectNodeContents(el);
-          range.collapse(false);
           sel?.removeAllRanges();
           sel?.addRange(range);
         } catch (err) {
@@ -187,7 +362,9 @@ const SkillsEditor: React.FC<{
         }
       }
     }
-  }, [editing]);
+  }, [skillsList.length, isEditable]);
+
+  // Focus raw editable area when editing mode is switched on — removed (no separate mode now)
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     e.dataTransfer.setData('text/plain', index.toString());
@@ -230,11 +407,11 @@ const SkillsEditor: React.FC<{
 
   if (!isEditable) {
     return (
-      <div className={`flex flex-wrap gap-x-2 gap-y-1.5 text-xs ${className}`}>
+      <div className={`flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs ${className}`}>
         {skillsList.map((s, i) => {
           const baseStyle = accentColor2 ? badgeStyle(i) : fallbackDefaultStyle;
           return (
-            <span key={i} className="inline-block align-middle text-center px-2.5 rounded font-medium border"
+            <span key={i} className="inline-block align-middle text-center px-2 rounded font-medium border"
               style={{ ...baseStyle, height: '1.8em', lineHeight: '1.8em', paddingTop: 0, paddingBottom: 0 }}>
               {s}
             </span>
@@ -246,54 +423,595 @@ const SkillsEditor: React.FC<{
 
   return (
     <div className="w-full">
-      {editing ? (
-        <div className="space-y-1">
-          <div className="text-[9px] text-brand-accent font-semibold select-none">Editing skills (comma-separated):</div>
-          <E
-            tag="div"
-            value={value}
-            isEditable={true}
-            editableClass={`${ec} skills-editable-area`}
-            className={`text-xs p-2 bg-slate-50 border border-dashed border-slate-200 text-slate-800 w-full ${editClassName}`}
-            onSave={(v) => {
-              onSave(v);
-              setEditing(false);
-            }}
-          />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-1 w-full">
-          <div className={`flex flex-wrap gap-x-2 gap-y-1.5 text-xs w-full ${className}`}>
-            {skillsList.length > 0 ? (
-              skillsList.map((s, i) => {
-                const baseStyle = accentColor2 ? badgeStyle(i) : fallbackDefaultStyle;
-                return (
-                  <span
-                    key={i}
-                    draggable={true}
-                    onDragStart={(e) => handleDragStart(e, i)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => handleDrop(e, i)}
-                    className="inline-block align-middle text-center px-2.5 rounded font-medium border select-none cursor-grab active:cursor-grabbing hover:scale-105 hover:border-slate-400 transition-all duration-150"
-                    style={{ ...baseStyle, height: '1.8em', lineHeight: '1.8em', paddingTop: 0, paddingBottom: 0 }}
-                    title="Drag to reorder"
-                  >
-                    {s}
-                  </span>
-                );
-              })
-            ) : (
-              <span className="text-slate-400 italic select-none">No skills added...</span>
-            )}
+      <div className={`flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs w-full ${className}`}>
+        {skillsList.map((s, i) => {
+          const baseStyle = accentColor2 ? badgeStyle(i) : fallbackDefaultStyle;
+          return (
+            <span
+              key={i}
+              draggable={focusedSkillIdx === null}
+              onDragStart={(e) => handleDragStart(e, i)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => handleDrop(e, i)}
+              className="inline-flex items-center gap-0.5 pl-2 pr-1 rounded font-medium border cursor-text hover:border-slate-400 focus-within:border-teal-400 transition-all duration-150 relative group/chip"
+              style={{ ...baseStyle, height: '1.8em', lineHeight: '1.8em', paddingTop: 0, paddingBottom: 0 }}
+            >
+              <span
+                contentEditable={true}
+                suppressContentEditableWarning={true}
+                className="outline-none px-0.5 rounded min-w-[20px]"
+                onFocus={() => setFocusedSkillIdx(i)}
+                onBlur={(e) => {
+                  setFocusedSkillIdx(null);
+                  const text = e.currentTarget.textContent?.trim() || '';
+                  const list = [...skillsList];
+                  if (text === '') {
+                    list.splice(i, 1);
+                  } else if (text !== s) {
+                    list[i] = text;
+                  }
+                  onSave(list.join(', '));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const text = e.currentTarget.textContent?.trim() || '';
+                    const list = [...skillsList];
+                    if (text === '') {
+                      list.splice(i, 1);
+                    } else {
+                      list[i] = text;
+                    }
+                    list.splice(i + 1, 0, 'New Skill');
+                    onSave(list.join(', '));
+                    setTimeout(() => {
+                      const nextEl = document.querySelector(`[data-skill-index="${i + 1}"]`) as HTMLElement | null;
+                      if (nextEl) {
+                        nextEl.focus();
+                        try {
+                          const range = document.createRange();
+                          const sel = window.getSelection();
+                          range.selectNodeContents(nextEl);
+                          sel?.removeAllRanges();
+                          sel?.addRange(range);
+                        } catch {}
+                      }
+                    }, 50);
+                  } else if (e.key === 'Backspace') {
+                    const text = e.currentTarget.textContent?.trim() || '';
+                    if (text === '') {
+                      e.preventDefault();
+                      const list = [...skillsList];
+                      list.splice(i, 1);
+                      onSave(list.join(', '));
+                    }
+                  }
+                }}
+                data-skill-index={i}
+                title="Click to edit · Enter to add next · Backspace on empty to delete"
+              >
+                {s}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const list = [...skillsList];
+                  list.splice(i, 1);
+                  onSave(list.join(', '));
+                }}
+                className="text-current bg-black/20 hover:bg-black/40 rounded-full w-3.5 h-3.5 flex items-center justify-center opacity-0 group-hover/chip:opacity-100 transition-opacity font-bold text-[9px] cursor-pointer ml-0.5 flex-shrink-0"
+                title="Remove skill"
+                type="button"
+              >
+                ×
+              </button>
+            </span>
+          );
+        })}
+
+        {/* Inline "+" button to add a new skill directly */}
+        <button
+          type="button"
+          onClick={() => {
+            const list = [...skillsList, 'New Skill'];
+            onSave(list.join(', '));
+          }}
+          className="edit-only inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 hover:bg-teal-100 text-slate-400 hover:text-teal-600 border border-dashed border-slate-300 hover:border-teal-400 transition-colors cursor-pointer text-[11px] font-bold flex-shrink-0"
+          title="Add skill"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── Item Logo with Upload / URL Popover ─────────────────────────────────────
+const ItemLogo: React.FC<{
+  logo?: string;
+  brandColor: string;
+  isEditable?: boolean;
+  onLogoChange?: (logo: string) => void;
+  placeholderIcon?: React.ReactNode;
+}> = ({ logo, brandColor, isEditable, onLogoChange, placeholderIcon }) => {
+  const [showInput, setShowInput] = useState(false);
+  const [url, setUrl] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showInput) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setShowInput(false);
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [showInput]);
+
+  const logoEl = logo ? (
+    <img src={logo} alt="logo" className="w-6 h-6 rounded object-contain bg-white border border-slate-100 flex-shrink-0" />
+  ) : (
+    <span className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0" style={{ background: `${brandColor}18`, color: brandColor }}>
+      {placeholderIcon || <Briefcase className="w-3.5 h-3.5" />}
+    </span>
+  );
+
+  if (!isEditable) return logoEl;
+
+  return (
+    <div className="relative flex-shrink-0 group/logo edit-only" ref={ref}>
+      <button
+        type="button"
+        onClick={() => { setUrl(logo || ''); setShowInput(!showInput); }}
+        className="flex items-center justify-center w-6 h-6 rounded overflow-hidden hover:ring-2 ring-brand-accent transition cursor-pointer"
+        title="Set company/school logo"
+      >
+        {logoEl}
+      </button>
+
+      {showInput && (
+        <div className="absolute left-0 top-8 z-50 bg-white border border-slate-200 shadow-xl rounded-lg p-3 w-64 flex flex-col gap-2 edit-only">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Company / School Logo</p>
+          <div className="flex gap-1.5">
+            <input
+              type="text"
+              className="flex-1 text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-brand-accent"
+              placeholder="Paste image URL..."
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { onLogoChange?.(url.trim()); setShowInput(false); }
+              }}
+            />
+            <button
+              type="button"
+              className="text-xs bg-teal-500 hover:bg-teal-600 text-white px-2 py-1 rounded font-semibold cursor-pointer"
+              onClick={() => { onLogoChange?.(url.trim()); setShowInput(false); }}
+            >
+              Set
+            </button>
           </div>
-          <button
-            onClick={() => setEditing(true)}
-            className="self-start text-[10px] text-brand-accent hover:underline cursor-pointer font-semibold mt-1"
-          >
-            Edit List
-          </button>
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <span className="inline-flex items-center gap-1 text-xs text-brand-accent hover:underline font-semibold cursor-pointer">
+              <Upload className="w-3 h-3" /> Upload Image
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  const dataUrl = ev.target?.result as string;
+                  onLogoChange?.(dataUrl);
+                  setShowInput(false);
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </label>
+          {logo && (
+            <button
+              type="button"
+              className="text-[10px] text-red-400 hover:text-red-600 hover:underline cursor-pointer text-left"
+              onClick={() => { onLogoChange?.(''); setShowInput(false); }}
+            >
+              Remove logo
+            </button>
+          )}
         </div>
       )}
+    </div>
+  );
+};
+
+// ─── Item Wrapper: hover toolbar per resume item ───────────────────────────────
+interface ItemWrapperProps {
+  sectionId: string;
+  index: number;
+  totalItems: number;
+  isEditable: boolean;
+  onDelete: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  children: React.ReactNode;
+  // logo props
+  logo?: string;
+  onLogoChange?: (logo: string) => void;
+  showLogo?: boolean;
+  placeholderIcon?: React.ReactNode;
+  brandColor?: string;
+}
+
+const ItemWrapper: React.FC<ItemWrapperProps> = ({
+  sectionId, index, totalItems, isEditable, onDelete, onMoveUp, onMoveDown, children,
+  logo, onLogoChange, showLogo, placeholderIcon, brandColor = '#314855'
+}) => {
+  const context = useContext(ActiveSectionContext);
+  const [showSettings, setShowSettings] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const itemId = `${sectionId}-${index}`;
+  const isItemActive = context?.activeItemId === itemId;
+
+  useEffect(() => {
+    if (!showSettings) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setShowSettings(false);
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [showSettings]);
+
+  if (!isEditable) return <>{children}</>;
+
+  const handleMoveUp = onMoveUp ?? (context?.handleMoveItemUpDown ? () => context.handleMoveItemUpDown(sectionId, index, 'up') : undefined);
+  const handleMoveDown = onMoveDown ?? (context?.handleMoveItemUpDown ? () => context.handleMoveItemUpDown(sectionId, index, 'down') : undefined);
+
+  const handleItemClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    context?.setActiveSectionId(sectionId);
+    context?.setActiveItemId(itemId);
+  };
+
+  return (
+    <div
+      className={`relative group/item rounded transition-all duration-200 ${isItemActive ? 'p-2 -m-2 item-active' : 'p-0'}`}
+      onClick={handleItemClick}
+    >
+      {children}
+
+      {/* Per-item floating toolbar */}
+      <div className="edit-only absolute -top-2 right-0 flex items-center gap-0.5 bg-white border border-slate-200 shadow-md rounded-md px-1 py-0.5 opacity-0 group-hover/item:opacity-100 transition-all duration-150 z-30">
+        {index > 0 && handleMoveUp && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); handleMoveUp(); }}
+            className="p-0.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded cursor-pointer transition"
+            title="Move Up"
+          >
+            <ArrowUp className="w-3 h-3" />
+          </button>
+        )}
+        {index < totalItems - 1 && handleMoveDown && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); handleMoveDown(); }}
+            className="p-0.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded cursor-pointer transition"
+            title="Move Down"
+          >
+            <ArrowDown className="w-3 h-3" />
+          </button>
+        )}
+
+        {/* Settings gear (with logo upload inside) */}
+        {showLogo && onLogoChange && (
+          <div className="relative" ref={settingsRef}>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
+              className={`p-0.5 hover:bg-slate-100 rounded cursor-pointer transition ${showSettings ? 'bg-slate-100 text-teal-600' : 'text-slate-400 hover:text-slate-700'}`}
+              title="Settings"
+            >
+              <Settings className="w-3 h-3" />
+            </button>
+            {showSettings && (
+              <div className="absolute right-0 top-5 z-50 bg-white border border-slate-200 shadow-xl rounded-lg p-3 w-64 flex flex-col gap-2.5 edit-only">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Logo</p>
+                <ItemLogo
+                  logo={logo}
+                  brandColor={brandColor}
+                  isEditable={true}
+                  onLogoChange={onLogoChange}
+                  placeholderIcon={placeholderIcon}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="p-0.5 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded cursor-pointer transition"
+          title="Delete"
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── Section Wrapper: hover toolbar per section ─────────────────────────────────
+interface SectionWrapperProps {
+  id: string;
+  title: string;
+  isEditable: boolean;
+  align: 'left' | 'center' | 'right' | 'justify' | undefined;
+  onAlignChange?: (align: 'left' | 'center' | 'right' | 'justify') => void;
+  onAddEntry?: () => void;
+  onMoveLeft?: () => void;
+  onMoveRight?: () => void;
+  onDeleteSection?: () => void;
+  isActive?: boolean;
+  onSelect?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  children: React.ReactNode;
+  // skills settings
+  skillsStyle?: 'chips' | 'normal';
+  onSkillsStyleChange?: (style: 'chips' | 'normal') => void;
+  skillsValue?: string;
+  onSkillsValueChange?: (val: string) => void;
+  // generic layout settings
+  layoutSettings?: any;
+  onLayoutSettingsChange?: (patch: Partial<any>) => void;
+}
+
+const SectionWrapper: React.FC<SectionWrapperProps> = ({
+  id, title, isEditable, align, onAlignChange, onAddEntry, onMoveLeft, onMoveRight, onDeleteSection,
+  isActive: propIsActive, onSelect: propOnSelect, onMoveUp: propOnMoveUp, onMoveDown: propOnMoveDown, children,
+  skillsStyle, onSkillsStyleChange, skillsValue, onSkillsValueChange,
+  layoutSettings, onLayoutSettingsChange
+}) => {
+  const context = useContext(ActiveSectionContext);
+  const isActive = propIsActive ?? (context?.activeSectionId === id);
+  const onSelect = propOnSelect ?? (() => context?.setActiveSectionId(id));
+  const onMoveUp = propOnMoveUp ?? (context?.handleMoveSectionUpDown ? () => context.handleMoveSectionUpDown(id, 'up') : undefined);
+  const onMoveDown = propOnMoveDown ?? (context?.handleMoveSectionUpDown ? () => context.handleMoveSectionUpDown(id, 'down') : undefined);
+
+  const [showSettings, setShowSettings] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showSettings) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setShowSettings(false);
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [showSettings]);
+
+  if (!isEditable) return <>{children}</>;
+
+  const isSkills = id === 'skills';
+  const hasSettings = !!onAlignChange ||
+    (isSkills && !!onSkillsStyleChange && !!onSkillsValueChange) ||
+    (!!layoutSettings && !!onLayoutSettingsChange && ['achievements', 'certs', 'experience', 'education', 'languages'].includes(id));
+
+  return (
+    <div
+      onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
+      className={`relative group/section rounded transition-all duration-200 ${
+        isActive
+          ? 'bg-white z-[30] p-2 -m-2 section-active'
+          : 'border border-dashed border-transparent hover:border-gray-200 hover:bg-slate-50/30 p-2 -m-2'
+      }`}
+    >
+      {children}
+
+      {/* Floating centered section toolbar */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`absolute -top-10 left-1/2 -translate-x-1/2 transition-all flex items-center gap-0.5 bg-white border border-slate-200 shadow-lg rounded-lg px-2 py-1 z-40 edit-only ${
+          isActive ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/section:opacity-100 group-hover/section:visible'
+        }`}
+      >
+        {onAddEntry && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onAddEntry(); }}
+            className="flex items-center gap-1 px-2.5 py-1 bg-teal-500 hover:bg-teal-600 text-white font-bold rounded text-[10px] cursor-pointer shadow-sm transition"
+            type="button"
+            title={id === 'skills' ? 'Add Skill' : `Add entry to ${title}`}
+          >
+            <Plus className="w-3 h-3" /> {id === 'skills' ? 'Add Skill' : 'Add'}
+          </button>
+        )}
+
+        {onMoveUp && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
+            className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded cursor-pointer transition flex items-center justify-center"
+            type="button" title="Move Up"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 rotate-90" />
+          </button>
+        )}
+
+        {onMoveDown && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
+            className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded cursor-pointer transition flex items-center justify-center"
+            type="button" title="Move Down"
+          >
+            <ArrowRight className="w-3.5 h-3.5 rotate-90" />
+          </button>
+        )}
+
+        {onMoveLeft && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveLeft(); }}
+            className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded cursor-pointer transition flex items-center justify-center"
+            type="button" title="Move Left"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {onMoveRight && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveRight(); }}
+            className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded cursor-pointer transition flex items-center justify-center"
+            type="button" title="Move Right"
+          >
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {hasSettings && (
+          <div className="relative" ref={ref}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
+              className={`p-1 hover:bg-slate-100 rounded cursor-pointer transition flex items-center justify-center ${showSettings ? 'bg-slate-100 text-teal-600' : 'text-slate-500 hover:text-slate-800'}`}
+              type="button" title="Section Settings"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+
+            {showSettings && (
+              <div className="absolute right-0 top-7 z-50 bg-white border border-slate-200 shadow-xl rounded-lg p-3 flex flex-col gap-2.5 edit-only w-64">
+                {onAlignChange && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Alignment</span>
+                    <div className="flex gap-1">
+                      {(['left', 'center', 'right', 'justify'] as const).map(alignVal => (
+                        <button key={alignVal} type="button"
+                          onClick={(e) => { e.stopPropagation(); onAlignChange(alignVal); setShowSettings(false); }}
+                          className={`p-1 hover:bg-slate-100 rounded cursor-pointer transition flex items-center justify-center ${align === alignVal ? 'bg-slate-100 text-teal-500 font-bold' : 'text-slate-500'}`}
+                        >
+                          {alignVal === 'left' && <AlignLeft className="w-3.5 h-3.5" />}
+                          {alignVal === 'center' && <AlignCenter className="w-3.5 h-3.5" />}
+                          {alignVal === 'right' && <AlignRight className="w-3.5 h-3.5" />}
+                          {alignVal === 'justify' && <AlignJustify className="w-3.5 h-3.5" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {isSkills && onSkillsStyleChange && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Layout Style</span>
+                    <div className="flex gap-1.5">
+                      {(['chips', 'normal'] as const).map(style => (
+                        <button key={style} type="button"
+                          onClick={(e) => { e.stopPropagation(); onSkillsStyleChange(style); }}
+                          className={`flex-1 px-2 py-1 rounded text-[10px] font-semibold border cursor-pointer transition ${skillsStyle === style ? 'bg-teal-500 text-white border-teal-500' : 'text-slate-500 border-slate-200 hover:border-slate-400'}`}
+                        >
+                          {style === 'chips' ? 'Chips' : 'List'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {layoutSettings && onLayoutSettingsChange && id === 'experience' && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
+                    {[
+                      { key: 'showExperienceLogo', label: 'Show Company Logo' },
+                      { key: 'showExperienceLocation', label: 'Show Location' },
+                    ].map(({ key, label }) => (
+                      <label key={key} className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
+                        <input type="checkbox"
+                          checked={layoutSettings[key] ?? true}
+                          onChange={(e) => onLayoutSettingsChange({ [key]: e.target.checked })}
+                          className="rounded"
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {layoutSettings && onLayoutSettingsChange && id === 'education' && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
+                    {[
+                      { key: 'showEducationLogo', label: 'Show School Logo' },
+                      { key: 'showEducationGpa', label: 'Show GPA Badge' },
+                    ].map(({ key, label }) => (
+                      <label key={key} className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
+                        <input type="checkbox"
+                          checked={layoutSettings[key] ?? true}
+                          onChange={(e) => onLayoutSettingsChange({ [key]: e.target.checked })}
+                          className="rounded"
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {layoutSettings && onLayoutSettingsChange && id === 'certs' && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
+                      <input type="checkbox"
+                        checked={layoutSettings.showProjectIcon ?? true}
+                        onChange={(e) => onLayoutSettingsChange({ showProjectIcon: e.target.checked })}
+                        className="rounded"
+                      />
+                      Show Project Icons
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
+                      <input type="checkbox"
+                        checked={layoutSettings.showProjectDesc ?? true}
+                        onChange={(e) => onLayoutSettingsChange({ showProjectDesc: e.target.checked })}
+                        className="rounded"
+                      />
+                      Show Project Description
+                    </label>
+                  </div>
+                )}
+
+                {layoutSettings && onLayoutSettingsChange && id === 'achievements' && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
+                      <input type="checkbox"
+                        checked={layoutSettings.showAchievementIcons ?? true}
+                        onChange={(e) => onLayoutSettingsChange({ showAchievementIcons: e.target.checked })}
+                        className="rounded"
+                      />
+                      Show Icons
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
+                      <input type="checkbox"
+                        checked={layoutSettings.showAchievementDesc ?? true}
+                        onChange={(e) => onLayoutSettingsChange({ showAchievementDesc: e.target.checked })}
+                        className="rounded"
+                      />
+                      Show Description
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {onDeleteSection && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDeleteSection(); }}
+            className="p-1 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded cursor-pointer transition flex items-center justify-center"
+            type="button" title="Delete Section"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 };
@@ -524,7 +1242,13 @@ const LanguageBubbles: React.FC<{ count: number; activeColor: string }> = ({ cou
 export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   state, isEditable = false,
   onFieldChange, onExperienceChange, onEducationChange,
-  onCertChange, onAchievementChange, onLanguageChange
+  onCertChange, onAchievementChange, onLanguageChange,
+  onAddExperience, onDeleteExperience,
+  onAddEducation, onDeleteEducation,
+  onAddCert: _onAddCert, onDeleteCert: _onDeleteCert,
+  onAddAchievement: _onAddAchievement, onDeleteAchievement: _onDeleteAchievement,
+  onAddLanguage: _onAddLanguage, onDeleteLanguage: _onDeleteLanguage,
+  onLayoutSettingsChange,
 }) => {
   const {
     name, subtitle, phone, email, linkedin, location, avatar,
@@ -554,6 +1278,54 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
 
   const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
   const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
+
+  // ─── Active section / item state (Enhance-CV three-tier backdrop system) ──
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const [activeItemId, setActiveItemId] = useState<string | null>(null);
+
+  const handleMoveItemUpDown = (sectionId: string, index: number, dir: 'up' | 'down') => {
+    const newIdx = dir === 'up' ? index - 1 : index + 1;
+    const swap = (arr: unknown[]): unknown[] => {
+      if (newIdx < 0 || newIdx >= arr.length) return arr;
+      const a = [...arr];
+      [a[index], a[newIdx]] = [a[newIdx], a[index]];
+      return a;
+    };
+    if (sectionId === 'experience') onFieldChange?.('resumeExperience', swap(resumeExperience) as typeof resumeExperience);
+    else if (sectionId === 'education') onFieldChange?.('resumeEducation', swap(resumeEducation) as typeof resumeEducation);
+    else if (sectionId === 'certs') onFieldChange?.('resumeCerts', swap(resumeCerts ?? []) as typeof resumeCerts);
+    else if (sectionId === 'achievements') onFieldChange?.('resumeAchievements', swap(resumeAchievements ?? []) as typeof resumeAchievements);
+    else if (sectionId === 'languages') onFieldChange?.('resumeLanguages', swap(resumeLanguages ?? []) as typeof resumeLanguages);
+  };
+
+  const handleMoveSectionUpDown = (id: string, dir: 'up' | 'down') => {
+    const leftCol = [...(designerLeftSections ?? [])];
+    const rightCol = [...(designerRightSections ?? [])];
+    const inLeft = leftCol.includes(id);
+    const col = inLeft ? leftCol : rightCol;
+    const colIdx = col.indexOf(id);
+    const newColIdx = dir === 'up' ? colIdx - 1 : colIdx + 1;
+    if (newColIdx < 0 || newColIdx >= col.length) return;
+    [col[colIdx], col[newColIdx]] = [col[newColIdx], col[colIdx]];
+    onFieldChange?.('layoutSettings', {
+      ...layoutSettings,
+      ...(inLeft ? { designerLeftSections: col } : { designerRightSections: col })
+    });
+  };
+
+  const sectionContextValue = {
+    activeSectionId, setActiveSectionId,
+    activeItemId, setActiveItemId,
+    handleMoveSectionUpDown,
+    handleMoveItemUpDown,
+  };
+
+  // Class applied to pdf-sheet: drives the three-tier CSS backdrop
+  const sheetActiveClass = isEditable
+    ? (activeItemId ? 'has-active-item' : activeSectionId ? 'has-active-section' : '')
+    : '';
+
+  const clearActive = () => { setActiveSectionId(null); setActiveItemId(null); };
 
   const handleSectionDragStart = (e: React.DragEvent, sectionId: string) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -698,7 +1470,7 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   // accentColor2 badge style — falls back to brandColor if not set
   const badgeStyle = (i: number): React.CSSProperties => accentColor2
     ? { background: `${i % 2 === 0 ? accentColor2 : brandColor}22`, color: i % 2 === 0 ? accentColor2 : brandColor, borderColor: `${i % 2 === 0 ? accentColor2 : brandColor}44` }
-    : { background: undefined };
+    : { background: `${brandColor}18`, color: brandColor, borderColor: `${brandColor}30` };
 
   // Shared props for BottomSections — avoids repeating at every call site
   const bottomProps = {
@@ -707,13 +1479,17 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
     certsAlign, achievementsAlign
   };
 
+  // ─── Render the correct template ────────────────────────────────────────────
+  const renderTemplate = (): React.ReactElement | null => {
+
   // ═══════════════════════════════════════════════════════════════════════════
   // 1. NAVY ELEGANT
   // ═══════════════════════════════════════════════════════════════════════════
   if (template === 'navy') {
     const H = 'text-sm font-bold uppercase tracking-wider border-b pb-1 mb-2';
     return (
-      <div className="pdf-sheet" style={sheetStyle} id="resume-sheet">
+      <div className={`pdf-sheet ${sheetActiveClass}`} style={sheetStyle} id="resume-sheet"
+        onClick={(e) => { if (e.target === e.currentTarget && isEditable) clearActive(); }}>
         <TemplateHeader {...headerProps} />
 
         {(resumeSummary || isEditable) && (
@@ -741,51 +1517,91 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
           </section>
         )}
 
-        {resumeExperience && resumeExperience.length > 0 && (
-          <section style={sec}>
-            <h3 className={H} style={{ color: brandColor, borderColor: `${brandColor}40` }}>Professional Experience</h3>
-            <div className="space-y-4">
-              {resumeExperience.map((exp, idx) => (
-                <div key={idx} className="text-xs">
-                  <div className="flex justify-between font-bold text-slate-800">
-                    <E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
-                    <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="text-slate-500 font-normal" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
-                  </div>
-                  <div className="flex justify-between text-slate-600 italic mb-1.5">
-                    <span className="flex items-center gap-1">
-                      <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
-                      <WorkLink url={exp.url} brandColor={brandColor} />
-                    </span>
-                    <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
-                  </div>
-                  <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                    onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
-                    bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
-                </div>
-              ))}
-            </div>
-          </section>
+        {(resumeExperience && resumeExperience.length > 0 || isEditable) && (
+          <SectionWrapper
+            id="experience" title="Professional Experience" isEditable={isEditable}
+            align={experienceAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ experienceAlign: a })}
+            onAddEntry={onAddExperience}
+            layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
+          >
+            <section style={sec}>
+              <h3 className={H} style={{ color: brandColor, borderColor: `${brandColor}40` }}>Professional Experience</h3>
+              <div className="space-y-4">
+                {resumeExperience.map((exp, idx) => (
+                  <ItemWrapper
+                    key={idx} sectionId="experience" index={idx} totalItems={resumeExperience.length}
+                    isEditable={isEditable} onDelete={() => onDeleteExperience?.(idx)}
+                    logo={exp.logo} onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
+                    showLogo={layoutSettings?.showExperienceLogo ?? true}
+                    placeholderIcon={<Building2 className="w-3.5 h-3.5" />} brandColor={brandColor}
+                  >
+                    <div className="text-xs">
+                      <div className="flex justify-between font-bold text-slate-800">
+                        <span className="flex items-center gap-1.5">
+                          {(layoutSettings?.showExperienceLogo ?? true) && (
+                            <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
+                          )}
+                          <E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
+                        </span>
+                        <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="text-slate-500 font-normal" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
+                      </div>
+                      <div className="flex justify-between text-slate-600 italic mb-1.5">
+                        <span className="flex items-center gap-1">
+                          <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                          <WorkLink url={exp.url} brandColor={brandColor} />
+                        </span>
+                        <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
+                      </div>
+                      <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
+                        onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
+                        bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
+                    </div>
+                  </ItemWrapper>
+                ))}
+              </div>
+            </section>
+          </SectionWrapper>
         )}
 
-        {resumeEducation && resumeEducation.length > 0 && (
-          <section style={sec}>
-            <h3 className={H} style={{ color: brandColor, borderColor: `${brandColor}40` }}>Education</h3>
-            <div className="space-y-3">
-              {resumeEducation.map((edu, idx) => (
-                <div key={idx} className="text-xs">
-                  <div className="flex justify-between font-bold text-slate-800">
-                    <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
-                    <E value={edu.dates} isEditable={isEditable} editableClass={ec} className="text-slate-500 font-normal" onSave={v => onEducationChange?.(idx, 'dates', v)} />
-                  </div>
-                  <div className="flex justify-between text-slate-600 italic mb-1">
-                    <E value={edu.school} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'school', v)} />
-                    <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
-                  </div>
-                  <E tag="p" value={edu.bullets} isEditable={isEditable} editableClass={ec} className={`text-slate-700 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
-                </div>
-              ))}
-            </div>
-          </section>
+        {(resumeEducation && resumeEducation.length > 0 || isEditable) && (
+          <SectionWrapper
+            id="education" title="Education" isEditable={isEditable}
+            align={educationAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ educationAlign: a })}
+            onAddEntry={onAddEducation}
+            layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
+          >
+            <section style={sec}>
+              <h3 className={H} style={{ color: brandColor, borderColor: `${brandColor}40` }}>Education</h3>
+              <div className="space-y-3">
+                {resumeEducation.map((edu, idx) => (
+                  <ItemWrapper
+                    key={idx} sectionId="education" index={idx} totalItems={resumeEducation.length}
+                    isEditable={isEditable} onDelete={() => onDeleteEducation?.(idx)}
+                    logo={edu.logo} onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
+                    showLogo={layoutSettings?.showEducationLogo ?? true}
+                    placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} brandColor={brandColor}
+                  >
+                    <div className="text-xs">
+                      <div className="flex justify-between font-bold text-slate-800">
+                        <span className="flex items-center gap-1.5">
+                          {(layoutSettings?.showEducationLogo ?? true) && (
+                            <ItemLogo logo={edu.logo} brandColor={brandColor} placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} />
+                          )}
+                          <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
+                        </span>
+                        <E value={edu.dates} isEditable={isEditable} editableClass={ec} className="text-slate-500 font-normal" onSave={v => onEducationChange?.(idx, 'dates', v)} />
+                      </div>
+                      <div className="flex justify-between text-slate-600 italic mb-1">
+                        <E value={edu.school} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'school', v)} />
+                        <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
+                      </div>
+                      <E tag="p" value={edu.bullets} isEditable={isEditable} editableClass={ec} className={`text-slate-700 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
+                    </div>
+                  </ItemWrapper>
+                ))}
+              </div>
+            </section>
+          </SectionWrapper>
         )}
 
         <BottomSections {...bottomProps} accentColor={brandColor} headingClass={H} />
@@ -799,7 +1615,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   if (template === 'serif') {
     const H = 'text-[13px] font-bold text-center border-b pb-0.5 mb-3 uppercase tracking-widest text-slate-800';
     return (
-      <div className="pdf-sheet text-justify" style={sheetStyle} id="resume-sheet">
+      <div className={`pdf-sheet text-justify ${sheetActiveClass}`} style={sheetStyle} id="resume-sheet"
+        onClick={(e) => { if (e.target === e.currentTarget && isEditable) clearActive(); }}>
         <TemplateHeader {...headerProps} />
 
         {(resumeSummary || isEditable) && (
@@ -822,61 +1639,96 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               brandColor={brandColor}
               badgeStyle={badgeStyle}
               className="text-center font-sans"
-              editClassName="text-xs p-2 bg-slate-50 border border-dashed border-slate-200 font-sans text-center"
               skillsStyle={skillsStyle}
             />
           </section>
         )}
 
-        {resumeExperience && resumeExperience.length > 0 && (
-          <section style={sec}>
-            <h3 className={H}>Experience</h3>
-            <div className="space-y-4">
-              {resumeExperience.map((exp, idx) => (
-                <div key={idx} className="text-xs">
-                  <div className="flex justify-between font-bold text-slate-950">
-                    <span className="flex items-center gap-1">
-                      <E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
-                      <span> — </span>
-                      <E value={exp.company} isEditable={isEditable} editableClass={ec} className="font-normal italic text-slate-700" onSave={v => onExperienceChange?.(idx, 'company', v)} />
-                      <WorkLink url={exp.url} brandColor={brandColor} />
-                    </span>
-                    <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-normal font-sans text-slate-500" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
-                  </div>
-                  <div className="text-[11px] text-slate-500 italic mb-1.5 font-sans">
-                    <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
-                  </div>
-                  <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                    onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-800 leading-relaxed"
-                    bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
-                </div>
-              ))}
-            </div>
-          </section>
+        {(resumeExperience && resumeExperience.length > 0 || isEditable) && (
+          <SectionWrapper
+            id="experience" title="Experience" isEditable={isEditable}
+            align={experienceAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ experienceAlign: a })}
+            onAddEntry={onAddExperience}
+            layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
+          >
+            <section style={sec}>
+              <h3 className={H}>Experience</h3>
+              <div className="space-y-4">
+                {resumeExperience.map((exp, idx) => (
+                  <ItemWrapper
+                    key={idx} sectionId="experience" index={idx} totalItems={resumeExperience.length}
+                    isEditable={isEditable} onDelete={() => onDeleteExperience?.(idx)}
+                    logo={exp.logo} onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
+                    showLogo={layoutSettings?.showExperienceLogo ?? true}
+                    placeholderIcon={<Building2 className="w-3.5 h-3.5" />} brandColor={brandColor}
+                  >
+                    <div className="text-xs">
+                      <div className="flex justify-between font-bold text-slate-950">
+                        <span className="flex items-center gap-1.5">
+                          {(layoutSettings?.showExperienceLogo ?? true) && (
+                            <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
+                          )}
+                          <E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
+                          <span> — </span>
+                          <E value={exp.company} isEditable={isEditable} editableClass={ec} className="font-normal italic text-slate-700" onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                          <WorkLink url={exp.url} brandColor={brandColor} />
+                        </span>
+                        <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-normal font-sans text-slate-500" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
+                      </div>
+                      <div className="text-[11px] text-slate-500 italic mb-1.5 font-sans">
+                        <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
+                      </div>
+                      <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
+                        onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-800 leading-relaxed"
+                        bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
+                    </div>
+                  </ItemWrapper>
+                ))}
+              </div>
+            </section>
+          </SectionWrapper>
         )}
 
-        {resumeEducation && resumeEducation.length > 0 && (
-          <section style={sec}>
-            <h3 className={H}>Education</h3>
-            <div className="space-y-3">
-              {resumeEducation.map((edu, idx) => (
-                <div key={idx} className="text-xs">
-                  <div className="flex justify-between font-bold text-slate-950 font-serif">
-                    <span>
-                      <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
-                      <span> — </span>
-                      <E value={edu.school} isEditable={isEditable} editableClass={ec} className="font-normal italic text-slate-700" onSave={v => onEducationChange?.(idx, 'school', v)} />
-                    </span>
-                    <E value={edu.dates} isEditable={isEditable} editableClass={ec} className="font-normal font-sans text-slate-500" onSave={v => onEducationChange?.(idx, 'dates', v)} />
-                  </div>
-                  <div className="flex justify-between text-[11px] text-slate-500 italic font-sans">
-                    <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
-                  </div>
-                  <E tag="p" value={edu.bullets} isEditable={isEditable} editableClass={ec} className={`text-slate-700 mt-1 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
-                </div>
-              ))}
-            </div>
-          </section>
+        {(resumeEducation && resumeEducation.length > 0 || isEditable) && (
+          <SectionWrapper
+            id="education" title="Education" isEditable={isEditable}
+            align={educationAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ educationAlign: a })}
+            onAddEntry={onAddEducation}
+            layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
+          >
+            <section style={sec}>
+              <h3 className={H}>Education</h3>
+              <div className="space-y-3">
+                {resumeEducation.map((edu, idx) => (
+                  <ItemWrapper
+                    key={idx} sectionId="education" index={idx} totalItems={resumeEducation.length}
+                    isEditable={isEditable} onDelete={() => onDeleteEducation?.(idx)}
+                    logo={edu.logo} onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
+                    showLogo={layoutSettings?.showEducationLogo ?? true}
+                    placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} brandColor={brandColor}
+                  >
+                    <div className="text-xs">
+                      <div className="flex justify-between font-bold text-slate-950 font-serif">
+                        <span className="flex items-center gap-1.5">
+                          {(layoutSettings?.showEducationLogo ?? true) && (
+                            <ItemLogo logo={edu.logo} brandColor={brandColor} placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} />
+                          )}
+                          <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
+                          <span> — </span>
+                          <E value={edu.school} isEditable={isEditable} editableClass={ec} className="font-normal italic text-slate-700" onSave={v => onEducationChange?.(idx, 'school', v)} />
+                        </span>
+                        <E value={edu.dates} isEditable={isEditable} editableClass={ec} className="font-normal font-sans text-slate-500" onSave={v => onEducationChange?.(idx, 'dates', v)} />
+                      </div>
+                      <div className="flex justify-between text-[11px] text-slate-500 italic font-sans">
+                        <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
+                      </div>
+                      <E tag="p" value={edu.bullets} isEditable={isEditable} editableClass={ec} className={`text-slate-700 mt-1 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
+                    </div>
+                  </ItemWrapper>
+                ))}
+              </div>
+            </section>
+          </SectionWrapper>
         )}
 
         <BottomSections {...bottomProps} accentColor={brandColor}
@@ -897,7 +1749,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
     const hasContact = hasPhone || hasEmail || hasLocation || hasLinkedin;
 
     return (
-      <div className="pdf-sheet p-0 text-slate-800 flex flex-row" style={{ ...sheetStyle, padding: 0 }} id="resume-sheet">
+      <div className={`pdf-sheet p-0 text-slate-800 flex flex-row ${sheetActiveClass}`} style={{ ...sheetStyle, padding: 0 }} id="resume-sheet"
+        onClick={(e) => { if (e.target === e.currentTarget && isEditable) clearActive(); }}>
         {/* Left column */}
         <aside className="w-[220px] flex-shrink-0 flex flex-col gap-5 p-5" style={{ background: brandColor + '15', borderRight: `3px solid ${brandColor}` }}>
           {showAvatar && (
@@ -930,7 +1783,6 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
                 badgeStyle={(i) => ({ ...badgeStyle(i), borderRadius: '9999px' })}
                 defaultBadgeStyle={{ background: brandColor + 'cc', color: '#fff', borderRadius: '9999px' }}
                 className="text-[10px] gap-1"
-                editClassName="text-[10px] p-1 bg-white/50 border border-dashed border-slate-300"
                 skillsStyle={skillsStyle}
               />
             </div>
@@ -999,51 +1851,91 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
             </div>
           )}
 
-          {resumeExperience && resumeExperience.length > 0 && (
-            <div style={sec}>
-              <h3 className={SH} style={{ borderColor: `${brandColor}40`, color: brandColor }}>Experience</h3>
-              <div className="space-y-3">
-                {resumeExperience.map((exp, idx) => (
-                  <div key={idx} className="text-xs">
-                    <div className="flex justify-between font-bold text-slate-900">
-                      <E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
-                      <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="text-slate-400 font-normal" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
-                    </div>
-                    <div className="flex justify-between text-slate-500 italic mb-1">
-                      <span className="flex items-center gap-1">
-                        <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
-                        <WorkLink url={exp.url} brandColor={brandColor} />
-                      </span>
-                      <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
-                    </div>
-                    <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                      onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
-                      bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
-                  </div>
-                ))}
+          {(resumeExperience && resumeExperience.length > 0 || isEditable) && (
+            <SectionWrapper
+              id="experience" title="Experience" isEditable={isEditable}
+              align={experienceAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ experienceAlign: a })}
+              onAddEntry={onAddExperience}
+              layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
+            >
+              <div style={sec}>
+                <h3 className={SH} style={{ borderColor: `${brandColor}40`, color: brandColor }}>Experience</h3>
+                <div className="space-y-3">
+                  {resumeExperience.map((exp, idx) => (
+                    <ItemWrapper
+                      key={idx} sectionId="experience" index={idx} totalItems={resumeExperience.length}
+                      isEditable={isEditable} onDelete={() => onDeleteExperience?.(idx)}
+                      logo={exp.logo} onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
+                      showLogo={layoutSettings?.showExperienceLogo ?? true}
+                      placeholderIcon={<Building2 className="w-3.5 h-3.5" />} brandColor={brandColor}
+                    >
+                      <div className="text-xs">
+                        <div className="flex justify-between font-bold text-slate-900">
+                          <span className="flex items-center gap-1.5">
+                            {(layoutSettings?.showExperienceLogo ?? true) && (
+                              <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
+                            )}
+                            <E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
+                          </span>
+                          <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="text-slate-400 font-normal" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
+                        </div>
+                        <div className="flex justify-between text-slate-500 italic mb-1">
+                          <span className="flex items-center gap-1">
+                            <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                            <WorkLink url={exp.url} brandColor={brandColor} />
+                          </span>
+                          <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
+                        </div>
+                        <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
+                          onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
+                          bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
+                      </div>
+                    </ItemWrapper>
+                  ))}
+                </div>
               </div>
-            </div>
+            </SectionWrapper>
           )}
 
-          {resumeEducation && resumeEducation.length > 0 && (
-            <div style={sec}>
-              <h3 className={SH} style={{ borderColor: `${brandColor}40`, color: brandColor }}>Education</h3>
-              <div className="space-y-3">
-                {resumeEducation.map((edu, idx) => (
-                  <div key={idx} className="text-xs">
-                    <div className="flex justify-between font-bold text-slate-900">
-                      <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
-                      <E value={edu.dates} isEditable={isEditable} editableClass={ec} className="text-slate-400 font-normal" onSave={v => onEducationChange?.(idx, 'dates', v)} />
-                    </div>
-                    <div className="flex justify-between text-slate-500 italic mb-1">
-                      <E value={edu.school} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'school', v)} />
-                      <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
-                    </div>
-                    <E tag="p" value={edu.bullets} isEditable={isEditable} editableClass={ec} className={`text-slate-600 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
-                  </div>
-                ))}
+          {(resumeEducation && resumeEducation.length > 0 || isEditable) && (
+            <SectionWrapper
+              id="education" title="Education" isEditable={isEditable}
+              align={educationAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ educationAlign: a })}
+              onAddEntry={onAddEducation}
+              layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
+            >
+              <div style={sec}>
+                <h3 className={SH} style={{ borderColor: `${brandColor}40`, color: brandColor }}>Education</h3>
+                <div className="space-y-3">
+                  {resumeEducation.map((edu, idx) => (
+                    <ItemWrapper
+                      key={idx} sectionId="education" index={idx} totalItems={resumeEducation.length}
+                      isEditable={isEditable} onDelete={() => onDeleteEducation?.(idx)}
+                      logo={edu.logo} onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
+                      showLogo={layoutSettings?.showEducationLogo ?? true}
+                      placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} brandColor={brandColor}
+                    >
+                      <div className="text-xs">
+                        <div className="flex justify-between font-bold text-slate-900">
+                          <span className="flex items-center gap-1.5">
+                            {(layoutSettings?.showEducationLogo ?? true) && (
+                              <ItemLogo logo={edu.logo} brandColor={brandColor} placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} />
+                            )}
+                            <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
+                          </span>
+                          <E value={edu.dates} isEditable={isEditable} editableClass={ec} className="text-slate-400 font-normal" onSave={v => onEducationChange?.(idx, 'dates', v)} />
+                        </div>
+                        <div className="flex justify-between text-slate-500 italic mb-1">
+                          <E value={edu.school} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'school', v)} />
+                          <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
+                        </div>
+                        <E tag="p" value={edu.bullets} isEditable={isEditable} editableClass={ec} className={`text-slate-600 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
+                      </div>
+                    </ItemWrapper>
+                  ))}
+                </div>
               </div>
-            </div>
+            </SectionWrapper>
           )}
         </main>
       </div>
@@ -1056,7 +1948,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   if (template === 'tech') {
     const MH = 'font-mono text-xs font-bold text-slate-950 uppercase tracking-widest border-b pb-1 mb-2.5';
     return (
-      <div className="pdf-sheet" style={sheetStyle} id="resume-sheet">
+      <div className={`pdf-sheet ${sheetActiveClass}`} style={sheetStyle} id="resume-sheet"
+        onClick={(e) => { if (e.target === e.currentTarget && isEditable) clearActive(); }}>
         <TemplateHeader {...headerProps} />
 
         {(resumeSummary || isEditable) && (
@@ -1080,48 +1973,87 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               badgeStyle={badgeStyle}
               defaultBadgeStyle={{ borderColor: '#cbd5e1', color: '#334155', background: '#f8fafc' }}
               className="font-mono text-[10px]"
-              editClassName="text-[10px] font-mono p-2 bg-slate-50 border border-dashed border-slate-200"
               skillsStyle={skillsStyle}
             />
           </section>
         )}
 
-        {resumeExperience && resumeExperience.length > 0 && (
-          <section style={sec}>
-            <div className={MH}>// Experience_Log</div>
-            <div className="space-y-4">
-              {resumeExperience.map((exp, idx) => (
-                <div key={idx} className="text-xs">
-                  <div className="flex justify-between font-bold text-slate-900">
-                    <span className="flex items-center gap-1"><E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} /><span> @ </span><E value={exp.company} isEditable={isEditable} editableClass={ec} className="text-slate-600 font-normal" onSave={v => onExperienceChange?.(idx, 'company', v)} /><WorkLink url={exp.url} brandColor={brandColor} /></span>
-                    <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-mono text-[10px] text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
-                  </div>
-                  <E value={exp.location} isEditable={isEditable} editableClass={ec} className="text-[11px] font-mono text-slate-500 italic mb-1.5 block" onSave={v => onExperienceChange?.(idx, 'location', v)} />
-                  <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                    onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
-                    bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
-                </div>
-              ))}
-            </div>
-          </section>
+        {(resumeExperience && resumeExperience.length > 0 || isEditable) && (
+          <SectionWrapper
+            id="experience" title="Experience Log" isEditable={isEditable}
+            align={experienceAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ experienceAlign: a })}
+            onAddEntry={onAddExperience}
+            layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
+          >
+            <section style={sec}>
+              <div className={MH}>// Experience_Log</div>
+              <div className="space-y-4">
+                {resumeExperience.map((exp, idx) => (
+                  <ItemWrapper
+                    key={idx} sectionId="experience" index={idx} totalItems={resumeExperience.length}
+                    isEditable={isEditable} onDelete={() => onDeleteExperience?.(idx)}
+                    logo={exp.logo} onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
+                    showLogo={layoutSettings?.showExperienceLogo ?? true}
+                    placeholderIcon={<Building2 className="w-3.5 h-3.5" />} brandColor={brandColor}
+                  >
+                    <div className="text-xs">
+                      <div className="flex justify-between font-bold text-slate-900">
+                        <span className="flex items-center gap-1.5">
+                          {(layoutSettings?.showExperienceLogo ?? true) && (
+                            <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
+                          )}
+                          <span className="flex items-center gap-1"><E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} /><span> @ </span><E value={exp.company} isEditable={isEditable} editableClass={ec} className="text-slate-600 font-normal" onSave={v => onExperienceChange?.(idx, 'company', v)} /><WorkLink url={exp.url} brandColor={brandColor} /></span>
+                        </span>
+                        <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-mono text-[10px] text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
+                      </div>
+                      <E value={exp.location} isEditable={isEditable} editableClass={ec} className="text-[11px] font-mono text-slate-500 italic mb-1.5 block" onSave={v => onExperienceChange?.(idx, 'location', v)} />
+                      <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
+                        onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
+                        bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
+                    </div>
+                  </ItemWrapper>
+                ))}
+              </div>
+            </section>
+          </SectionWrapper>
         )}
 
-        {resumeEducation && resumeEducation.length > 0 && (
-          <section style={sec}>
-            <div className={MH}>// Academic_Profile</div>
-            <div className="space-y-3">
-              {resumeEducation.map((edu, idx) => (
-                <div key={idx} className="text-xs">
-                  <div className="flex justify-between font-bold text-slate-900">
-                    <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
-                    <E value={edu.dates} isEditable={isEditable} editableClass={ec} className="font-mono text-[10px] text-slate-400" onSave={v => onEducationChange?.(idx, 'dates', v)} />
-                  </div>
-                  <E value={edu.school} isEditable={isEditable} editableClass={ec} className="text-[11px] font-mono text-slate-500 mb-1 block" onSave={v => onEducationChange?.(idx, 'school', v)} />
-                  <E tag="p" value={edu.bullets} isEditable={isEditable} editableClass={ec} className={`text-slate-600 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
-                </div>
-              ))}
-            </div>
-          </section>
+        {(resumeEducation && resumeEducation.length > 0 || isEditable) && (
+          <SectionWrapper
+            id="education" title="Academic Profile" isEditable={isEditable}
+            align={educationAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ educationAlign: a })}
+            onAddEntry={onAddEducation}
+            layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
+          >
+            <section style={sec}>
+              <div className={MH}>// Academic_Profile</div>
+              <div className="space-y-3">
+                {resumeEducation.map((edu, idx) => (
+                  <ItemWrapper
+                    key={idx} sectionId="education" index={idx} totalItems={resumeEducation.length}
+                    isEditable={isEditable} onDelete={() => onDeleteEducation?.(idx)}
+                    logo={edu.logo} onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
+                    showLogo={layoutSettings?.showEducationLogo ?? true}
+                    placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} brandColor={brandColor}
+                  >
+                    <div className="text-xs">
+                      <div className="flex justify-between font-bold text-slate-900">
+                        <span className="flex items-center gap-1.5">
+                          {(layoutSettings?.showEducationLogo ?? true) && (
+                            <ItemLogo logo={edu.logo} brandColor={brandColor} placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} />
+                          )}
+                          <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
+                        </span>
+                        <E value={edu.dates} isEditable={isEditable} editableClass={ec} className="font-mono text-[10px] text-slate-400" onSave={v => onEducationChange?.(idx, 'dates', v)} />
+                      </div>
+                      <E value={edu.school} isEditable={isEditable} editableClass={ec} className="text-[11px] font-mono text-slate-500 mb-1 block" onSave={v => onEducationChange?.(idx, 'school', v)} />
+                      <E tag="p" value={edu.bullets} isEditable={isEditable} editableClass={ec} className={`text-slate-600 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
+                    </div>
+                  </ItemWrapper>
+                ))}
+              </div>
+            </section>
+          </SectionWrapper>
         )}
 
         {resumeCerts && resumeCerts.length > 0 && (
@@ -1182,7 +2114,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   if (template === 'ats') {
     const H = 'text-xs font-bold uppercase tracking-widest border-b-2 pb-0.5 mb-2 text-slate-900';
     return (
-      <div className="pdf-sheet text-slate-900" style={{ ...sheetStyle, color: '#1a1a1a' }} id="resume-sheet">
+      <div className={`pdf-sheet text-slate-900 ${sheetActiveClass}`} style={{ ...sheetStyle, color: '#1a1a1a' }} id="resume-sheet"
+        onClick={(e) => { if (e.target === e.currentTarget && isEditable) clearActive(); }}>
         <TemplateHeader {...headerProps} />
 
         {(resumeSummary || isEditable) && (
@@ -1205,57 +2138,96 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               brandColor={brandColor}
               badgeStyle={badgeStyle}
               className="text-xs text-slate-800"
-              editClassName="text-xs p-1 bg-slate-50 border border-dashed border-slate-200"
               skillsStyle={skillsStyle}
             />
           </section>
         )}
 
-        {resumeExperience && resumeExperience.length > 0 && (
-          <section style={sec}>
-            <h2 className={H} style={{ borderColor: brandColor }}>Professional Experience</h2>
-            <div className="space-y-4">
-              {resumeExperience.map((exp, idx) => (
-                <div key={idx} className="text-xs">
-                  <div className="flex justify-between font-bold text-slate-900">
-                    <E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
-                    <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-normal" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
-                  </div>
-                  <div className="flex justify-between text-slate-700 mb-1">
-                    <span className="flex items-center gap-1">
-                      <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
-                      <WorkLink url={exp.url} brandColor={brandColor} />
-                    </span>
-                    <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
-                  </div>
-                  <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                    onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-800"
-                    bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
-                </div>
-              ))}
-            </div>
-          </section>
+        {(resumeExperience && resumeExperience.length > 0 || isEditable) && (
+          <SectionWrapper
+            id="experience" title="Professional Experience" isEditable={isEditable}
+            align={experienceAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ experienceAlign: a })}
+            onAddEntry={onAddExperience}
+            layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
+          >
+            <section style={sec}>
+              <h2 className={H} style={{ borderColor: brandColor }}>Professional Experience</h2>
+              <div className="space-y-4">
+                {resumeExperience.map((exp, idx) => (
+                  <ItemWrapper
+                    key={idx} sectionId="experience" index={idx} totalItems={resumeExperience.length}
+                    isEditable={isEditable} onDelete={() => onDeleteExperience?.(idx)}
+                    logo={exp.logo} onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
+                    showLogo={layoutSettings?.showExperienceLogo ?? true}
+                    placeholderIcon={<Building2 className="w-3.5 h-3.5" />} brandColor={brandColor}
+                  >
+                    <div className="text-xs">
+                      <div className="flex justify-between font-bold text-slate-900">
+                        <span className="flex items-center gap-1.5">
+                          {(layoutSettings?.showExperienceLogo ?? true) && (
+                            <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
+                          )}
+                          <E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
+                        </span>
+                        <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-normal" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
+                      </div>
+                      <div className="flex justify-between text-slate-700 mb-1">
+                        <span className="flex items-center gap-1">
+                          <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                          <WorkLink url={exp.url} brandColor={brandColor} />
+                        </span>
+                        <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
+                      </div>
+                      <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
+                        onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-800"
+                        bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
+                    </div>
+                  </ItemWrapper>
+                ))}
+              </div>
+            </section>
+          </SectionWrapper>
         )}
 
-        {resumeEducation && resumeEducation.length > 0 && (
-          <section style={sec}>
-            <h2 className={H} style={{ borderColor: brandColor }}>Education</h2>
-            <div className="space-y-2">
-              {resumeEducation.map((edu, idx) => (
-                <div key={idx} className="text-xs">
-                  <div className="flex justify-between font-bold text-slate-900">
-                    <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
-                    <E value={edu.dates} isEditable={isEditable} editableClass={ec} className="font-normal" onSave={v => onEducationChange?.(idx, 'dates', v)} />
-                  </div>
-                  <div className="flex justify-between text-slate-700 mb-0.5">
-                    <E value={edu.school} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'school', v)} />
-                    <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
-                  </div>
-                  <E tag="p" value={edu.bullets} isEditable={isEditable} editableClass={ec} className={`text-slate-700 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
-                </div>
-              ))}
-            </div>
-          </section>
+        {(resumeEducation && resumeEducation.length > 0 || isEditable) && (
+          <SectionWrapper
+            id="education" title="Education" isEditable={isEditable}
+            align={educationAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ educationAlign: a })}
+            onAddEntry={onAddEducation}
+            layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
+          >
+            <section style={sec}>
+              <h2 className={H} style={{ borderColor: brandColor }}>Education</h2>
+              <div className="space-y-2">
+                {resumeEducation.map((edu, idx) => (
+                  <ItemWrapper
+                    key={idx} sectionId="education" index={idx} totalItems={resumeEducation.length}
+                    isEditable={isEditable} onDelete={() => onDeleteEducation?.(idx)}
+                    logo={edu.logo} onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
+                    showLogo={layoutSettings?.showEducationLogo ?? true}
+                    placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} brandColor={brandColor}
+                  >
+                    <div className="text-xs">
+                      <div className="flex justify-between font-bold text-slate-900">
+                        <span className="flex items-center gap-1.5">
+                          {(layoutSettings?.showEducationLogo ?? true) && (
+                            <ItemLogo logo={edu.logo} brandColor={brandColor} placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} />
+                          )}
+                          <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
+                        </span>
+                        <E value={edu.dates} isEditable={isEditable} editableClass={ec} className="font-normal" onSave={v => onEducationChange?.(idx, 'dates', v)} />
+                      </div>
+                      <div className="flex justify-between text-slate-700 mb-0.5">
+                        <E value={edu.school} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'school', v)} />
+                        <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
+                      </div>
+                      <E tag="p" value={edu.bullets} isEditable={isEditable} editableClass={ec} className={`text-slate-700 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
+                    </div>
+                  </ItemWrapper>
+                ))}
+              </div>
+            </section>
+          </SectionWrapper>
         )}
 
         {resumeCerts && resumeCerts.length > 0 && (
@@ -1375,78 +2347,115 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
                   badgeStyle={() => ({ background: '#f8fafc', color: '#334155', borderColor: '#cbd5e1', borderRadius: '4px', borderStyle: 'solid', borderWidth: '1px' })}
                   defaultBadgeStyle={{ background: '#f8fafc', color: '#334155', borderColor: '#cbd5e1', borderRadius: '4px', borderStyle: 'solid', borderWidth: '1px' }}
                   className="text-[11px] gap-x-2 gap-y-1.5"
-                  editClassName="text-xs p-2 bg-slate-50 border border-dashed border-slate-200"
                   skillsStyle={skillsStyle}
                 />
               </section>
             </DraggableSection>
           );
         case 'experience':
-          if (!resumeExperience || resumeExperience.length === 0) return null;
+          if (!resumeExperience || (resumeExperience.length === 0 && !isEditable)) return null;
           return (
             <DraggableSection key="experience" id="experience" {...dragProps}>
-              <section style={sec}>
-                <h3 className="text-xs font-bold uppercase tracking-widest border-b-2 pb-0.5 mb-2 text-slate-800" style={{ borderColor: brandColor, color: brandColor }}>Experience</h3>
-                <div className="space-y-4">
-                  {resumeExperience.map((exp, idx) => (
-                    <div key={idx} className="text-[11px]">
-                      <div className="flex justify-between font-bold text-slate-800">
-                        <E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
-                        <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-normal text-slate-500" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
-                      </div>
-                      <div className="flex justify-between text-slate-600 mb-1 font-medium">
-                        <span className="flex items-center gap-1">
-                          <E value={exp.company} isEditable={isEditable} editableClass={ec} className="text-[#007ACC] font-semibold" onSave={v => onExperienceChange?.(idx, 'company', v)} />
-                          <WorkLink url={exp.url} brandColor={brandColor} />
-                        </span>
-                        <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
-                      </div>
-                      <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                        onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700 leading-relaxed"
-                        bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
-                    </div>
-                  ))}
-                </div>
-              </section>
+              <SectionWrapper
+                id="experience" title="Experience" isEditable={isEditable}
+                align={experienceAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ experienceAlign: a })}
+                onAddEntry={onAddExperience}
+                layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
+              >
+                <section style={sec}>
+                  <h3 className="text-xs font-bold uppercase tracking-widest border-b-2 pb-0.5 mb-2 text-slate-800" style={{ borderColor: brandColor, color: brandColor }}>Experience</h3>
+                  <div className="space-y-4">
+                    {resumeExperience.map((exp, idx) => (
+                      <ItemWrapper
+                        key={idx} sectionId="experience" index={idx} totalItems={resumeExperience.length}
+                        isEditable={isEditable} onDelete={() => onDeleteExperience?.(idx)}
+                        logo={exp.logo} onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
+                        showLogo={layoutSettings?.showExperienceLogo ?? true}
+                        placeholderIcon={<Building2 className="w-3.5 h-3.5" />} brandColor={brandColor}
+                      >
+                        <div className="text-[11px]">
+                          <div className="flex justify-between font-bold text-slate-800">
+                            <span className="flex items-center gap-1.5">
+                              {(layoutSettings?.showExperienceLogo ?? true) && (
+                                <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
+                              )}
+                              <E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
+                            </span>
+                            <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-normal text-slate-500" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
+                          </div>
+                          <div className="flex justify-between text-slate-600 mb-1 font-medium">
+                            <span className="flex items-center gap-1">
+                              <E value={exp.company} isEditable={isEditable} editableClass={ec} className="text-[#007ACC] font-semibold" onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                              <WorkLink url={exp.url} brandColor={brandColor} />
+                            </span>
+                            <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
+                          </div>
+                          <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
+                            onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700 leading-relaxed"
+                            bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
+                        </div>
+                      </ItemWrapper>
+                    ))}
+                  </div>
+                </section>
+              </SectionWrapper>
             </DraggableSection>
           );
         case 'education':
-          if (!resumeEducation || resumeEducation.length === 0) return null;
+          if (!resumeEducation || (resumeEducation.length === 0 && !isEditable)) return null;
           return (
             <DraggableSection key="education" id="education" {...dragProps}>
-              <section style={sec}>
-                <h3 className="text-xs font-bold uppercase tracking-widest border-b-2 pb-0.5 mb-2 text-slate-800" style={{ borderColor: brandColor, color: brandColor }}>Education</h3>
-                <div className="space-y-3">
-                  {resumeEducation.map((edu, idx) => {
-                    const { gradeText, remaining } = parseEducationGrade(edu.bullets);
-                    return (
-                      <div key={idx} className="text-[11px] flex gap-3 justify-between items-start">
-                        <div className="flex-1">
-                          <div className="font-bold text-slate-800">
-                            <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
-                          </div>
-                          <div className="flex justify-between text-slate-600 font-medium mb-1">
-                            <E value={edu.school} isEditable={isEditable} editableClass={ec} className="text-[#007ACC] font-semibold" onSave={v => onEducationChange?.(idx, 'school', v)} />
-                          </div>
-                          <div className="flex justify-between text-slate-500 text-[10px] mb-1">
-                            <E value={edu.dates} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'dates', v)} />
-                            <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
-                          </div>
-                          <E tag="p" value={remaining} isEditable={isEditable} editableClass={ec} className={`text-slate-600 leading-relaxed text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
-                        </div>
-                        {gradeText && (
-                          <div className="flex items-center gap-2 h-full flex-shrink-0 self-stretch mt-1">
-                            <div className="w-[1px] bg-slate-300 self-stretch min-h-[30px]" />
-                            <div className="text-[10px] font-bold text-[#007ACC] text-center whitespace-pre-line leading-tight px-1 min-w-[60px]">
-                              {gradeText}
+              <SectionWrapper
+                id="education" title="Education" isEditable={isEditable}
+                align={educationAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ educationAlign: a })}
+                onAddEntry={onAddEducation}
+                layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
+              >
+                <section style={sec}>
+                  <h3 className="text-xs font-bold uppercase tracking-widest border-b-2 pb-0.5 mb-2 text-slate-800" style={{ borderColor: brandColor, color: brandColor }}>Education</h3>
+                  <div className="space-y-3">
+                    {resumeEducation.map((edu, idx) => {
+                      const { gradeText, remaining } = parseEducationGrade(edu.bullets);
+                      return (
+                        <ItemWrapper
+                          key={idx} sectionId="education" index={idx} totalItems={resumeEducation.length}
+                          isEditable={isEditable} onDelete={() => onDeleteEducation?.(idx)}
+                          logo={edu.logo} onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
+                          showLogo={layoutSettings?.showEducationLogo ?? true}
+                          placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} brandColor={brandColor}
+                        >
+                          <div className="text-[11px] flex gap-3 justify-between items-start">
+                            <div className="flex-1">
+                              <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                                {(layoutSettings?.showEducationLogo ?? true) && (
+                                  <ItemLogo logo={edu.logo} brandColor={brandColor} placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} />
+                                )}
+                                <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
+                              </div>
+                              <div className="flex justify-between text-slate-600 font-medium mb-1">
+                                <E value={edu.school} isEditable={isEditable} editableClass={ec} className="text-[#007ACC] font-semibold" onSave={v => onEducationChange?.(idx, 'school', v)} />
+                              </div>
+                              <div className="flex justify-between text-slate-500 text-[10px] mb-1">
+                                <E value={edu.dates} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'dates', v)} />
+                                <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
+                              </div>
+                              <E tag="p" value={remaining} isEditable={isEditable} editableClass={ec} className={`text-slate-600 leading-relaxed text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
                             </div>
+                            {gradeText && (
+                              <div className="flex items-center gap-2 h-full flex-shrink-0 self-stretch mt-1">
+                                <div className="w-[1px] bg-slate-300 self-stretch min-h-[30px]" />
+                                <div className="text-[10px] font-bold text-[#007ACC] text-center whitespace-pre-line leading-tight px-1 min-w-[60px]">
+                                  {gradeText}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
+                        </ItemWrapper>
+                      );
+                    })}
+                  </div>
+                </section>
+              </SectionWrapper>
             </DraggableSection>
           );
         case 'certs':
@@ -1543,7 +2552,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
     };
 
     return (
-      <div className="pdf-sheet text-slate-800 font-sans" style={sheetStyle} id="resume-sheet">
+      <div className={`pdf-sheet text-slate-800 font-sans ${sheetActiveClass}`} style={sheetStyle} id="resume-sheet"
+        onClick={(e) => { if (e.target === e.currentTarget && isEditable) clearActive(); }}>
         {/* Custom Header */}
         <header className="flex justify-between items-start border-b pb-4 mb-4" style={{ borderColor: `${brandColor}40` }}>
           <div className="flex-1">
@@ -1611,7 +2621,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   // ═══════════════════════════════════════════════════════════════════════════
   const H6 = 'text-xs font-bold uppercase tracking-widest pb-1 mb-2 border-b';
   return (
-    <div className="pdf-sheet" style={{ ...sheetStyle, color: '#1e293b' }} id="resume-sheet">
+    <div className={`pdf-sheet ${sheetActiveClass}`} style={{ ...sheetStyle, color: '#1e293b' }} id="resume-sheet"
+        onClick={(e) => { if (e.target === e.currentTarget && isEditable) clearActive(); }}>
       {/* Full-width branded header band — now uses shared TemplateHeader */}
     <TemplateHeader {...headerProps} />
 
@@ -1636,7 +2647,6 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               badgeStyle={(i) => ({ ...badgeStyle(i), borderRadius: '9999px' })}
               defaultBadgeStyle={{ background: brandColor, color: '#fff', borderRadius: '9999px' }}
               className="text-[11px] gap-x-2 gap-y-1.5"
-              editClassName="text-xs p-2 bg-slate-50 border border-dashed border-slate-200"
               skillsStyle={skillsStyle}
             />
         </section>
@@ -1692,6 +2702,15 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
       <BottomSections {...bottomProps} accentColor={brandColor}
         headingClass={H6} />
     </div>
+  );
+
+  return null; // unreachable fallback
+  }; // end renderTemplate
+
+  return (
+    <ActiveSectionContext.Provider value={sectionContextValue}>
+      {renderTemplate()}
+    </ActiveSectionContext.Provider>
   );
 };
 

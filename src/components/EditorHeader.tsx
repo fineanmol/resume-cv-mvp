@@ -6,7 +6,13 @@ import {
   Redo2, 
   Settings, 
   ZoomIn, 
-  ZoomOut 
+  ZoomOut,
+  PanelLeftClose,
+  PanelLeft,
+  Layout,
+  Plus,
+  ArrowUpDown,
+  Palette
 } from 'lucide-react';
 
 interface EditorHeaderProps {
@@ -23,6 +29,15 @@ interface EditorHeaderProps {
   setShowSettings: (val: boolean) => void;
   onDownload: () => void;
   onBack: () => void;
+  sidebarOpen: boolean;
+  onToggleSidebar: () => void;
+  
+  // Modal Triggers
+  isResume?: boolean;
+  onOpenTemplates?: () => void;
+  onOpenAddSection?: () => void;
+  onOpenRearrange?: () => void;
+  onOpenDesign?: () => void;
 }
 
 export const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -38,7 +53,15 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   showSettings,
   setShowSettings,
   onDownload,
-  onBack
+  onBack,
+  sidebarOpen,
+  onToggleSidebar,
+  
+  isResume,
+  onOpenTemplates,
+  onOpenAddSection,
+  onOpenRearrange,
+  onOpenDesign
 }) => {
   return (
     <header className="bg-sidebar border-b border-border-color/60 px-6 py-3.5 flex items-center justify-between shadow-sm flex-shrink-0 z-10">
@@ -49,6 +72,16 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           title="Back to Dashboard"
         >
           <ArrowLeft className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={onToggleSidebar}
+          className={`p-1.5 hover:bg-card border rounded-lg transition text-text-muted hover:text-brand-accent cursor-pointer ${
+            sidebarOpen ? 'border-border-color/40 bg-card' : 'border-transparent'
+          }`}
+          title={sidebarOpen ? "Hide Sidebar Form" : "Show Sidebar Form"}
+        >
+          {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
         </button>
 
         {/* Title Input */}
@@ -70,6 +103,44 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
       {/* Toolbar Controls */}
       <div className="flex items-center gap-3">
+        {/* Document Modals (Resume specific) */}
+        {isResume && (
+          <div className="flex items-center border border-border-color/50 rounded-lg p-0.5 bg-input-bg">
+            <button
+              onClick={onOpenTemplates}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-text-muted hover:text-brand-accent hover:bg-card rounded-md transition text-xs font-semibold cursor-pointer"
+              title="Change Template Layout"
+            >
+              <Layout className="w-3.5 h-3.5" />
+              <span>Templates</span>
+            </button>
+            <button
+              onClick={onOpenAddSection}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-text-muted hover:text-brand-accent hover:bg-card rounded-md transition text-xs font-semibold cursor-pointer"
+              title="Add a new Section"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Section</span>
+            </button>
+            <button
+              onClick={onOpenRearrange}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-text-muted hover:text-brand-accent hover:bg-card rounded-md transition text-xs font-semibold cursor-pointer"
+              title="Rearrange Sections"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5" />
+              <span>Rearrange</span>
+            </button>
+            <button
+              onClick={onOpenDesign}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-text-muted hover:text-brand-accent hover:bg-card rounded-md transition text-xs font-semibold cursor-pointer"
+              title="Page Design Settings"
+            >
+              <Palette className="w-3.5 h-3.5" />
+              <span>Design</span>
+            </button>
+          </div>
+        )}
+
         {/* History stack traversal (Undo/Redo) */}
         <div className="flex items-center border border-border-color/50 rounded-lg p-0.5 bg-input-bg">
           <button

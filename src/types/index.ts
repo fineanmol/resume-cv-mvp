@@ -1,5 +1,5 @@
 export type FontFamily = 'inter' | 'outfit' | 'plus-jakarta' | 'poppins' | 'playfair' | 'eb-garamond' | 'lora' | 'jetbrains-mono';
-export type HeaderStyle = 'centered' | 'left' | 'banner' | 'minimal';
+export type HeaderStyle = 'centered' | 'left' | 'banner' | 'minimal' | 'enhancv';
 
 export interface LayoutSettings {
   fontSize: number;
@@ -24,6 +24,27 @@ export interface LayoutSettings {
   showLayoutBounds?: boolean;
   designerLeftSections?: string[];
   designerRightSections?: string[];
+  roundPhoto?: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+    showLocation?: boolean;
+  showLinkedin?: boolean;
+  showTitle?: boolean;
+  uppercaseName?: boolean;
+  // Category-specific layout options
+  showAchievementIcons?: boolean;
+  showAchievementDesc?: boolean;
+  showProjectIcons?: boolean;
+  showProjectDesc?: boolean;
+  showExperienceDates?: boolean;
+  showExperienceLocation?: boolean;
+  showExperienceCompany?: boolean;
+  showExperienceLogo?: boolean;
+  showEducationDates?: boolean;
+  showEducationLocation?: boolean;
+  showEducationGpa?: boolean;
+  showEducationLogo?: boolean;
+  showLanguageLevel?: boolean;
 }
 
 export interface HighlightItem {
@@ -63,6 +84,7 @@ export interface ExperienceItem {
   location: string;
   bullets: string;
   url?: string;
+  logo?: string;
 }
 
 export interface EducationItem {
@@ -71,18 +93,20 @@ export interface EducationItem {
   dates: string;
   location: string;
   bullets: string;
+  logo?: string;
 }
 
 export interface CertItem {
   title: string;
   desc: string;
   url?: string;
+  icon?: string;
 }
 
 export interface AchievementItem {
   title: string;
   desc: string;
-  icon: 'flag' | 'star' | 'check';
+  icon: 'star' | 'award' | 'flag' | 'check' | 'trophy' | 'target' | 'terminal';
 }
 
 export interface LanguageItem {

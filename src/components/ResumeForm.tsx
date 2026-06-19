@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Trash2, Sparkles,
   Upload, User, Briefcase, GraduationCap, Award,
-  Loader, Star, Globe, FileText, AlignLeft
+  Loader, Star, Globe, FileText, AlignLeft,
+  Trophy, Target, Terminal, Flag, Check, Settings
 } from 'lucide-react';
 import { splitIntoBullets } from '../utils/bullets';
 
@@ -36,11 +37,81 @@ const ITEM_ANIM = {
 const inputCls = 'bg-input-bg border border-border-color rounded px-2.5 py-1.5 text-xs text-text-main focus:outline-none focus:border-brand-accent w-full';
 const fullInputCls = `${inputCls} rounded-lg`;
 
+interface DescriptionBulletEditorProps {
+  value: string;
+  onChange: (newValue: string) => void;
+  prefixId: string;
+  placeholder?: string;
+}
+
+const DescriptionBulletEditor: React.FC<DescriptionBulletEditorProps> = ({
+  value,
+  onChange,
+  prefixId,
+  placeholder = "Add details..."
+}) => {
+  const arr = value ? value.split('\n') : [''];
+
+  return (
+    <div className="space-y-1.5">
+      {arr.map((bullet, bIdx) => (
+        <div key={bIdx} className="flex items-center gap-1.5">
+          <span className="text-[10px] font-semibold text-text-muted select-none w-4 text-right">{bIdx + 1}.</span>
+          <input
+            id={`${prefixId}-${bIdx}`}
+            value={bullet}
+            onChange={(e) => {
+              const updated = [...arr];
+              updated[bIdx] = e.target.value;
+              onChange(updated.join('\n'));
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const inputEl = e.currentTarget;
+                const start = inputEl.selectionStart ?? bullet.length;
+                const textBefore = bullet.substring(0, start);
+                const textAfter = bullet.substring(start);
+
+                const updated = [...arr];
+                updated[bIdx] = textBefore;
+                updated.splice(bIdx + 1, 0, textAfter);
+                onChange(updated.join('\n'));
+                setTimeout(() => {
+                  const nextInput = document.getElementById(`${prefixId}-${bIdx + 1}`) as HTMLInputElement | null;
+                  if (nextInput) {
+                    nextInput.focus();
+                    nextInput.setSelectionRange(0, 0);
+                  }
+                }, 0);
+              } else if (e.key === 'Backspace' && !bullet) {
+                e.preventDefault();
+                if (arr.length > 1) {
+                  const updated = arr.filter((_, i) => i !== bIdx);
+                  onChange(updated.join('\n'));
+                  setTimeout(() => {
+                    document.getElementById(`${prefixId}-${bIdx - 1}`)?.focus();
+                  }, 0);
+                }
+              }
+            }}
+            className="flex-1 min-w-0 bg-input-bg border border-border-color rounded-lg p-1.5 text-xs text-text-main focus:outline-none"
+            placeholder={placeholder}
+          />
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const ResumeForm: React.FC<ResumeFormProps> = ({
   state, onChange, onImproveBullet, aiLoading, isOnline, geminiKey
 }) => {
   const [openSection, setOpenSection] = useState<string>('personal');
   const [parsing, setParsing] = useState(false);
+  const [openExpSettingsIdx, setOpenExpSettingsIdx] = useState<number | null>(null);
+  const [openEduSettingsIdx, setOpenEduSettingsIdx] = useState<number | null>(null);
+  const [openCertSettingsIdx, setOpenCertSettingsIdx] = useState<number | null>(null);
 
   const toggle = (s: string) => setOpenSection(p => p === s ? '' : s);
   const clean = (t: string) => t.replace(/\*\*|\*/g, '');
@@ -79,9 +150,9 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
   };
 
   const updExp = (idx: number, k: string, v: string) =>
-    onChange(prev => { const u = [...prev.resumeExperience]; u[idx] = { ...u[idx], [k]: (k === 'bullets' || k === 'url') ? v : clean(v) }; return { ...prev, resumeExperience: u }; });
+    onChange(prev => { const u = [...prev.resumeExperience]; u[idx] = { ...u[idx], [k]: (k === 'bullets' || k === 'url' || k === 'logo') ? v : clean(v) }; return { ...prev, resumeExperience: u }; });
   const updEdu = (idx: number, k: string, v: string) =>
-    onChange(prev => { const u = [...prev.resumeEducation]; u[idx] = { ...u[idx], [k]: k === 'bullets' ? v : clean(v) }; return { ...prev, resumeEducation: u }; });
+    onChange(prev => { const u = [...prev.resumeEducation]; u[idx] = { ...u[idx], [k]: (k === 'bullets' || k === 'logo') ? v : clean(v) }; return { ...prev, resumeEducation: u }; });
   const updCert = (idx: number, k: string, v: string) =>
     onChange(prev => { const u = [...prev.resumeCerts]; u[idx] = { ...u[idx], [k]: k === 'url' ? v : clean(v) }; return { ...prev, resumeCerts: u }; });
   const updAch = (idx: number, k: string, v: string) =>
@@ -243,10 +314,24 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
                   <AnimatePresence>
                     {state.resumeExperience.map((exp, idx) => (
                       <motion.div key={idx} {...ITEM_ANIM} className="bg-card/20 border border-border-color/60 rounded-xl p-3.5 space-y-2.5 relative group">
-                        <button onClick={() => onChange(p => ({ ...p, resumeExperience: p.resumeExperience.filter((_, i) => i !== idx) }))}
-                          className="absolute right-3 top-3 text-text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition cursor-pointer">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="absolute right-3 top-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition z-10">
+                          <button
+                            type="button"
+                            onClick={() => setOpenExpSettingsIdx(openExpSettingsIdx === idx ? null : idx)}
+                            className={`text-text-muted hover:text-brand-accent transition cursor-pointer p-1 ${openExpSettingsIdx === idx ? 'text-brand-accent' : ''}`}
+                            title="Item Settings"
+                          >
+                            <Settings className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onChange(p => ({ ...p, resumeExperience: p.resumeExperience.filter((_, i) => i !== idx) }))}
+                            className="text-text-muted hover:text-red-400 transition cursor-pointer p-1"
+                            title="Delete Experience"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                         <div className="grid grid-cols-2 gap-2">
                           <input value={exp.title} onChange={e => updExp(idx, 'title', e.target.value)} className={inputCls} placeholder="Job Title" />
                           <input value={exp.company} onChange={e => updExp(idx, 'company', e.target.value)} className={inputCls} placeholder="Company" />
@@ -255,88 +340,81 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
                           <input value={exp.dates} onChange={e => updExp(idx, 'dates', e.target.value)} className={inputCls} placeholder="Dates" />
                           <input value={exp.location} onChange={e => updExp(idx, 'location', e.target.value)} className={inputCls} placeholder="Location" />
                         </div>
-                        <input value={exp.url || ''} onChange={e => updExp(idx, 'url', e.target.value)} className={inputCls} placeholder="Link / Project URL (optional)" />
+
+                        {openExpSettingsIdx === idx && (
+                          <div className="p-3 bg-slate-50/5 rounded-lg border border-border-color/50 space-y-2.5">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Experience Settings</div>
+                            <div>
+                              <label className="block text-[9px] text-text-muted mb-1 font-semibold">Website / Project URL</label>
+                              <input
+                                value={exp.url || ''}
+                                onChange={e => updExp(idx, 'url', e.target.value)}
+                                className={inputCls}
+                                placeholder="https://company.com"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[9px] text-text-muted font-semibold mb-1">Company Logo / Icon</label>
+                              <div className="flex gap-2 items-center">
+                                {exp.logo ? (
+                                  <img src={exp.logo} className="w-10 h-10 object-contain rounded border border-border-color bg-white" alt="" />
+                                ) : (
+                                  <div className="w-10 h-10 rounded border border-dashed border-border-color/80 flex items-center justify-center text-text-muted bg-input-bg">
+                                    <Briefcase className="w-4 h-4" />
+                                  </div>
+                                )}
+                                <div className="flex-1 flex flex-col gap-1">
+                                  <input
+                                    value={exp.logo || ''}
+                                    onChange={e => updExp(idx, 'logo', e.target.value)}
+                                    className="w-full bg-input-bg border border-border-color rounded-lg p-1.5 text-[11px] text-text-main focus:outline-none"
+                                    placeholder="Paste logo URL"
+                                  />
+                                  <div className="flex gap-1.5">
+                                    <label className="flex-1 px-2 py-1 bg-brand-accent/10 border border-brand-accent/20 hover:bg-brand-accent/20 text-brand-accent text-[9px] font-bold rounded cursor-pointer transition text-center select-none">
+                                      Upload File
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            const reader = new FileReader();
+                                            reader.onload = () => {
+                                              if (typeof reader.result === 'string') {
+                                                updExp(idx, 'logo', reader.result);
+                                              }
+                                            };
+                                            reader.readAsDataURL(file);
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                    {exp.logo && (
+                                      <button
+                                        type="button"
+                                        onClick={() => updExp(idx, 'logo', '')}
+                                        className="px-2 py-1 border border-red-200 hover:bg-red-50 text-red-500 text-[9px] font-bold rounded cursor-pointer transition flex-1"
+                                      >
+                                        Remove
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="space-y-1.5">
                           <label className="block text-[10px] font-bold uppercase tracking-wider text-text-muted">Responsibilities & Achievements</label>
-                          <div className="space-y-1.5">
-                            {(exp.bullets ? exp.bullets.split('\n') : ['']).map((bullet, bIdx, arr) => (
-                              <div key={bIdx} className="flex items-center gap-1.5">
-                                <span className="text-[10px] font-semibold text-text-muted select-none w-4 text-right">{bIdx + 1}.</span>
-                                <input
-                                  id={`exp-bullet-${idx}-${bIdx}`}
-                                  value={bullet}
-                                  onChange={(e) => {
-                                    const updated = [...arr];
-                                    updated[bIdx] = e.target.value;
-                                    updExp(idx, 'bullets', updated.join('\n'));
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      e.preventDefault();
-                                      const inputEl = e.currentTarget;
-                                      const start = inputEl.selectionStart ?? bullet.length;
-                                      const textBefore = bullet.substring(0, start);
-                                      const textAfter = bullet.substring(start);
-
-                                      const updated = [...arr];
-                                      updated[bIdx] = textBefore;
-                                      updated.splice(bIdx + 1, 0, textAfter);
-                                      updExp(idx, 'bullets', updated.join('\n'));
-                                      setTimeout(() => {
-                                        const nextInput = document.getElementById(`exp-bullet-${idx}-${bIdx + 1}`) as HTMLInputElement | null;
-                                        if (nextInput) {
-                                          nextInput.focus();
-                                          nextInput.setSelectionRange(0, 0);
-                                        }
-                                      }, 0);
-                                    } else if (e.key === 'Backspace' && !bullet) {
-                                      e.preventDefault();
-                                      if (arr.length > 1) {
-                                        const updated = arr.filter((_, i) => i !== bIdx);
-                                        updExp(idx, 'bullets', updated.join('\n'));
-                                        setTimeout(() => {
-                                          document.getElementById(`exp-bullet-${idx}-${bIdx - 1}`)?.focus();
-                                        }, 0);
-                                      }
-                                    } else if (e.key === 'ArrowUp' && bIdx > 0) {
-                                      e.preventDefault();
-                                      document.getElementById(`exp-bullet-${idx}-${bIdx - 1}`)?.focus();
-                                    } else if (e.key === 'ArrowDown' && bIdx < arr.length - 1) {
-                                      e.preventDefault();
-                                      document.getElementById(`exp-bullet-${idx}-${bIdx + 1}`)?.focus();
-                                    }
-                                  }}
-                                  className={inputCls}
-                                  placeholder="Describe an achievement or responsibility... (Use **bold** for emphasis)"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const updated = arr.filter((_, i) => i !== bIdx);
-                                    updExp(idx, 'bullets', updated.join('\n'));
-                                  }}
-                                  className="text-text-muted hover:text-red-400 p-1 cursor-pointer transition flex-shrink-0"
-                                  title="Delete bullet point"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const arr = exp.bullets ? exp.bullets.split('\n') : [''];
-                              const updated = [...arr, ''];
-                              updExp(idx, 'bullets', updated.join('\n'));
-                              setTimeout(() => {
-                                document.getElementById(`exp-bullet-${idx}-${arr.length}`)?.focus();
-                              }, 0);
-                            }}
-                            className="flex items-center gap-1 text-[10px] text-brand-accent hover:underline font-bold mt-1 cursor-pointer"
-                          >
-                            <Plus className="w-3 h-3" /> Add Bullet Point
-                          </button>
+                          <DescriptionBulletEditor
+                            value={exp.bullets}
+                            onChange={v => updExp(idx, 'bullets', v)}
+                            prefixId={`exp-bullet-${idx}`}
+                            placeholder="Describe responsibility or achievement... (Use **bold** for emphasis)"
+                          />
                         </div>
                         {isOnline && (
                           <button type="button" disabled={aiLoading} onClick={() => onImproveBullet(idx, exp.bullets)}
@@ -370,10 +448,24 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
                   <AnimatePresence>
                     {state.resumeEducation.map((edu, idx) => (
                       <motion.div key={idx} {...ITEM_ANIM} className="bg-card/20 border border-border-color/60 rounded-xl p-3.5 space-y-2.5 relative group">
-                        <button onClick={() => onChange(p => ({ ...p, resumeEducation: p.resumeEducation.filter((_, i) => i !== idx) }))}
-                          className="absolute right-3 top-3 text-text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition cursor-pointer">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="absolute right-3 top-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition z-10">
+                          <button
+                            type="button"
+                            onClick={() => setOpenEduSettingsIdx(openEduSettingsIdx === idx ? null : idx)}
+                            className={`text-text-muted hover:text-brand-accent transition cursor-pointer p-1 ${openEduSettingsIdx === idx ? 'text-brand-accent' : ''}`}
+                            title="Item Settings"
+                          >
+                            <Settings className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onChange(p => ({ ...p, resumeEducation: p.resumeEducation.filter((_, i) => i !== idx) }))}
+                            className="text-text-muted hover:text-red-400 transition cursor-pointer p-1"
+                            title="Delete Education"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                         <div className="grid grid-cols-2 gap-2">
                           <input value={edu.degree} onChange={e => updEdu(idx, 'degree', e.target.value)} className={inputCls} placeholder="Degree" />
                           <input value={edu.school} onChange={e => updEdu(idx, 'school', e.target.value)} className={inputCls} placeholder="School" />
@@ -382,9 +474,73 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
                           <input value={edu.dates} onChange={e => updEdu(idx, 'dates', e.target.value)} className={inputCls} placeholder="Dates" />
                           <input value={edu.location} onChange={e => updEdu(idx, 'location', e.target.value)} className={inputCls} placeholder="Location" />
                         </div>
-                        <textarea value={edu.bullets} onChange={e => updEdu(idx, 'bullets', e.target.value)} rows={2}
-                          className="w-full bg-input-bg border border-border-color rounded-lg p-2.5 text-xs text-text-main focus:outline-none resize-y"
-                          placeholder="Relevant coursework, GPA, honors..." />
+
+                        {openEduSettingsIdx === idx && (
+                          <div className="p-3 bg-slate-50/5 rounded-lg border border-border-color/50 space-y-2.5">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Education Settings</div>
+                            <div className="space-y-1">
+                              <label className="block text-[9px] text-text-muted font-semibold mb-1">School Logo / Icon</label>
+                              <div className="flex gap-2 items-center">
+                                {edu.logo ? (
+                                  <img src={edu.logo} className="w-10 h-10 object-contain rounded border border-border-color bg-white" alt="" />
+                                ) : (
+                                  <div className="w-10 h-10 rounded border border-dashed border-border-color/80 flex items-center justify-center text-text-muted bg-input-bg">
+                                    <GraduationCap className="w-4 h-4" />
+                                  </div>
+                                )}
+                                <div className="flex-1 flex flex-col gap-1">
+                                  <input
+                                    value={edu.logo || ''}
+                                    onChange={e => updEdu(idx, 'logo', e.target.value)}
+                                    className="w-full bg-input-bg border border-border-color rounded-lg p-1.5 text-[11px] text-text-main focus:outline-none"
+                                    placeholder="Paste logo URL"
+                                  />
+                                  <div className="flex gap-1.5">
+                                    <label className="flex-1 px-2 py-1 bg-brand-accent/10 border border-brand-accent/20 hover:bg-brand-accent/20 text-brand-accent text-[9px] font-bold rounded cursor-pointer transition text-center select-none">
+                                      Upload File
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            const reader = new FileReader();
+                                            reader.onload = () => {
+                                              if (typeof reader.result === 'string') {
+                                                updEdu(idx, 'logo', reader.result);
+                                              }
+                                            };
+                                            reader.readAsDataURL(file);
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                    {edu.logo && (
+                                      <button
+                                        type="button"
+                                        onClick={() => updEdu(idx, 'logo', '')}
+                                        className="px-2 py-1 border border-red-200 hover:bg-red-50 text-red-500 text-[9px] font-bold rounded cursor-pointer transition flex-1"
+                                      >
+                                        Remove
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-1.5">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-text-muted">coursework, GPA, honors...</label>
+                          <DescriptionBulletEditor
+                            value={edu.bullets}
+                            onChange={v => updEdu(idx, 'bullets', v)}
+                            prefixId={`edu-bullet-${idx}`}
+                            placeholder="GPA: 3.8/4.0, Relevant coursework, honors..."
+                          />
+                        </div>
                       </motion.div>
                     ))}
                   </AnimatePresence>
@@ -394,35 +550,102 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
           </AnimatePresence>
         </div>
 
-        {/* ── SECTION: Certifications ──────────────────────────── */}
+        {/* ── SECTION: Projects & Certifications ───────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
-          <SectionHeader id="certs" icon={Award} label="Certifications" badge={state.resumeCerts.length} openSection={openSection} onToggle={toggle} />
+          <SectionHeader id="certs" icon={Award} label="Projects & Certifications" badge={state.resumeCerts.length} openSection={openSection} onToggle={toggle} />
           <AnimatePresence initial={false}>
             {openSection === 'certs' && (
               <motion.div key="certs" {...SECTION_ANIM} style={{ overflow: "hidden" }}>
                 <div className="p-4 border-t border-border-color/40 space-y-2.5">
                   <button
-                    onClick={() => onChange(p => ({ ...p, resumeCerts: [...p.resumeCerts, { title: 'Certification Name', desc: 'Issuing Organization — Year' }] }))}
+                    onClick={() => onChange(p => ({ ...p, resumeCerts: [...p.resumeCerts, { title: 'Project / Certification Name', desc: 'Description / Tech Stack / Issuer' }] }))}
                     className="w-full flex items-center justify-center gap-1.5 py-2 bg-input-bg hover:bg-brand-accent/10 border border-border-color/80 hover:border-brand-accent/40 text-text-main rounded-lg text-xs font-semibold cursor-pointer transition"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Add Certification
+                    <Plus className="w-3.5 h-3.5" /> Add Project / Certification
                   </button>
                   <AnimatePresence>
                     {state.resumeCerts.map((cert, idx) => (
                       <motion.div key={idx} {...ITEM_ANIM} className="bg-card/20 border border-border-color/50 p-2.5 rounded-lg relative group space-y-1.5">
-                        <button onClick={() => onChange(p => ({ ...p, resumeCerts: p.resumeCerts.filter((_, i) => i !== idx) }))}
-                          className="absolute right-2 top-2 text-text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition cursor-pointer">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition z-10">
+                          <button
+                            type="button"
+                            onClick={() => setOpenCertSettingsIdx(openCertSettingsIdx === idx ? null : idx)}
+                            className={`text-text-muted hover:text-brand-accent transition cursor-pointer p-0.5 ${openCertSettingsIdx === idx ? 'text-brand-accent' : ''}`}
+                            title="Item Settings"
+                          >
+                            <Settings className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onChange(p => ({ ...p, resumeCerts: p.resumeCerts.filter((_, i) => i !== idx) }))}
+                            className="text-text-muted hover:text-red-400 transition cursor-pointer p-0.5"
+                            title="Delete Project / Cert"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                         <input value={cert.title} onChange={e => updCert(idx, 'title', e.target.value)}
                           className="bg-transparent border-b border-transparent hover:border-border-color/30 text-xs font-semibold text-text-main focus:outline-none w-full"
-                          placeholder="Certification Name" />
-                        <input value={cert.desc} onChange={e => updCert(idx, 'desc', e.target.value)}
-                          className="bg-transparent border-b border-transparent hover:border-border-color/30 text-[11px] text-text-muted focus:outline-none w-full"
-                          placeholder="Issuing Organization — Year" />
-                        <input value={cert.url || ''} onChange={e => updCert(idx, 'url', e.target.value)}
-                          className="bg-transparent border-b border-transparent hover:border-border-color/30 text-[10px] text-text-muted focus:outline-none w-full"
-                          placeholder="Credential URL / Verification Link (optional)" />
+                          placeholder="Project / Certification Name" />
+
+                        {openCertSettingsIdx === idx && (
+                          <div className="p-2.5 bg-slate-50/5 rounded-lg border border-border-color/50 space-y-2">
+                            <div className="text-[9px] font-bold uppercase tracking-wider text-text-muted">Project Settings</div>
+                            <div>
+                              <label className="block text-[9px] text-text-muted mb-0.5 font-semibold">Project Link / Verification Link</label>
+                              <input
+                                value={cert.url || ''}
+                                onChange={e => updCert(idx, 'url', e.target.value)}
+                                className="w-full bg-input-bg border border-border-color rounded px-2 py-1 text-[11px] text-text-main focus:outline-none focus:border-brand-accent"
+                                placeholder="https://myproject.com"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[9px] text-text-muted font-semibold mb-0.5">Project Icon</label>
+                              <div className="flex flex-wrap gap-1 items-center">
+                                {([
+                                  { key: 'star', icon: Star },
+                                  { key: 'award', icon: Award },
+                                  { key: 'flag', icon: Flag },
+                                  { key: 'check', icon: Check },
+                                  { key: 'trophy', icon: Trophy },
+                                  { key: 'target', icon: Target },
+                                  { key: 'terminal', icon: Terminal },
+                                  { key: 'globe', icon: Globe },
+                                  { key: 'fileText', icon: FileText }
+                                ] as const).map(opt => {
+                                  const IconComponent = opt.icon;
+                                  const isSel = cert.icon === opt.key;
+                                  return (
+                                    <button
+                                      key={opt.key}
+                                      type="button"
+                                      onClick={() => updCert(idx, 'icon', isSel ? '' : opt.key)}
+                                      title={opt.key}
+                                      className={`p-1 rounded border transition cursor-pointer flex items-center justify-center ${
+                                        isSel
+                                          ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
+                                          : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                                      }`}
+                                    >
+                                      <IconComponent className="w-3 h-3" />
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-1">
+                          <label className="block text-[9px] font-semibold text-text-muted uppercase tracking-wider">Description / details</label>
+                          <DescriptionBulletEditor
+                            value={cert.desc}
+                            onChange={v => updCert(idx, 'desc', v)}
+                            prefixId={`cert-bullet-${idx}`}
+                            placeholder="Description / Tech Stack / Issuer — e.g. Tech: React, Tailwind"
+                          />
+                        </div>
                       </motion.div>
                     ))}
                   </AnimatePresence>
@@ -458,6 +681,36 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
                         <input value={ach.desc} onChange={e => updAch(idx, 'desc', e.target.value)}
                           className="bg-transparent border-b border-transparent hover:border-border-color/30 text-[11px] text-text-muted focus:outline-none w-full"
                           placeholder="Impact / scale (e.g. Increased revenue by 30%)" />
+                        <div className="flex flex-wrap gap-1.5 items-center mt-2.5 pt-1.5 border-t border-border-color/20">
+                          <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider mr-1.5">Icon:</span>
+                          {([
+                            { key: 'star', icon: Star },
+                            { key: 'award', icon: Award },
+                            { key: 'flag', icon: Flag },
+                            { key: 'check', icon: Check },
+                            { key: 'trophy', icon: Trophy },
+                            { key: 'target', icon: Target },
+                            { key: 'terminal', icon: Terminal }
+                          ] as const).map(opt => {
+                            const IconComponent = opt.icon;
+                            const isSel = (ach.icon || 'star') === opt.key;
+                            return (
+                              <button
+                                key={opt.key}
+                                type="button"
+                                onClick={() => updAch(idx, 'icon', opt.key)}
+                                title={opt.key}
+                                className={`p-1.5 rounded-lg border transition cursor-pointer flex items-center justify-center ${
+                                  isSel
+                                    ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
+                                    : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                                }`}
+                              >
+                                <IconComponent className="w-3.5 h-3.5" />
+                              </button>
+                            );
+                          })}
+                        </div>
                       </motion.div>
                     ))}
                   </AnimatePresence>
