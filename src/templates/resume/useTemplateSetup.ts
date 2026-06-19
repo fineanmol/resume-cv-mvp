@@ -289,13 +289,11 @@ export function useTemplateSetup({
     onAvatarChange: (url: string) => onFieldChange?.('avatar', url),
   };
 
-  const badgeStyle = (i: number): React.CSSProperties => accentColor2
-    ? {
-        background: `${i % 2 === 0 ? accentColor2 : brandColor}22`,
-        color: i % 2 === 0 ? accentColor2 : brandColor,
-        borderColor: `${i % 2 === 0 ? accentColor2 : brandColor}44`,
-      }
-    : { background: `${brandColor}18`, color: brandColor, borderColor: `${brandColor}30` };
+  const badgeStyle = (): React.CSSProperties => ({
+    background: '#ffffff',
+    color: '#475569',
+    borderColor: '#e2e8f0',
+  });
 
   const bottomProps = {
     resumeCerts,
@@ -326,6 +324,8 @@ export function useTemplateSetup({
     onEntryVisibilityChange,
     certsAlign,
     achievementsAlign,
+    accentColor: brandColor,
+    accentColor2,
   };
 
   return {

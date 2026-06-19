@@ -12,7 +12,7 @@ import { WorkLink } from './WorkLink';
 import { SectionWrapper } from './SectionWrapper';
 import { ItemWrapper } from './ItemWrapper';
 import { BulletList } from './BulletList';
-import { AchievementIconPicker } from './AchievementIconPicker';
+import { EntryIconPicker } from './EntryIconPicker';
 import { LanguageBubbles } from './LanguageBubbles';
 import {
   CertEntrySettings,
@@ -32,6 +32,7 @@ export interface BottomSectionsProps {
   isEditable: boolean;
   ec: string;
   accentColor: string;
+  accentColor2?: string;
   headingClass: string;
   layoutSettings?: LayoutSettings;
   bulletStyle?: LayoutSettings['bulletStyle'];
@@ -67,7 +68,7 @@ function descUsesBulletList(desc: string): boolean {
 
 export const BottomSections: React.FC<BottomSectionsProps> = ({
   resumeCerts, resumeAchievements, resumeLanguages,
-  sec, isEditable, ec, accentColor, headingClass,
+  sec, isEditable, ec, accentColor, accentColor2, headingClass,
   layoutSettings, bulletStyle = 'disc', onLayoutSettingsChange,
   onCertChange, onAchievementChange, onLanguageChange,
   onAddCert, onDeleteCert, onDuplicateCert, onAddSimilarCert,
@@ -152,6 +153,7 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
                         item={cert}
                         onToggle={(field, value) => onEntryVisibilityChange?.('certs', idx, field, value)}
                         onClose={onClose}
+                        onUrlChange={(url) => onCertChange?.(idx, 'url', url)}
                       />
                     )}
                   >
@@ -159,14 +161,18 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
                       <div className={`flex items-center gap-1 ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
                         {showIcon && (
                           isEditable ? (
-                            <AchievementIconPicker
-                              currentIcon={cert.icon || 'award'}
+                            <EntryIconPicker
+                              variant="project"
+                              currentIcon={cert.icon || 'briefcase'}
                               onChange={(icon) => onCertChange?.(idx, 'icon', icon)}
                               isEditable={isEditable}
                               accentColor={accentColor}
+                              accentColor2={accentColor2}
+                              index={idx}
+                              title={cert.title}
                             />
                           ) : (
-                            getDynamicProjectIcon(idx, cert.title, cert.icon, accentColor, 'w-3 h-3 flex-shrink-0')
+                            getDynamicProjectIcon(idx, cert.title, cert.icon, accentColor, 'w-3 h-3 flex-shrink-0', accentColor2)
                           )
                         )}
                         <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 font-bold"
@@ -196,6 +202,7 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
               {achievements.map((ach, idx) => {
                 const showIcon = showAchievementIcons && showAch(ach, 'icon');
                 const showDesc = showAchievementDesc && showAch(ach, 'desc');
+                const showLink = showAch(ach, 'link');
 
                 return (
                   <ItemWrapper
@@ -208,25 +215,33 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
                         item={ach}
                         onToggle={(field, value) => onEntryVisibilityChange?.('achievements', idx, field, value)}
                         onClose={onClose}
+                        onUrlChange={(url) => onAchievementChange?.(idx, 'url', url)}
                       />
                     )}
                   >
                     <li className={`flex gap-2 text-${achievementsAlign} ${achievementsAlign === 'right' ? 'flex-row-reverse' : ''}`}>
                       {showIcon && (
                         isEditable ? (
-                          <AchievementIconPicker
+                          <EntryIconPicker
+                            variant="achievement"
                             currentIcon={ach.icon || 'star'}
                             onChange={(icon) => onAchievementChange?.(idx, 'icon', icon)}
                             isEditable={isEditable}
                             accentColor={accentColor}
+                            accentColor2={accentColor2}
+                            index={idx}
+                            title={ach.title}
                           />
                         ) : (
-                          getDynamicAchievementIcon(idx, ach.title, ach.icon, accentColor, 'w-3 h-3 flex-shrink-0 mt-0.5')
+                          getDynamicAchievementIcon(idx, ach.title, ach.icon, accentColor, 'w-3 h-3 flex-shrink-0 mt-0.5', accentColor2)
                         )
                       )}
                       <div className="flex-1 min-w-0">
-                        <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 block"
-                          onSave={(v) => onAchievementChange?.(idx, 'title', v)} />
+                        <div className={`flex items-center gap-1 ${achievementsAlign === 'center' ? 'justify-center' : achievementsAlign === 'right' ? 'justify-end' : ''}`}>
+                          <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className="text-slate-800"
+                            onSave={(v) => onAchievementChange?.(idx, 'title', v)} />
+                          {showLink && <WorkLink url={ach.url} brandColor={accentColor} />}
+                        </div>
                         {showDesc && (
                           descUsesBulletList(ach.desc) ? (
                             <BulletList

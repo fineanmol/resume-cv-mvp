@@ -100,6 +100,12 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
               className="bg-transparent border-b border-transparent hover:border-border-color/30 text-[11px] text-text-muted focus:outline-none w-full"
               placeholder="Impact / scale (e.g. Increased revenue by 30%)"
             />
+            <input
+              value={ach.url || ''}
+              onChange={(e) => updAch(idx, 'url', e.target.value)}
+              className="bg-transparent border-b border-transparent hover:border-border-color/30 text-[11px] text-text-muted focus:outline-none w-full mt-1"
+              placeholder="Link URL (optional)"
+            />
             <div className="flex flex-wrap gap-1.5 items-center mt-2.5 pt-1.5 border-t border-border-color/20">
               <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider mr-1.5">
                 Icon:

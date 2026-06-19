@@ -3,6 +3,7 @@ import {
   Plus, Settings, Trash2, ArrowLeft, ArrowRight,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
 } from 'lucide-react';
+import { ToggleSwitch } from '../../components/ui/ToggleSwitch';
 import { ActiveSectionContext } from './ActiveSectionContext';
 import type { LayoutSettings } from '../../types';
 
@@ -60,13 +61,34 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
     (isSkills && !!onSkillsStyleChange && !!onSkillsValueChange) ||
     (!!layoutSettings && !!onLayoutSettingsChange && ['achievements', 'certs', 'experience', 'education', 'languages'].includes(id));
 
+  const popoverClass = 'absolute right-0 top-full mt-1 z-[110] bg-white border border-slate-200 shadow-lg rounded-md p-2 flex flex-col gap-1.5 edit-only w-[172px]';
+  const sectionLabelClass = 'text-[9px] font-semibold text-slate-400 uppercase tracking-wide select-none leading-none';
+
+  const visibilityToggles = (
+    rows: { key: keyof LayoutSettings; label: string }[],
+  ) => (
+    <div className="flex flex-col gap-1">
+      {rows.map(({ key, label }) => (
+        <ToggleSwitch
+          key={key}
+          id={`${id}-${key}`}
+          label={label}
+          checked={(layoutSettings?.[key] as boolean | undefined) ?? true}
+          onChange={(checked) => onLayoutSettingsChange?.({ [key]: checked })}
+          variant="teal"
+          compact
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div
       onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
-      className={`relative group/section rounded transition-all duration-200 ${
+      className={`relative group/section rounded overflow-visible ${
         isActive
-          ? 'bg-white z-[30] p-2 -m-2 section-active'
-          : 'border border-dashed border-transparent hover:border-gray-200 hover:bg-slate-50/30 p-2 -m-2'
+          ? 'z-[30] section-active'
+          : 'border border-dashed border-transparent hover:border-gray-200 hover:bg-slate-50/30'
       } ${showSettings ? '!z-[100]' : ''}`}
     >
       {children}
@@ -139,20 +161,20 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
             </button>
 
             {showSettings && (
-              <div className="absolute right-0 top-full mt-1 z-[110] bg-white border border-slate-200 shadow-xl rounded-lg p-3 flex flex-col gap-2.5 edit-only w-64">
+              <div className={popoverClass}>
                 {onAlignChange && (
                   <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Alignment</span>
-                    <div className="flex gap-1">
+                    <span className={sectionLabelClass}>Alignment</span>
+                    <div className="flex gap-0.5">
                       {(['left', 'center', 'right', 'justify'] as const).map(alignVal => (
                         <button key={alignVal} type="button"
                           onClick={(e) => { e.stopPropagation(); onAlignChange(alignVal); setShowSettings(false); }}
-                          className={`p-1 hover:bg-slate-100 rounded cursor-pointer transition flex items-center justify-center ${align === alignVal ? 'bg-slate-100 text-teal-500 font-bold' : 'text-slate-500'}`}
+                          className={`p-1 hover:bg-slate-100 rounded cursor-pointer transition flex items-center justify-center ${align === alignVal ? 'bg-slate-100 text-teal-500' : 'text-slate-500'}`}
                         >
-                          {alignVal === 'left' && <AlignLeft className="w-3.5 h-3.5" />}
-                          {alignVal === 'center' && <AlignCenter className="w-3.5 h-3.5" />}
-                          {alignVal === 'right' && <AlignRight className="w-3.5 h-3.5" />}
-                          {alignVal === 'justify' && <AlignJustify className="w-3.5 h-3.5" />}
+                          {alignVal === 'left' && <AlignLeft className="w-3 h-3" />}
+                          {alignVal === 'center' && <AlignCenter className="w-3 h-3" />}
+                          {alignVal === 'right' && <AlignRight className="w-3 h-3" />}
+                          {alignVal === 'justify' && <AlignJustify className="w-3 h-3" />}
                         </button>
                       ))}
                     </div>
@@ -161,12 +183,12 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
 
                 {isSkills && onSkillsStyleChange && (
                   <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Layout Style</span>
-                    <div className="flex gap-1.5">
+                    <span className={sectionLabelClass}>Layout</span>
+                    <div className="flex gap-1">
                       {(['chips', 'normal'] as const).map(style => (
                         <button key={style} type="button"
                           onClick={(e) => { e.stopPropagation(); onSkillsStyleChange(style); }}
-                          className={`flex-1 px-2 py-1 rounded text-[10px] font-semibold border cursor-pointer transition ${skillsStyle === style ? 'bg-teal-500 text-white border-teal-500' : 'text-slate-500 border-slate-200 hover:border-slate-400'}`}
+                          className={`flex-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border cursor-pointer transition ${skillsStyle === style ? 'bg-teal-500 text-white border-teal-500' : 'text-slate-500 border-slate-200 hover:border-slate-400'}`}
                         >
                           {style === 'chips' ? 'Chips' : 'List'}
                         </button>
@@ -176,103 +198,61 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
                 )}
 
                 {layoutSettings && onLayoutSettingsChange && id === 'experience' && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
-                    {[
-                      { key: 'showExperienceDates', label: 'Show Dates' },
-                      { key: 'showExperienceCompany', label: 'Show Company' },
-                      { key: 'showExperienceLocation', label: 'Show Location' },
-                      { key: 'showExperienceLogo', label: 'Show Company Logo' },
-                    ].map(({ key, label }) => (
-                      <label key={key} className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
-                        <input type="checkbox"
-                          checked={layoutSettings[key] ?? true}
-                          onChange={(e) => onLayoutSettingsChange({ [key]: e.target.checked })}
-                          className="rounded"
-                        />
-                        {label}
-                      </label>
-                    ))}
-                  </div>
+                  <>
+                    {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
+                    <span className={sectionLabelClass}>Visibility</span>
+                    {visibilityToggles([
+                      { key: 'showExperienceDates', label: 'Dates' },
+                      { key: 'showExperienceCompany', label: 'Company' },
+                      { key: 'showExperienceLocation', label: 'Location' },
+                      { key: 'showExperienceLogo', label: 'Logo' },
+                    ])}
+                  </>
                 )}
 
                 {layoutSettings && onLayoutSettingsChange && id === 'education' && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
-                    {[
-                      { key: 'showEducationDates', label: 'Show Dates' },
-                      { key: 'showEducationLocation', label: 'Show Location' },
-                      { key: 'showEducationGpa', label: 'Show GPA Badge' },
-                      { key: 'showEducationLogo', label: 'Show School Logo' },
-                    ].map(({ key, label }) => (
-                      <label key={key} className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
-                        <input type="checkbox"
-                          checked={layoutSettings[key] ?? true}
-                          onChange={(e) => onLayoutSettingsChange({ [key]: e.target.checked })}
-                          className="rounded"
-                        />
-                        {label}
-                      </label>
-                    ))}
-                  </div>
+                  <>
+                    {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
+                    <span className={sectionLabelClass}>Visibility</span>
+                    {visibilityToggles([
+                      { key: 'showEducationDates', label: 'Dates' },
+                      { key: 'showEducationLocation', label: 'Location' },
+                      { key: 'showEducationGpa', label: 'GPA' },
+                      { key: 'showEducationLogo', label: 'Logo' },
+                    ])}
+                  </>
                 )}
 
                 {layoutSettings && onLayoutSettingsChange && id === 'certs' && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
-                      <input type="checkbox"
-                        checked={layoutSettings.showProjectIcons ?? true}
-                        onChange={(e) => onLayoutSettingsChange({ showProjectIcons: e.target.checked })}
-                        className="rounded"
-                      />
-                      Show Project Icons
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
-                      <input type="checkbox"
-                        checked={layoutSettings.showProjectDesc ?? true}
-                        onChange={(e) => onLayoutSettingsChange({ showProjectDesc: e.target.checked })}
-                        className="rounded"
-                      />
-                      Show Project Description
-                    </label>
-                  </div>
+                  <>
+                    {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
+                    <span className={sectionLabelClass}>Visibility</span>
+                    {visibilityToggles([
+                      { key: 'showProjectIcons', label: 'Icons' },
+                      { key: 'showProjectDesc', label: 'Description' },
+                    ])}
+                  </>
                 )}
 
                 {layoutSettings && onLayoutSettingsChange && id === 'achievements' && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
-                      <input type="checkbox"
-                        checked={layoutSettings.showAchievementIcons ?? true}
-                        onChange={(e) => onLayoutSettingsChange({ showAchievementIcons: e.target.checked })}
-                        className="rounded"
-                      />
-                      Show Icons
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
-                      <input type="checkbox"
-                        checked={layoutSettings.showAchievementDesc ?? true}
-                        onChange={(e) => onLayoutSettingsChange({ showAchievementDesc: e.target.checked })}
-                        className="rounded"
-                      />
-                      Show Description
-                    </label>
-                  </div>
+                  <>
+                    {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
+                    <span className={sectionLabelClass}>Visibility</span>
+                    {visibilityToggles([
+                      { key: 'showAchievementIcons', label: 'Icons' },
+                      { key: 'showAchievementDesc', label: 'Description' },
+                    ])}
+                  </>
                 )}
 
                 {layoutSettings && onLayoutSettingsChange && id === 'languages' && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
-                      <input type="checkbox"
-                        checked={layoutSettings.showLanguageLevel ?? true}
-                        onChange={(e) => onLayoutSettingsChange({ showLanguageLevel: e.target.checked })}
-                        className="rounded"
-                      />
-                      Show Proficiency Level
-                    </label>
-                  </div>
+                  <>
+                    {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
+                    <span className={sectionLabelClass}>Visibility</span>
+                    {visibilityToggles([
+                      { key: 'showLanguageLevel', label: 'Proficiency' },
+                    ])}
+                  </>
                 )}
               </div>
             )}

@@ -23,7 +23,7 @@ export const SidebarTemplate: React.FC = () => {
     name, subtitle, phone, email, linkedin, location, avatar,
     resumeSummary, resumeSkills, resumeExperience, resumeEducation,
     resumeCerts, resumeAchievements, resumeLanguages, layoutSettings,
-    brandColor, accentColor2, bulletStyle, skillsStyle, summaryAlign,
+    brandColor, bulletStyle, skillsStyle, summaryAlign,
     experienceAlign, educationAlign, certsAlign, achievementsAlign,
     showPhoto, bodyFontCss, headingFontCss, lineHeight, badgeStyle,
     onLayoutSettingsChange, onAddExperience, onDeleteExperience,
@@ -100,11 +100,8 @@ export const SidebarTemplate: React.FC = () => {
                 isEditable={isEditable}
                 ec={ec}
                 onSave={ef('resumeSkills')}
-                accentColor2={accentColor2}
-                brandColor={brandColor}
-                badgeStyle={(i) => ({ ...badgeStyle(i), borderRadius: '9999px' })}
-                defaultBadgeStyle={{ background: brandColor + 'cc', color: '#fff', borderRadius: '9999px' }}
-                className="text-[10px] gap-1"
+                badgeStyle={() => ({ ...badgeStyle(), borderRadius: '9999px' })}
+                className="text-[10px]"
                 skillsStyle={skillsStyle}
               />
             </div>
@@ -250,6 +247,7 @@ export const SidebarTemplate: React.FC = () => {
                           onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
                           placeholderIcon={<Building2 className="w-3.5 h-3.5" />}
                           brandColor={brandColor}
+                          onUrlChange={(url) => onExperienceChange?.(idx, 'url', url)}
                         />
                       )}
                     >

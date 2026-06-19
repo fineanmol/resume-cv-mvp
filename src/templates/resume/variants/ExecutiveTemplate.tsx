@@ -20,7 +20,7 @@ export const ExecutiveTemplate: React.FC = () => {
   const {
     sheetActiveClass, sheetStyle, isEditable, clearActive, headerProps,
     resumeSummary, sec, brandColor, summaryAlign, ec, ef, onFieldChange,
-    resumeSkills, skillsStyle, badgeStyle, accentColor2,
+    resumeSkills, skillsStyle, badgeStyle,
     resumeExperience, experienceAlign, onLayoutSettingsChange, onAddExperience,
     layoutSettings, onExperienceChange, onDeleteExperience, bulletStyle,
     resumeEducation, educationAlign, onAddEducation, onEducationChange, onDeleteEducation,
@@ -76,10 +76,7 @@ export const ExecutiveTemplate: React.FC = () => {
               isEditable={isEditable}
               ec={ec}
               onSave={ef('resumeSkills')}
-              accentColor2={accentColor2}
-              brandColor={brandColor}
-              badgeStyle={(i) => ({ ...badgeStyle(i), borderRadius: '9999px' })}
-              defaultBadgeStyle={{ background: brandColor, color: '#fff', borderRadius: '9999px' }}
+              badgeStyle={() => ({ ...badgeStyle(), borderRadius: '9999px' })}
               className="text-[11px] gap-x-2 gap-y-1.5"
               skillsStyle={skillsStyle}
             />
@@ -120,6 +117,7 @@ export const ExecutiveTemplate: React.FC = () => {
                         onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
                         placeholderIcon={<Building2 className="w-3.5 h-3.5" />}
                         brandColor={brandColor}
+                        onUrlChange={(url) => onExperienceChange?.(idx, 'url', url)}
                       />
                     )}
                   >

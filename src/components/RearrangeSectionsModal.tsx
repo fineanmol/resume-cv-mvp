@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, GripVertical, Lock, Layout } from 'lucide-react';
 import { Modal } from './ui/Modal';
 
@@ -20,6 +20,22 @@ const SECTION_NAMES: Record<string, string> = {
   languages: 'Languages',
 };
 
+type Column = 'left' | 'right';
+
+interface DragState {
+  draggedId: string | null;
+  draggedFrom: Column | null;
+  overColumn: Column | null;
+  overId: string | null;
+}
+
+const EMPTY_DRAG: DragState = {
+  draggedId: null,
+  draggedFrom: null,
+  overColumn: null,
+  overId: null,
+};
+
 export const RearrangeSectionsModal: React.FC<RearrangeSectionsModalProps> = ({
   isOpen,
   onClose,
@@ -37,7 +53,6 @@ export const RearrangeSectionsModal: React.FC<RearrangeSectionsModalProps> = ({
   >
     {isOpen && (
       <RearrangeSectionsModalBody
-        key={`${leftSections.join('|')}-${rightSections.join('|')}`}
         onClose={onClose}
         leftSections={leftSections}
         rightSections={rightSections}
@@ -47,7 +62,6 @@ export const RearrangeSectionsModal: React.FC<RearrangeSectionsModalProps> = ({
   </Modal>
 );
 
-/** Inner body unmounts when modal closes — local drag state resets on each open (Cancel-safe). */
 const RearrangeSectionsModalBody: React.FC<Omit<RearrangeSectionsModalProps, 'isOpen'>> = ({
   onClose,
   leftSections,
@@ -56,79 +70,92 @@ const RearrangeSectionsModalBody: React.FC<Omit<RearrangeSectionsModalProps, 'is
 }) => {
   const [localLeft, setLocalLeft] = useState<string[]>(leftSections);
   const [localRight, setLocalRight] = useState<string[]>(rightSections);
-  const [draggedId, setDraggedId] = useState<string | null>(null);
-  const [draggedFrom, setDraggedFrom] = useState<'left' | 'right' | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const [dragOverColumn, setDragOverColumn] = useState<'left' | 'right' | null>(null);
+  const [dragUi, setDragUi] = useState<DragState>(EMPTY_DRAG);
+  const dragRef = useRef<DragState>(EMPTY_DRAG);
+  const rafRef = useRef<number | null>(null);
 
-  const handleDragStart = (e: React.DragEvent, id: string, from: 'left' | 'right') => {
-    setDraggedId(id);
-    setDraggedFrom(from);
+  useEffect(() => () => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  const syncDragUi = useCallback((next: DragState) => {
+    dragRef.current = next;
+    if (rafRef.current !== null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      const cur = dragRef.current;
+      setDragUi(prev =>
+        prev.draggedId === cur.draggedId &&
+        prev.draggedFrom === cur.draggedFrom &&
+        prev.overColumn === cur.overColumn &&
+        prev.overId === cur.overId
+          ? prev
+          : { ...cur },
+      );
+    });
+  }, []);
+
+  const resetDrag = useCallback(() => {
+    syncDragUi(EMPTY_DRAG);
+  }, [syncDragUi]);
+
+  const handleDragStart = (e: React.DragEvent, id: string, from: Column) => {
     e.dataTransfer.setData('text/plain', id);
     e.dataTransfer.effectAllowed = 'move';
+    syncDragUi({ draggedId: id, draggedFrom: from, overColumn: from, overId: id });
   };
 
-  const handleDragOver = (e: React.DragEvent, column: 'left' | 'right', targetId?: string) => {
+  const handleDragOver = (e: React.DragEvent, column: Column, targetId?: string) => {
     e.preventDefault();
-    setDragOverColumn(column);
-    if (targetId) {
-      setDragOverId(targetId);
-    } else {
-      setDragOverId(null);
-    }
+    const { draggedId } = dragRef.current;
+    if (!draggedId) return;
+    e.dataTransfer.dropEffect = 'move';
+    syncDragUi({
+      ...dragRef.current,
+      overColumn: column,
+      overId: targetId ?? null,
+    });
   };
 
-  const handleDragLeave = () => {
-    setDragOverId(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, targetColumn: 'left' | 'right', targetId?: string) => {
+  const handleDrop = (e: React.DragEvent, targetColumn: Column, targetId?: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!draggedId || !draggedFrom) return;
+    const { draggedId, draggedFrom } = dragRef.current;
+    if (!draggedId || !draggedFrom) {
+      resetDrag();
+      return;
+    }
     if (targetId && draggedId === targetId) {
-      setDraggedId(null);
-      setDraggedFrom(null);
-      setDragOverId(null);
-      setDragOverColumn(null);
+      resetDrag();
       return;
     }
 
     let newLeft = [...localLeft];
     let newRight = [...localRight];
 
-    // Remove from source
     if (draggedFrom === 'left') {
       newLeft = newLeft.filter((id) => id !== draggedId);
     } else {
       newRight = newRight.filter((id) => id !== draggedId);
     }
 
-    // Insert into destination
     if (targetColumn === 'left') {
       if (targetId) {
         const targetIdx = newLeft.indexOf(targetId);
-        newLeft.splice(targetIdx, 0, draggedId);
+        newLeft.splice(targetIdx >= 0 ? targetIdx : newLeft.length, 0, draggedId);
       } else {
         newLeft.push(draggedId);
       }
+    } else if (targetId) {
+      const targetIdx = newRight.indexOf(targetId);
+      newRight.splice(targetIdx >= 0 ? targetIdx : newRight.length, 0, draggedId);
     } else {
-      if (targetId) {
-        const targetIdx = newRight.indexOf(targetId);
-        newRight.splice(targetIdx, 0, draggedId);
-      } else {
-        newRight.push(draggedId);
-      }
+      newRight.push(draggedId);
     }
 
     setLocalLeft(newLeft);
     setLocalRight(newRight);
-
-    // Reset Drag state
-    setDraggedId(null);
-    setDraggedFrom(null);
-    setDragOverId(null);
-    setDragOverColumn(null);
+    resetDrag();
   };
 
   const handleApply = () => {
@@ -136,13 +163,65 @@ const RearrangeSectionsModalBody: React.FC<Omit<RearrangeSectionsModalProps, 'is
     onClose();
   };
 
+  const renderColumn = (column: Column, ids: string[]) => {
+    const isOverColumn = dragUi.overColumn === column && !dragUi.overId;
+
+    return (
+      <div
+        onDragOver={(e) => handleDragOver(e, column)}
+        onDrop={(e) => handleDrop(e, column)}
+        className={`bg-slate-50/50 border-2 border-dashed rounded-xl p-3 min-h-[220px] ${
+          isOverColumn ? 'border-brand-accent bg-brand-accent/5' : 'border-slate-200'
+        }`}
+      >
+        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1">
+          <Layout className="w-3 h-3 text-slate-400" />
+          {column === 'left' ? 'Left Column' : 'Right Column'}
+        </div>
+
+        <div className="space-y-2">
+          {ids.map((id) => {
+            const isDragging = dragUi.draggedId === id;
+            const isDropTarget = dragUi.overId === id && dragUi.draggedId !== null && dragUi.draggedId !== id;
+
+            return (
+              <div
+                key={id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, id, column)}
+                onDragOver={(e) => handleDragOver(e, column, id)}
+                onDrop={(e) => handleDrop(e, column, id)}
+                onDragEnd={resetDrag}
+                className={`bg-white border text-xs font-medium text-slate-700 p-2.5 rounded-lg shadow-sm flex items-center justify-between cursor-move select-none ${
+                  isDragging ? 'opacity-40' : ''
+                } ${
+                  isDropTarget ? 'border-brand-accent ring-1 ring-brand-accent bg-brand-accent/5' : 'border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <span className="truncate">{SECTION_NAMES[id] || id}</span>
+                <GripVertical className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+              </div>
+            );
+          })}
+          {ids.length === 0 && (
+            <div className={`text-[10px] text-center py-8 rounded-lg border border-dashed ${
+              isOverColumn ? 'text-brand-accent border-brand-accent/40' : 'text-slate-400 border-transparent'
+            }`}
+            >
+              Drag sections here
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
-      {/* Header */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-border-color/60 flex-shrink-0">
         <div>
           <h2 className="text-lg font-bold text-text-main">Rearrange Sections</h2>
-          <p className="text-xs text-text-muted mt-1">Hold &amp; drag the section cards to rearrange them or move them between columns</p>
+          <p className="text-xs text-text-muted mt-1">Drag section cards to reorder or move between columns</p>
         </div>
         <button
           type="button"
@@ -153,96 +232,20 @@ const RearrangeSectionsModalBody: React.FC<Omit<RearrangeSectionsModalProps, 'is
         </button>
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center bg-[#dde3ec]/40 scrollbar-none" style={{ maxHeight: 'calc(90vh - 140px)' }}>
-        {/* Mockup A4 panel */}
         <div className="bg-white border border-slate-200 rounded-xl shadow-xl p-6 w-full max-w-md flex flex-col">
-          {/* Header section (Locked) */}
           <div className="w-full mb-5 bg-slate-100 border border-slate-200 text-slate-500 rounded-lg p-3.5 flex items-center justify-between opacity-80 select-none">
             <span className="text-xs font-bold uppercase tracking-wider">Applicant Header Block</span>
             <Lock className="w-3.5 h-3.5 text-slate-400" />
           </div>
 
-          {/* Split Columns Grid */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Left Column Drop Zone */}
-            <div
-              onDragOver={(e) => handleDragOver(e, 'left')}
-              onDrop={(e) => handleDrop(e, 'left')}
-              className={`bg-slate-50/50 border-2 border-dashed rounded-xl p-3 min-h-[220px] transition-colors ${
-                dragOverColumn === 'left' && !dragOverId ? 'border-brand-accent bg-brand-accent/5' : 'border-slate-200'
-              }`}
-            >
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1">
-                <Layout className="w-3 h-3 text-slate-400" /> Left Column
-              </div>
-
-              <div className="space-y-2">
-                {localLeft.map((id) => (
-                  <div
-                    key={id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, id, 'left')}
-                    onDragOver={(e) => handleDragOver(e, 'left', id)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, 'left', id)}
-                    className={`bg-white border text-xs font-medium text-slate-700 p-2.5 rounded-lg shadow-sm flex items-center justify-between cursor-move transition-all ${
-                      draggedId === id ? 'opacity-40' : ''
-                    } ${
-                      dragOverId === id ? 'border-brand-accent ring-1 ring-brand-accent bg-brand-accent/5 scale-[1.02]' : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <span className="truncate">{SECTION_NAMES[id] || id}</span>
-                    <GripVertical className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
-                ))}
-                {localLeft.length === 0 && (
-                  <div className="text-[10px] text-slate-400 text-center py-8">Drag sections here</div>
-                )}
-              </div>
-            </div>
-
-            {/* Right Column Drop Zone */}
-            <div
-              onDragOver={(e) => handleDragOver(e, 'right')}
-              onDrop={(e) => handleDrop(e, 'right')}
-              className={`bg-slate-50/50 border-2 border-dashed rounded-xl p-3 min-h-[220px] transition-colors ${
-                dragOverColumn === 'right' && !dragOverId ? 'border-brand-accent bg-brand-accent/5' : 'border-slate-200'
-              }`}
-            >
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1">
-                <Layout className="w-3 h-3 text-slate-400" /> Right Column
-              </div>
-
-              <div className="space-y-2">
-                {localRight.map((id) => (
-                  <div
-                    key={id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, id, 'right')}
-                    onDragOver={(e) => handleDragOver(e, 'right', id)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, 'right', id)}
-                    className={`bg-white border text-xs font-medium text-slate-700 p-2.5 rounded-lg shadow-sm flex items-center justify-between cursor-move transition-all ${
-                      draggedId === id ? 'opacity-40' : ''
-                    } ${
-                      dragOverId === id ? 'border-brand-accent ring-1 ring-brand-accent bg-brand-accent/5 scale-[1.02]' : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <span className="truncate">{SECTION_NAMES[id] || id}</span>
-                    <GripVertical className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
-                ))}
-                {localRight.length === 0 && (
-                  <div className="text-[10px] text-slate-400 text-center py-8">Drag sections here</div>
-                )}
-              </div>
-            </div>
+            {renderColumn('left', localLeft)}
+            {renderColumn('right', localRight)}
           </div>
         </div>
       </div>
 
-      {/* Footer */}
       <div className="flex justify-end gap-3 px-6 py-4 border-t border-border-color/60 bg-sidebar flex-shrink-0">
         <button
           type="button"

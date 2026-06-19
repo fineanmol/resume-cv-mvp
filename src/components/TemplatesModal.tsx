@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2 } from 'lucide-react';
 import { ResumeTemplateRenderer } from '../templates/ResumeTemplates';
 import { CoverLetterTemplateRenderer } from '../templates/CoverLetterTemplates';
-import type { TemplateId, ResumeState, CoverLetterState } from '../types';
+import type { TemplateId, ResumeState, CoverLetterState, ResumeLayoutSettings } from '../types';
 import { TEMPLATE_CATALOG } from '../config/templates';
 import { Modal } from './ui/Modal';
 
@@ -27,15 +27,11 @@ const TemplatesModalBody: React.FC<Omit<TemplatesModalProps, 'isOpen'>> = ({
 
   const currentTemplateObj = TEMPLATE_CATALOG.find(t => t.id === selectedTemplateId) || TEMPLATE_CATALOG[0];
 
-  // Live A4 preview: renders the full ResumeTemplateRenderer with real documentState
-  // (EnhanceCV uses static thumbnails — this gives an accurate layout preview).
-  const previewState = {
-    ...documentState,
-    layoutSettings: {
-      ...documentState.layoutSettings,
-      template: selectedTemplateId,
-      brandColor: currentTemplateObj.accent,
-    },
+  // Live A4 preview: renders the full template with real documentState
+  const previewLayout: ResumeLayoutSettings = {
+    ...(documentState.layoutSettings as ResumeLayoutSettings),
+    template: selectedTemplateId,
+    brandColor: currentTemplateObj.accent,
   };
 
   const handleApply = () => {
@@ -123,9 +119,15 @@ const TemplatesModalBody: React.FC<Omit<TemplatesModalProps, 'isOpen'>> = ({
             >
               <div className="origin-top-left scale-[0.55] w-[794px] h-[1123px]">
                 {docType === 'resume' ? (
-                  <ResumeTemplateRenderer state={previewState} isEditable={false} />
+                  <ResumeTemplateRenderer
+                    state={{ ...(documentState as ResumeState), layoutSettings: previewLayout }}
+                    isEditable={false}
+                  />
                 ) : (
-                  <CoverLetterTemplateRenderer state={previewState} isEditable={false} />
+                  <CoverLetterTemplateRenderer
+                    state={{ ...(documentState as CoverLetterState), layoutSettings: previewLayout }}
+                    isEditable={false}
+                  />
                 )}
               </div>
             </div>

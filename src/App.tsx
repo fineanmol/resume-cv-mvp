@@ -305,6 +305,8 @@ export default function App() {
               ...(resume.state.layoutSettings.designerLeftSections || []),
               ...(resume.state.layoutSettings.designerRightSections || [])
             ]}
+            brandColor={resume.state.layoutSettings.brandColor}
+            skillsStyle={resume.state.layoutSettings.skillsStyle}
             onAddSection={(sectionId) => {
               resume.set(p => {
                 const right = [...(p.layoutSettings.designerRightSections || [])];

@@ -24,6 +24,8 @@ export const EducationEntrySettings: React.FC<EducationEntrySettingsProps> = ({
   brandColor = '#314855',
 }) => {
   const v = item.visibility;
+  const showLogo = isEntryFieldVisible(v, 'logo');
+
   const row = (id: keyof EducationEntryVisibility, label: string) => ({
     id,
     label,
@@ -42,7 +44,7 @@ export const EducationEntrySettings: React.FC<EducationEntrySettingsProps> = ({
         row('logo', 'Show Logo'),
       ]}
     >
-      {onLogoChange && (
+      {showLogo && onLogoChange && (
         <div className="pt-2 border-t border-slate-100 space-y-2">
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Logo</p>
           <ItemLogo

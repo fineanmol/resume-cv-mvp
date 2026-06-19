@@ -20,7 +20,7 @@ export const AtsTemplate: React.FC = () => {
   const {
     sheetActiveClass, sheetStyle, isEditable, clearActive, headerProps,
     resumeSummary, sec, summaryAlign, ec, ef, onFieldChange,
-    resumeSkills, skillsStyle, badgeStyle, accentColor2, brandColor,
+    resumeSkills, skillsStyle, badgeStyle, brandColor,
     resumeExperience, experienceAlign, onLayoutSettingsChange, onAddExperience,
     layoutSettings, onExperienceChange, onDeleteExperience, bulletStyle,
     resumeEducation, educationAlign, onAddEducation, onEducationChange, onDeleteEducation,
@@ -76,8 +76,6 @@ export const AtsTemplate: React.FC = () => {
               isEditable={isEditable}
               ec={ec}
               onSave={ef('resumeSkills')}
-              accentColor2={accentColor2}
-              brandColor={brandColor}
               badgeStyle={badgeStyle}
               className="text-xs text-slate-800"
               skillsStyle={skillsStyle}
@@ -119,6 +117,7 @@ export const AtsTemplate: React.FC = () => {
                         onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
                         placeholderIcon={<Building2 className="w-3.5 h-3.5" />}
                         brandColor={brandColor}
+                        onUrlChange={(url) => onExperienceChange?.(idx, 'url', url)}
                       />
                     )}
                   >

@@ -20,7 +20,7 @@ export const NavyTemplate: React.FC = () => {
   const {
     sheetActiveClass, sheetStyle, isEditable, clearActive, headerProps,
     resumeSummary, sec, brandColor, summaryAlign, ec, ef, onFieldChange,
-    resumeSkills, skillsStyle, badgeStyle, accentColor2,
+    resumeSkills, skillsStyle, badgeStyle,
     resumeExperience, experienceAlign, onLayoutSettingsChange, onAddExperience,
     layoutSettings, onExperienceChange, onDeleteExperience, bulletStyle,
     resumeEducation, educationAlign, onAddEducation, onEducationChange, onDeleteEducation,
@@ -63,6 +63,7 @@ export const NavyTemplate: React.FC = () => {
         {(resumeSkills || isEditable) && (
           <SectionWrapper
             id="skills" title="Skills" isEditable={isEditable}
+            align={undefined}
             skillsStyle={skillsStyle}
             onSkillsStyleChange={(s) => onLayoutSettingsChange?.({ skillsStyle: s })}
             onSkillsValueChange={ef('resumeSkills')}
@@ -75,10 +76,7 @@ export const NavyTemplate: React.FC = () => {
                 isEditable={isEditable}
                 ec={ec}
                 onSave={ef('resumeSkills')}
-                accentColor2={accentColor2}
-                brandColor={brandColor}
                 badgeStyle={badgeStyle}
-                defaultBadgeStyle={{ background: '#f1f5f9', color: '#1e293b', borderColor: '#e2e8f0' }}
                 skillsStyle={skillsStyle}
               />
             </section>
@@ -118,6 +116,7 @@ export const NavyTemplate: React.FC = () => {
                         onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
                         placeholderIcon={<Building2 className="w-3.5 h-3.5" />}
                         brandColor={brandColor}
+                        onUrlChange={(url) => onExperienceChange?.(idx, 'url', url)}
                       />
                     )}
                   >

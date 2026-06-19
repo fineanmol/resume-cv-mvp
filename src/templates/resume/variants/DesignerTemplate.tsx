@@ -1,11 +1,13 @@
 import React from 'react';
 import {
-  Award, Phone, Mail, MapPin, Trophy, Target, Terminal,
+  Phone, Mail, MapPin,
   Building2, GraduationCap,
 } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
 import { SkillsEditor } from '../../shared/SkillsEditor';
+import { EntryIconPicker } from '../../shared/EntryIconPicker';
+import { getDynamicAchievementIcon, getDynamicProjectIcon } from '../../shared/templateIconHelpers';
 import { formatLinkedinUrl } from '../../../utils/linkedin';
 import { parseEducationGrade } from '../../shared/parseEducationGrade';
 import { getLanguageBubbleCount } from '../../../utils/languageLevel';
@@ -20,32 +22,8 @@ import {
   SectionWrapper,
   WorkLink,
 } from '../shared';
-import { ExperienceEntrySettings, EducationEntrySettings } from '../../shared/entrySettings';
+import { ExperienceEntrySettings, EducationEntrySettings, CertEntrySettings, AchievementEntrySettings } from '../../shared/entrySettings';
 import { isEntryFieldVisible } from '../../../utils/entryVisibility';
-
-const getAchievementIcon = (idx: number, title: string) => {
-  const t = title.toLowerCase();
-  if (t.includes('rockstar') || t.includes('award') || t.includes('first') || t.includes('place') || t.includes('won')) {
-    return <Trophy className="w-4 h-4 text-[#007ACC] flex-shrink-0 mt-0.5" />;
-  }
-  if (t.includes('medal') || t.includes('bronze') || t.includes('silver') || t.includes('gold') || t.includes('academic') || t.includes('score')) {
-    return <Award className="w-4 h-4 text-[#007ACC] flex-shrink-0 mt-0.5" />;
-  }
-  if (t.includes('hackathon') || t.includes('participat') || t.includes('world') || t.includes('smart')) {
-    return <Target className="w-4 h-4 text-[#007ACC] flex-shrink-0 mt-0.5" />;
-  }
-  if (t.includes('digitalocean') || t.includes('github') || t.includes('open source') || t.includes('event') || t.includes('code') || t.includes('hacktoberfest')) {
-    return <Terminal className="w-4 h-4 text-[#007ACC] flex-shrink-0 mt-0.5" />;
-  }
-  switch (idx % 4) {
-    case 0: return <Trophy className="w-4 h-4 text-[#007ACC] flex-shrink-0 mt-0.5" />;
-    case 1: return <Award className="w-4 h-4 text-[#007ACC] flex-shrink-0 mt-0.5" />;
-    case 2: return <Target className="w-4 h-4 text-[#007ACC] flex-shrink-0 mt-0.5" />;
-    case 3:
-    default:
-      return <Terminal className="w-4 h-4 text-[#007ACC] flex-shrink-0 mt-0.5" />;
-  }
-};
 
 export const DesignerTemplate: React.FC = () => {
   const {
@@ -53,7 +31,7 @@ export const DesignerTemplate: React.FC = () => {
     name, subtitle, phone, email, linkedin, location, avatar,
     resumeSummary, resumeSkills, resumeExperience, resumeEducation,
     resumeCerts, resumeAchievements, resumeLanguages, layoutSettings,
-    brandColor, accentColor2, bulletStyle, skillsStyle, summaryAlign,
+    brandColor, accentColor2, bulletStyle, skillsStyle, summaryAlign, badgeStyle,
     experienceAlign, educationAlign, certsAlign,
     showPhoto, headingFontCss, dragProps, handleSectionDragOver, handleColumnDrop,
     designerLeftSections, designerRightSections, showLayoutBounds,
@@ -78,6 +56,17 @@ export const DesignerTemplate: React.FC = () => {
 
   const showEdu = (edu: (typeof resumeEducation)[number], field: keyof NonNullable<(typeof resumeEducation)[number]['visibility']>) =>
     isEntryFieldVisible(edu.visibility, field);
+
+  const showCert = (cert: NonNullable<typeof resumeCerts>[number], field: keyof NonNullable<NonNullable<typeof resumeCerts>[number]['visibility']>) =>
+    isEntryFieldVisible(cert.visibility, field);
+
+  const showAch = (ach: NonNullable<typeof resumeAchievements>[number], field: keyof NonNullable<NonNullable<typeof resumeAchievements>[number]['visibility']>) =>
+    isEntryFieldVisible(ach.visibility, field);
+
+  const showProjectIcons = layoutSettings?.showProjectIcons ?? true;
+  const showProjectDesc = layoutSettings?.showProjectDesc ?? true;
+  const showAchievementIcons = layoutSettings?.showAchievementIcons ?? true;
+  const showAchievementDesc = layoutSettings?.showAchievementDesc ?? true;
 
   const handleAddSkill = () => {
     const list = resumeSkills ? resumeSkills.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -121,11 +110,8 @@ export const DesignerTemplate: React.FC = () => {
                   isEditable={isEditable}
                   ec={ec}
                   onSave={ef('resumeSkills')}
-                  accentColor2={accentColor2}
-                  brandColor={brandColor}
-                  badgeStyle={() => ({ background: '#f8fafc', color: '#334155', borderColor: '#cbd5e1', borderRadius: '4px', borderStyle: 'solid', borderWidth: '1px' })}
-                  defaultBadgeStyle={{ background: '#f8fafc', color: '#334155', borderColor: '#cbd5e1', borderRadius: '4px', borderStyle: 'solid', borderWidth: '1px' }}
-                  className="text-[11px] gap-x-2 gap-y-1.5"
+                  badgeStyle={badgeStyle}
+                  className="text-[11px]"
                   skillsStyle={skillsStyle}
                 />
               </section>
@@ -168,6 +154,7 @@ export const DesignerTemplate: React.FC = () => {
                             onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
                             placeholderIcon={<Building2 className="w-3.5 h-3.5" />}
                             brandColor={brandColor}
+                            onUrlChange={(url) => onExperienceChange?.(idx, 'url', url)}
                           />
                         )}
                       >
@@ -323,22 +310,48 @@ export const DesignerTemplate: React.FC = () => {
                       <ItemWrapper
                         key={idx} sectionId="certs" index={idx} totalItems={(resumeCerts ?? []).length}
                         isEditable={isEditable} onDelete={() => onDeleteCert?.(idx)}
+                        settingsPanel={(onClose) => (
+                          <CertEntrySettings
+                            item={cert}
+                            onToggle={(field, value) => onEntryVisibilityChange?.('certs', idx, field, value)}
+                            onClose={onClose}
+                            onUrlChange={(url) => onCertChange?.(idx, 'url', url)}
+                          />
+                        )}
                       >
-                        <li className={`text-${certsAlign}`}>
+                        <li className={`flex gap-2 items-start text-${certsAlign}`}>
+                          {showProjectIcons && showCert(cert, 'icon') && (
+                            isEditable ? (
+                              <EntryIconPicker
+                                variant="project"
+                                currentIcon={cert.icon || 'briefcase'}
+                                onChange={(icon) => onCertChange?.(idx, 'icon', icon)}
+                                isEditable={isEditable}
+                              accentColor={brandColor}
+                              accentColor2={accentColor2}
+                              index={idx}
+                              title={cert.title}
+                            />
+                          ) : (
+                              getDynamicProjectIcon(idx, cert.title, cert.icon, brandColor, 'w-3 h-3 flex-shrink-0 mt-0.5', accentColor2)
+                            )
+                          )}
+                          <div className="flex-1 min-w-0">
                           <div className={`flex items-center gap-1 font-bold text-slate-800 ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
                             <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="font-bold text-slate-800"
                               onSave={v => onCertChange?.(idx, 'title', v)} />
-                            <WorkLink url={cert.url} brandColor={brandColor} />
+                            {showCert(cert, 'link') && <WorkLink url={cert.url} brandColor={brandColor} />}
                           </div>
-                          {cleanDesc && (
+                          {showProjectDesc && cleanDesc && (
                             <E tag="p" value={cleanDesc} isEditable={isEditable} editableClass={ec} className={`text-slate-600 mt-0.5 leading-relaxed text-${certsAlign}`}
                               onSave={v => onCertChange?.(idx, 'desc', v)} />
                           )}
-                          {techStack && (
+                          {showProjectDesc && techStack && (
                             <div className={`text-slate-500 italic mt-0.5 text-[10px] text-${certsAlign}`}>
                               {techStack}
                             </div>
                           )}
+                          </div>
                         </li>
                       </ItemWrapper>
                     );
@@ -362,22 +375,53 @@ export const DesignerTemplate: React.FC = () => {
               <section style={sec}>
                 <h3 className={H} style={{ borderColor: brandColor, color: brandColor }}>Key Achievements</h3>
                 <ul className="space-y-3 text-[11px]">
-                  {(resumeAchievements ?? []).map((ach, idx) => (
+                  {(resumeAchievements ?? []).map((ach, idx) => {
+                    const showLink = showAch(ach, 'link');
+                    return (
                     <ItemWrapper
                       key={idx} sectionId="achievements" index={idx} totalItems={(resumeAchievements ?? []).length}
                       isEditable={isEditable} onDelete={() => onDeleteAchievement?.(idx)}
+                      settingsPanel={(onClose) => (
+                        <AchievementEntrySettings
+                          item={ach}
+                          onToggle={(field, value) => onEntryVisibilityChange?.('achievements', idx, field, value)}
+                          onClose={onClose}
+                          onUrlChange={(url) => onAchievementChange?.(idx, 'url', url)}
+                        />
+                      )}
                     >
                       <li className="flex gap-2.5 items-start">
-                        {getAchievementIcon(idx, ach.title)}
+                        {showAchievementIcons && showAch(ach, 'icon') && (
+                          isEditable ? (
+                            <EntryIconPicker
+                              variant="achievement"
+                              currentIcon={ach.icon || 'star'}
+                              onChange={(icon) => onAchievementChange?.(idx, 'icon', icon)}
+                              isEditable={isEditable}
+                            accentColor={brandColor}
+                            accentColor2={accentColor2}
+                            index={idx}
+                            title={ach.title}
+                          />
+                        ) : (
+                            getDynamicAchievementIcon(idx, ach.title, ach.icon, brandColor, 'w-3 h-3 flex-shrink-0 mt-0.5', accentColor2)
+                          )
+                        )}
                         <div className="flex-1 min-w-0">
-                          <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 font-bold block"
-                            onSave={v => onAchievementChange?.(idx, 'title', v)} />
-                          <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-600 text-[10px] mt-0.5 leading-relaxed"
-                            onSave={v => onAchievementChange?.(idx, 'desc', v)} />
+                          <div className="flex items-center gap-1">
+                            <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 font-bold"
+                              onSave={v => onAchievementChange?.(idx, 'title', v)} />
+                            {showLink && <WorkLink url={ach.url} brandColor={brandColor} />}
+                          </div>
+                          {showAchievementDesc && showAch(ach, 'desc') && (
+                            <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-600 text-[10px] mt-0.5 leading-relaxed"
+                              onSave={v => onAchievementChange?.(idx, 'desc', v)} />
+                          )}
                         </div>
                       </li>
                     </ItemWrapper>
-                  ))}
+                    );
+                  })}
                 </ul>
               </section>
             </SectionWrapper>

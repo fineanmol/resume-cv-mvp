@@ -3,11 +3,13 @@ import type { ExperienceEntryVisibility, ExperienceItem } from '../../../types';
 import { isEntryFieldVisible } from '../../../utils/entryVisibility';
 import { ItemLogo } from '../ItemLogo';
 import { SettingsPanelShell } from './SettingsPanelShell';
+import { EntryLinkField } from './EntryLinkField';
 
 interface ExperienceEntrySettingsProps {
   item: ExperienceItem;
   onToggle: (field: keyof ExperienceEntryVisibility, value: boolean) => void;
   onClose: () => void;
+  onUrlChange?: (url: string) => void;
   logo?: string;
   onLogoChange?: (logo: string) => void;
   placeholderIcon?: React.ReactNode;
@@ -18,12 +20,16 @@ export const ExperienceEntrySettings: React.FC<ExperienceEntrySettingsProps> = (
   item,
   onToggle,
   onClose,
+  onUrlChange,
   logo,
   onLogoChange,
   placeholderIcon,
   brandColor = '#314855',
 }) => {
   const v = item.visibility;
+  const showLink = isEntryFieldVisible(v, 'link');
+  const showLogo = isEntryFieldVisible(v, 'logo');
+
   const row = (id: keyof ExperienceEntryVisibility, label: string) => ({
     id,
     label,
@@ -43,7 +49,14 @@ export const ExperienceEntrySettings: React.FC<ExperienceEntrySettingsProps> = (
         row('link', 'Show Link'),
       ]}
     >
-      {onLogoChange && (
+      {showLink && onUrlChange && (
+        <EntryLinkField
+          url={item.url}
+          onChange={onUrlChange}
+          placeholder="https://company.com"
+        />
+      )}
+      {showLogo && onLogoChange && (
         <div className="pt-2 border-t border-slate-100 space-y-2">
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Logo</p>
           <ItemLogo

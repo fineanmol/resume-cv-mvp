@@ -105,6 +105,7 @@ export interface CertEntryVisibility {
 export interface AchievementEntryVisibility {
   desc?: boolean;
   icon?: boolean;
+  link?: boolean;
 }
 
 export interface LanguageEntryVisibility {
@@ -146,7 +147,8 @@ export interface CertItem {
 export interface AchievementItem {
   title: string;
   desc: string;
-  icon: 'star' | 'award' | 'flag' | 'check' | 'trophy' | 'target' | 'terminal';
+  icon?: string;
+  url?: string;
   visibility?: AchievementEntryVisibility;
 }
 

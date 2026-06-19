@@ -18,7 +18,7 @@ export const SerifTemplate: React.FC = () => {
   const {
     sheetActiveClass, sheetStyle, isEditable, clearActive, headerProps,
     resumeSummary, sec, summaryAlign, ec, ef, onFieldChange,
-    resumeSkills, skillsStyle, badgeStyle, accentColor2, brandColor,
+    resumeSkills, skillsStyle, badgeStyle, brandColor,
     resumeExperience, experienceAlign, onLayoutSettingsChange, onAddExperience,
     layoutSettings, onExperienceChange, onDeleteExperience, bulletStyle,
     resumeEducation, educationAlign, onAddEducation, onEducationChange, onDeleteEducation,
@@ -72,10 +72,8 @@ export const SerifTemplate: React.FC = () => {
               isEditable={isEditable}
               ec={ec}
               onSave={ef('resumeSkills')}
-              accentColor2={accentColor2}
-              brandColor={brandColor}
               badgeStyle={badgeStyle}
-              className="text-center font-sans"
+              className="font-sans"
               skillsStyle={skillsStyle}
             />
           </section>

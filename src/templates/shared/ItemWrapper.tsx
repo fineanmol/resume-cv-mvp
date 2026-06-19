@@ -52,7 +52,7 @@ export const ItemWrapper: React.FC<ItemWrapperProps> = ({
   const handleMoveUp = onMoveUp ?? (context?.handleMoveItemUpDown ? () => context.handleMoveItemUpDown(sectionId, index, 'up') : undefined);
   const handleMoveDown = onMoveDown ?? (context?.handleMoveItemUpDown ? () => context.handleMoveItemUpDown(sectionId, index, 'down') : undefined);
 
-  const handleItemClick = (e: React.MouseEvent) => {
+  const handleItemActivate = (e: React.MouseEvent) => {
     e.stopPropagation();
     context?.setActiveSectionId(sectionId);
     context?.setActiveItemId(itemId);
@@ -65,10 +65,11 @@ export const ItemWrapper: React.FC<ItemWrapperProps> = ({
 
   return (
     <div
-      className={`relative group/item rounded transition-all duration-200 ${
-        isItemActive ? 'p-2 -m-2 item-active' : 'p-0'
+      className={`relative group/item rounded ${
+        isItemActive ? 'item-active' : ''
       } ${showSettings ? 'z-[100]' : ''}`}
-      onClick={handleItemClick}
+      onMouseDown={handleItemActivate}
+      onClick={(e) => e.stopPropagation()}
     >
       {children}
 

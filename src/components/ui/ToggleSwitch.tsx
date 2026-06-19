@@ -6,6 +6,7 @@ interface ToggleSwitchProps {
   label?: string;
   id?: string;
   variant?: 'default' | 'teal';
+  compact?: boolean;
 }
 
 export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
@@ -14,6 +15,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   label,
   id,
   variant = 'default',
+  compact = false,
 }) => {
   const checkedClass = variant === 'teal' ? 'bg-teal-500' : 'bg-brand-accent';
   const switchEl = (
@@ -23,22 +25,24 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
       id={id}
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative w-9 h-5 rounded-full transition cursor-pointer ${
-        checked ? checkedClass : 'bg-border-color'
-      }`}
+      className={`relative rounded-full transition cursor-pointer flex-shrink-0 ${
+        compact ? 'w-7 h-4' : 'w-9 h-5'
+      } ${checked ? checkedClass : 'bg-border-color'}`}
     >
       <span
-        className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${
-          checked ? 'left-4' : 'left-0.5'
-        }`}
+        className={`absolute top-0.5 bg-white rounded-full shadow transition-all ${
+          compact ? 'w-3 h-3' : 'w-4 h-4'
+        } ${checked ? (compact ? 'left-3.5' : 'left-4') : 'left-0.5'}`}
       />
     </button>
   );
 
   if (label) {
     return (
-      <label className="flex items-center justify-between cursor-pointer">
-        <span className="text-xs text-text-main font-medium">{label}</span>
+      <label className="flex items-center justify-between gap-2 cursor-pointer min-w-0">
+        <span className={`${compact ? 'text-[11px] leading-tight' : 'text-xs'} text-text-main font-medium truncate`}>
+          {label}
+        </span>
         {switchEl}
       </label>
     );

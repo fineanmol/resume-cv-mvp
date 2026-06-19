@@ -10,7 +10,7 @@ import { EditableText } from './shared/EditableText';
 interface CoverLetterTemplateProps {
   state: CoverLetterState;
   isEditable?: boolean;
-  onFieldChange?: (field: keyof CoverLetterState, value: string) => void;
+  onFieldChange?: <K extends keyof CoverLetterState>(field: K, value: CoverLetterState[K]) => void;
   onHighlightChange?: (index: number, field: keyof HighlightItem, value: string) => void;
 }
 

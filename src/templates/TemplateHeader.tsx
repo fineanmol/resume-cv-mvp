@@ -96,7 +96,7 @@ export const AvatarCircleEditable: React.FC<{
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [showPopover]);
 
-  const settings = layoutSettings || {};
+  const settings: Partial<LayoutSettings> = layoutSettings ?? {};
   const photoShape = resolvePhotoShape(settings);
   const showPhoto = settings.showPhoto ?? true;
 
@@ -247,40 +247,42 @@ export const AvatarCircleEditable: React.FC<{
             </button>
           </div>
 
-          {/* Photo Shape Style Selector */}
-          <div className="flex items-center justify-between pt-0.5">
-            <span className="text-slate-600 font-medium">Photo Style</span>
-            <PhotoShapeSelector
-              shape={photoShape}
-              onChange={handlePhotoShapeChange}
-            />
-          </div>
+          {showPhoto && (
+            <>
+              <div className="flex items-center justify-between pt-0.5">
+                <span className="text-slate-600 font-medium">Photo Style</span>
+                <PhotoShapeSelector
+                  shape={photoShape}
+                  onChange={handlePhotoShapeChange}
+                />
+              </div>
 
-          {/* Upload / Delete Action Buttons */}
-          <div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-              className="py-1 text-[10px] font-bold uppercase tracking-wider rounded border border-slate-200 hover:bg-slate-50 text-slate-700 cursor-pointer flex items-center justify-center gap-1"
-            >
-              <Camera className="w-3 h-3" />
-              Upload
-            </button>
-            {src && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onAvatarChange) onAvatarChange('');
-                  setShowPopover(false);
-                }}
-                className="py-1 text-[10px] font-bold uppercase tracking-wider rounded border border-red-200 hover:bg-red-50 text-red-600 cursor-pointer flex items-center justify-center gap-1"
-              >
-                <Trash2 className="w-3 h-3" />
-                Delete
-              </button>
-            )}
-          </div>
+              <div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                  className="py-1 text-[10px] font-bold uppercase tracking-wider rounded border border-slate-200 hover:bg-slate-50 text-slate-700 cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <Camera className="w-3 h-3" />
+                  Upload
+                </button>
+                {src && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onAvatarChange) onAvatarChange('');
+                      setShowPopover(false);
+                    }}
+                    className="py-1 text-[10px] font-bold uppercase tracking-wider rounded border border-red-200 hover:bg-red-50 text-red-600 cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Delete
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -292,7 +294,7 @@ const ContactRow: React.FC<{
   isEditable: boolean; ec: string; cls?: string; itemCls?: string;
   layoutSettings?: LayoutSettings;
 }> = ({ phone, email, location, linkedin, isEditable, ec, cls, itemCls, layoutSettings }) => {
-  const settings = layoutSettings || {};
+  const settings: Partial<LayoutSettings> = layoutSettings ?? {};
   const hasPhone = (settings.showPhone ?? true) && !!(phone?.value && phone.value.trim());
   const hasEmail = (settings.showEmail ?? true) && !!(email?.value && email.value.trim());
   const hasLocation = (settings.showLocation ?? true) && !!(location?.value && location.value.trim());
@@ -357,8 +359,9 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
   };
 
   const renderSettingsPanel = () => {
-    if (!p.layoutSettings) return null;
-    const showPhoto = p.layoutSettings.showPhoto ?? true;
+    const ls = p.layoutSettings;
+    if (!ls) return null;
+    const showPhoto = ls.showPhoto ?? true;
     return (
       <div
         ref={settingsRef}
@@ -378,7 +381,7 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
               <button
                 key={style}
                 onClick={() => handleSettingsChange({ headerStyle: style })}
-                className={`py-1 text-[9px] rounded border cursor-pointer capitalize transition ${p.layoutSettings.headerStyle === style ? 'bg-teal-50 border-teal-500 text-teal-600 font-bold' : 'border-slate-200 hover:bg-slate-50'}`}
+                className={`py-1 text-[9px] rounded border cursor-pointer capitalize transition ${ls.headerStyle === style ? 'bg-teal-50 border-teal-500 text-teal-600 font-bold' : 'border-slate-200 hover:bg-slate-50'}`}
               >
                 {style === 'enhancv' ? 'Enhance' : style}
               </button>
@@ -397,15 +400,15 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
               <button
                 type="button"
                 role="switch"
-                aria-checked={p.layoutSettings.showTitle ?? true}
-                onClick={() => handleSettingsChange({ showTitle: !(p.layoutSettings.showTitle ?? true) })}
+                aria-checked={ls.showTitle ?? true}
+                onClick={() => handleSettingsChange({ showTitle: !(ls.showTitle ?? true) })}
                 className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  (p.layoutSettings.showTitle ?? true) ? 'bg-teal-500' : 'bg-slate-200'
+                  (ls.showTitle ?? true) ? 'bg-teal-500' : 'bg-slate-200'
                 }`}
               >
                 <span
                   className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    (p.layoutSettings.showTitle ?? true) ? 'translate-x-3' : 'translate-x-0'
+                    (ls.showTitle ?? true) ? 'translate-x-3' : 'translate-x-0'
                   }`}
                 />
               </button>
@@ -417,15 +420,15 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
               <button
                 type="button"
                 role="switch"
-                aria-checked={p.layoutSettings.showPhone ?? true}
-                onClick={() => handleSettingsChange({ showPhone: !(p.layoutSettings.showPhone ?? true) })}
+                aria-checked={ls.showPhone ?? true}
+                onClick={() => handleSettingsChange({ showPhone: !(ls.showPhone ?? true) })}
                 className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  (p.layoutSettings.showPhone ?? true) ? 'bg-teal-500' : 'bg-slate-200'
+                  (ls.showPhone ?? true) ? 'bg-teal-500' : 'bg-slate-200'
                 }`}
               >
                 <span
                   className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    (p.layoutSettings.showPhone ?? true) ? 'translate-x-3' : 'translate-x-0'
+                    (ls.showPhone ?? true) ? 'translate-x-3' : 'translate-x-0'
                   }`}
                 />
               </button>
@@ -437,15 +440,15 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
               <button
                 type="button"
                 role="switch"
-                aria-checked={p.layoutSettings.showEmail ?? true}
-                onClick={() => handleSettingsChange({ showEmail: !(p.layoutSettings.showEmail ?? true) })}
+                aria-checked={ls.showEmail ?? true}
+                onClick={() => handleSettingsChange({ showEmail: !(ls.showEmail ?? true) })}
                 className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  (p.layoutSettings.showEmail ?? true) ? 'bg-teal-500' : 'bg-slate-200'
+                  (ls.showEmail ?? true) ? 'bg-teal-500' : 'bg-slate-200'
                 }`}
               >
                 <span
                   className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    (p.layoutSettings.showEmail ?? true) ? 'translate-x-3' : 'translate-x-0'
+                    (ls.showEmail ?? true) ? 'translate-x-3' : 'translate-x-0'
                   }`}
                 />
               </button>
@@ -457,15 +460,15 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
               <button
                 type="button"
                 role="switch"
-                aria-checked={p.layoutSettings.showLocation ?? true}
-                onClick={() => handleSettingsChange({ showLocation: !(p.layoutSettings.showLocation ?? true) })}
+                aria-checked={ls.showLocation ?? true}
+                onClick={() => handleSettingsChange({ showLocation: !(ls.showLocation ?? true) })}
                 className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  (p.layoutSettings.showLocation ?? true) ? 'bg-teal-500' : 'bg-slate-200'
+                  (ls.showLocation ?? true) ? 'bg-teal-500' : 'bg-slate-200'
                 }`}
               >
                 <span
                   className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    (p.layoutSettings.showLocation ?? true) ? 'translate-x-3' : 'translate-x-0'
+                    (ls.showLocation ?? true) ? 'translate-x-3' : 'translate-x-0'
                   }`}
                 />
               </button>
@@ -477,15 +480,15 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
               <button
                 type="button"
                 role="switch"
-                aria-checked={p.layoutSettings.showLinkedin ?? true}
-                onClick={() => handleSettingsChange({ showLinkedin: !(p.layoutSettings.showLinkedin ?? true) })}
+                aria-checked={ls.showLinkedin ?? true}
+                onClick={() => handleSettingsChange({ showLinkedin: !(ls.showLinkedin ?? true) })}
                 className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  (p.layoutSettings.showLinkedin ?? true) ? 'bg-teal-500' : 'bg-slate-200'
+                  (ls.showLinkedin ?? true) ? 'bg-teal-500' : 'bg-slate-200'
                 }`}
               >
                 <span
                   className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    (p.layoutSettings.showLinkedin ?? true) ? 'translate-x-3' : 'translate-x-0'
+                    (ls.showLinkedin ?? true) ? 'translate-x-3' : 'translate-x-0'
                   }`}
                 />
               </button>
@@ -497,15 +500,15 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
               <button
                 type="button"
                 role="switch"
-                aria-checked={p.layoutSettings.uppercaseName ?? false}
-                onClick={() => handleSettingsChange({ uppercaseName: !(p.layoutSettings.uppercaseName ?? false) })}
+                aria-checked={ls.uppercaseName ?? false}
+                onClick={() => handleSettingsChange({ uppercaseName: !(ls.uppercaseName ?? false) })}
                 className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  (p.layoutSettings.uppercaseName ?? false) ? 'bg-teal-500' : 'bg-slate-200'
+                  (ls.uppercaseName ?? false) ? 'bg-teal-500' : 'bg-slate-200'
                 }`}
               >
                 <span
                   className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                    (p.layoutSettings.uppercaseName ?? false) ? 'translate-x-3' : 'translate-x-0'
+                    (ls.uppercaseName ?? false) ? 'translate-x-3' : 'translate-x-0'
                   }`}
                 />
               </button>
@@ -531,14 +534,15 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
               </button>
             </div>
 
-            {/* Photo Style Shape Selector */}
-            <div className="flex items-center justify-between">
-              <span>Photo Style</span>
-              <PhotoShapeSelector
-                shape={resolvePhotoShape(p.layoutSettings)}
-                onChange={(shape) => handleSettingsChange(photoShapePatch(shape))}
-              />
-            </div>
+            {showPhoto && (
+              <div className="flex items-center justify-between">
+                <span>Photo Style</span>
+                <PhotoShapeSelector
+                  shape={resolvePhotoShape(ls)}
+                  onChange={(shape) => handleSettingsChange(photoShapePatch(shape))}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -604,10 +608,10 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
 
     // ── ENHANCV: 2-column layout (name/title/2x2-contact left, optional photo right)
     if (p.headerStyle === 'enhancv') {
-      const hasPhone = (p.layoutSettings.showPhone ?? true) && !!(p.phone?.value && p.phone.value.trim());
-      const hasEmail = (p.layoutSettings.showEmail ?? true) && !!(p.email?.value && p.email.value.trim());
-      const hasLocation = (p.layoutSettings.showLocation ?? true) && !!(p.location?.value && p.location.value.trim());
-      const hasLinkedin = (p.layoutSettings.showLinkedin ?? true) && !!(p.linkedin?.value && p.linkedin.value.trim());
+      const hasPhone = (p.layoutSettings?.showPhone ?? true) && !!(p.phone?.value && p.phone.value.trim());
+      const hasEmail = (p.layoutSettings?.showEmail ?? true) && !!(p.email?.value && p.email.value.trim());
+      const hasLocation = (p.layoutSettings?.showLocation ?? true) && !!(p.location?.value && p.location.value.trim());
+      const hasLinkedin = (p.layoutSettings?.showLinkedin ?? true) && !!(p.linkedin?.value && p.linkedin.value.trim());
 
       return (
         <header 

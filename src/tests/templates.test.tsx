@@ -370,8 +370,8 @@ describe('ResumeTemplates — skillsStyle option', () => {
     const { container } = render(
       <ResumeTemplateRenderer state={resumeWith({ template: 'navy', skillsStyle: 'chips' })} />
     );
-    // Chips should have the inline-block styles
-    const chip = container.querySelector('span.inline-block');
+    // Chips should hug content (inline-flex w-max)
+    const chip = container.querySelector('span.inline-flex.w-max');
     expect(chip).toBeTruthy();
     expect(chip?.textContent).toBe('React');
   });
@@ -380,8 +380,8 @@ describe('ResumeTemplates — skillsStyle option', () => {
     const { container } = render(
       <ResumeTemplateRenderer state={resumeWith({ template: 'navy', skillsStyle: 'normal' })} />
     );
-    // Normal style shouldn't contain span.inline-block chips
-    const chip = container.querySelector('span.inline-block');
+    // Normal style shouldn't contain skill chips
+    const chip = container.querySelector('span.inline-flex.w-max');
     expect(chip).toBeNull();
     // It should render the entire comma-separated value
     expect(container.textContent).toContain('React, TypeScript, Node.js');
