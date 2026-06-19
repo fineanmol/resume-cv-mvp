@@ -3,6 +3,7 @@ import {
   parseEditableBullets,
   handleBulletEnterKey,
   handleBulletBackspaceKey,
+  setContentEditableCaret,
 } from '../hooks/useBulletKeyboard';
 
 describe('useBulletKeyboard', () => {
@@ -84,6 +85,22 @@ describe('useBulletKeyboard', () => {
       });
       expect(handled).toBe(false);
       expect(result).toBe('unchanged');
+    });
+  });
+
+  describe('setContentEditableCaret', () => {
+    it('places the caret at the requested character offset', () => {
+      const el = document.createElement('span');
+      el.textContent = 'FirstSecond';
+      document.body.appendChild(el);
+
+      setContentEditableCaret(el, 5);
+
+      const sel = window.getSelection();
+      expect(sel?.rangeCount).toBe(1);
+      expect(sel?.getRangeAt(0).startOffset).toBe(5);
+
+      el.remove();
     });
   });
 });

@@ -30,12 +30,50 @@ export function getContentEditableCursorOffset(element: HTMLElement): number {
   return preRange.toString().length;
 }
 
+export function setContentEditableCaret(el: HTMLElement, offset: number): void {
+  const sel = window.getSelection();
+  if (!sel) return;
+
+  const range = document.createRange();
+  const maxOffset = el.textContent?.length ?? 0;
+  const targetOffset = Math.max(0, Math.min(offset, maxOffset));
+
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let remaining = targetOffset;
+  let textNode = walker.nextNode() as Text | null;
+
+  if (!textNode) {
+    range.setStart(el, 0);
+    range.collapse(true);
+  } else {
+    let placed = false;
+    while (textNode) {
+      const len = textNode.length;
+      if (remaining <= len) {
+        range.setStart(textNode, remaining);
+        range.collapse(true);
+        placed = true;
+        break;
+      }
+      remaining -= len;
+      textNode = walker.nextNode() as Text | null;
+    }
+    if (!placed) {
+      range.selectNodeContents(el);
+      range.collapse(false);
+    }
+  }
+
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
 export function focusBulletElement(
   prefixId: string,
   bIdx: number,
-  position: 'start' | 'end' = 'start',
+  caret: 'start' | 'end' | number = 'start',
 ): void {
-  setTimeout(() => {
+  const applyFocus = () => {
     const el = document.querySelector(
       `[data-bullet-id="${prefixId}-${bIdx}"]`,
     ) as HTMLInputElement | HTMLElement | null;
@@ -43,24 +81,28 @@ export function focusBulletElement(
 
     el.focus();
 
+    let offset: number;
+    if (typeof caret === 'number') {
+      offset = caret;
+    } else if (caret === 'end') {
+      offset = el instanceof HTMLInputElement
+        ? el.value.length
+        : (el.textContent?.length ?? 0);
+    } else {
+      offset = 0;
+    }
+
     if (el instanceof HTMLInputElement) {
-      const pos = position === 'end' ? el.value.length : 0;
+      const pos = Math.min(offset, el.value.length);
       el.setSelectionRange(pos, pos);
       return;
     }
 
-    const range = document.createRange();
-    const sel = window.getSelection();
-    if (position === 'end' && el.childNodes.length > 0) {
-      range.selectNodeContents(el);
-      range.collapse(false);
-    } else {
-      range.setStart(el, 0);
-      range.collapse(true);
-    }
-    sel?.removeAllRanges();
-    sel?.addRange(range);
-  }, 0);
+    setContentEditableCaret(el, offset);
+  };
+
+  // Wait for React to commit remounted bullet rows after merge/delete
+  setTimeout(() => requestAnimationFrame(applyFocus), 0);
 }
 
 export function handleBulletEnterKey(options: {
@@ -94,20 +136,23 @@ export function handleBulletBackspaceKey(options: {
 
   // Merge into previous bullet when cursor is at start and current line has text
   if (cursorPos === 0 && normalized && bIdx > 0) {
+    const prevText = bullets[bIdx - 1] ?? '';
+    const mergeCaret = prevText.length;
     const updated = [...bullets];
-    updated[bIdx - 1] = (updated[bIdx - 1] ?? '') + normalized;
+    updated[bIdx - 1] = prevText + normalized;
     updated.splice(bIdx, 1);
     onChange(updated.join('\n'));
-    focusBulletElement(prefixId, bIdx - 1, 'end');
+    focusBulletElement(prefixId, bIdx - 1, mergeCaret);
     return true;
   }
 
   if (!isBulletEmpty(text)) return false;
   if (bullets.length <= 1) return true;
 
+  const mergeCaret = (bullets[bIdx - 1] ?? '').length;
   const updated = bullets.filter((_, i) => i !== bIdx);
   onChange(updated.join('\n'));
-  focusBulletElement(prefixId, bIdx - 1, 'end');
+  focusBulletElement(prefixId, bIdx - 1, mergeCaret);
   return true;
 }
 
