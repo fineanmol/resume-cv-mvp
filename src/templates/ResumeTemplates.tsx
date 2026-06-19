@@ -2,7 +2,7 @@ import React from 'react';
 import type { ResumeState, ExperienceItem, EducationItem, CertItem, AchievementItem, LanguageItem } from '../types';
 import { Star, Award, Phone, Mail, MapPin } from 'lucide-react';
 import { FONT_CSS } from '../config/fonts';
-import { TemplateHeader } from './TemplateHeader';
+import { TemplateHeader, formatLinkedinUrl } from './TemplateHeader';
 import { splitIntoBullets } from '../utils/bullets';
 
 interface ResumeTemplateProps {
@@ -23,11 +23,12 @@ interface EditableProps {
   onSave: (val: string) => void;
   isEditable: boolean;
   editableClass: string;
-  tag?: 'span' | 'p' | 'strong' | 'div' | 'h1' | 'h2' | 'h3';
+  tag?: 'span' | 'p' | 'strong' | 'div' | 'h1' | 'h2' | 'h3' | 'a';
   style?: React.CSSProperties;
   dangerousInnerHtml?: string;
+  href?: string;
 }
-const E: React.FC<EditableProps> = ({ value, className, onSave, isEditable, editableClass, tag = 'span', style, dangerousInnerHtml }) => {
+const E: React.FC<EditableProps> = ({ value, className, onSave, isEditable, editableClass, tag = 'span', style, dangerousInnerHtml, href }) => {
   const Tag = tag;
   if (isEditable) {
     return (
@@ -43,6 +44,13 @@ const E: React.FC<EditableProps> = ({ value, className, onSave, isEditable, edit
       >
         {value}
       </Tag>
+    );
+  }
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={`${className || ''} hover:underline cursor-pointer`} style={style}>
+        {value}
+      </a>
     );
   }
   if (dangerousInnerHtml !== undefined) {
@@ -82,7 +90,7 @@ function BulletList({
 
 // ─── LinkedIn icon — module-level so it's not recreated each render ──────────
 const LI: React.FC = () => (
-  <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg className="w-3 h-3 flex-shrink-0 mt-[1px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
     <rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" />
   </svg>
@@ -410,10 +418,10 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
           <div>
             <h4 className={SH} style={{ borderColor: `${brandColor}60`, color: brandColor }}>Contact</h4>
             <ul className="space-y-1.5 text-[11px] leading-relaxed">
-              {(phone || isEditable) && <li className="flex items-center gap-1.5"><Phone className="w-3 h-3 flex-shrink-0" /><E value={phone || 'Phone'} isEditable={isEditable} editableClass={ec} onSave={ef('phone')} /></li>}
-              {(email || isEditable) && <li className="flex items-center gap-1.5"><Mail className="w-3 h-3 flex-shrink-0" /><E value={email || 'Email'} isEditable={isEditable} editableClass={ec} onSave={ef('email')} /></li>}
-              {(location || isEditable) && <li className="flex items-center gap-1.5"><MapPin className="w-3 h-3 flex-shrink-0" /><E value={location || 'Location'} isEditable={isEditable} editableClass={ec} onSave={ef('location')} /></li>}
-              {(linkedin || isEditable) && <li className="flex items-center gap-1.5"><LI /><E value={linkedin || 'LinkedIn'} isEditable={isEditable} editableClass={ec} onSave={ef('linkedin')} /></li>}
+              {(phone || isEditable) && <li className="flex items-center gap-1.5"><Phone className="w-3 h-3 flex-shrink-0 mt-[1px]" /><E value={phone || 'Phone'} isEditable={isEditable} editableClass={ec} onSave={ef('phone')} /></li>}
+              {(email || isEditable) && <li className="flex items-center gap-1.5"><Mail className="w-3 h-3 flex-shrink-0 mt-[1px]" /><E value={email || 'Email'} isEditable={isEditable} editableClass={ec} onSave={ef('email')} href={isEditable ? undefined : `mailto:${email}`} /></li>}
+              {(location || isEditable) && <li className="flex items-center gap-1.5"><MapPin className="w-3 h-3 flex-shrink-0 mt-[1px]" /><E value={location || 'Location'} isEditable={isEditable} editableClass={ec} onSave={ef('location')} /></li>}
+              {(linkedin || isEditable) && <li className="flex items-center gap-1.5"><LI /><E value={linkedin || 'LinkedIn'} isEditable={isEditable} editableClass={ec} onSave={ef('linkedin')} href={isEditable ? undefined : formatLinkedinUrl(linkedin)} /></li>}
             </ul>
           </div>
 

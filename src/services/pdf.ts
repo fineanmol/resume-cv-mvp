@@ -321,7 +321,7 @@ export class PdfService {
       filename,
       image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: {
-        scale: 2,
+        scale: 4,
         useCORS: true,
         letterRendering: true,
         logging: false,

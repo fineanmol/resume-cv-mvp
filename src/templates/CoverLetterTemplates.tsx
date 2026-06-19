@@ -2,7 +2,7 @@ import React from 'react';
 import type { CoverLetterState, HighlightItem } from '../types';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { FONT_CSS } from '../config/fonts';
-import { TemplateHeader } from './TemplateHeader';
+import { TemplateHeader, formatLinkedinUrl } from './TemplateHeader';
 
 interface CoverLetterTemplateProps {
   state: CoverLetterState;
@@ -294,7 +294,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
             <ul className="space-y-2 text-[11px] leading-relaxed">
               { (phone || isEditable) && (
                 <li className="flex items-center gap-1.5 truncate">
-                  <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                  <Phone className="w-3.5 h-3.5 flex-shrink-0 mt-[1px]" />
                   <span
                     className={editableClass}
                     contentEditable={isEditable}
@@ -307,20 +307,26 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
               )}
               { (email || isEditable) && (
                 <li className="flex items-center gap-1.5 truncate">
-                  <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span
-                    className={editableClass}
-                    contentEditable={isEditable}
-                    suppressContentEditableWarning={true}
-                    onBlur={(e) => onFieldChange?.('email', e.currentTarget.textContent || '')}
-                  >
-                    {email || 'Email'}
-                  </span>
+                  <Mail className="w-3.5 h-3.5 flex-shrink-0 mt-[1px]" />
+                  {isEditable ? (
+                    <span
+                      className={editableClass}
+                      contentEditable={isEditable}
+                      suppressContentEditableWarning={true}
+                      onBlur={(e) => onFieldChange?.('email', e.currentTarget.textContent || '')}
+                    >
+                      {email || 'Email'}
+                    </span>
+                  ) : (
+                    <a href={`mailto:${email}`} className="hover:underline cursor-pointer">
+                      {email}
+                    </a>
+                  )}
                 </li>
               )}
               { (location || isEditable) && (
                 <li className="flex items-center gap-1.5 truncate">
-                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                  <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-[1px]" />
                   <span
                     className={editableClass}
                     contentEditable={isEditable}
@@ -333,15 +339,21 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
               )}
               { (linkedin || isEditable) && (
                 <li className="flex items-center gap-1.5 truncate">
-                  <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                  <span
-                    className={editableClass}
-                    contentEditable={isEditable}
-                    suppressContentEditableWarning={true}
-                    onBlur={(e) => onFieldChange?.('linkedin', e.currentTarget.textContent || '')}
-                  >
-                    {linkedin || 'LinkedIn'}
-                  </span>
+                  <svg className="w-3.5 h-3.5 flex-shrink-0 mt-[1px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                  {isEditable ? (
+                    <span
+                      className={editableClass}
+                      contentEditable={isEditable}
+                      suppressContentEditableWarning={true}
+                      onBlur={(e) => onFieldChange?.('linkedin', e.currentTarget.textContent || '')}
+                    >
+                      {linkedin || 'LinkedIn'}
+                    </span>
+                  ) : (
+                    <a href={formatLinkedinUrl(linkedin)} target="_blank" rel="noopener noreferrer" className="hover:underline cursor-pointer">
+                      {linkedin}
+                    </a>
+                  )}
                 </li>
               )}
             </ul>

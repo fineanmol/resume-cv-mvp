@@ -7,8 +7,23 @@ import React from 'react';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import type { HeaderStyle } from '../types';
 
+export function formatLinkedinUrl(url: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('linkedin.com') || trimmed.startsWith('www.linkedin.com')) {
+    return `https://${trimmed}`;
+  }
+  if (trimmed.startsWith('in/')) {
+    return `https://linkedin.com/${trimmed}`;
+  }
+  return `https://linkedin.com/in/${trimmed}`;
+}
+
 const LI: React.FC = () => (
-  <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+  <svg className="w-3 h-3 flex-shrink-0 mt-[1px]" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
     <rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" />
@@ -37,20 +52,41 @@ export interface TemplateHeaderProps {
   sectionSpacing: number;
 }
 
-// Reusable editable span
-const EF: React.FC<{ field: EditField; isEditable: boolean; ec: string; className?: string; style?: React.CSSProperties }> = (
-  { field, isEditable, ec, className, style }
-) => (
-  <span
-    className={`${className ?? ''} ${isEditable ? ec : ''}`}
-    style={style}
-    contentEditable={isEditable || undefined}
-    suppressContentEditableWarning={isEditable || undefined}
-    onBlur={isEditable ? e => field.onSave((e.currentTarget as HTMLElement).textContent ?? '') : undefined}
-  >
-    {field.value}
-  </span>
-);
+// Reusable editable span / link anchor
+const EF: React.FC<{
+  field: EditField;
+  isEditable: boolean;
+  ec: string;
+  className?: string;
+  style?: React.CSSProperties;
+  href?: string;
+}> = ({ field, isEditable, ec, className, style, href }) => {
+  if (isEditable) {
+    return (
+      <span
+        className={`${className ?? ''} ${ec}`}
+        style={style}
+        contentEditable={true}
+        suppressContentEditableWarning={true}
+        onBlur={e => field.onSave((e.currentTarget as HTMLElement).textContent ?? '')}
+      >
+        {field.value}
+      </span>
+    );
+  }
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={`${className ?? ''} hover:underline cursor-pointer`} style={style}>
+        {field.value}
+      </a>
+    );
+  }
+  return (
+    <span className={className} style={style}>
+      {field.value}
+    </span>
+  );
+};
 
 const AvatarCircle: React.FC<{ src: string; name: string; size?: string; border?: string }> = (
   { src, name, size = 'w-16 h-16', border }
@@ -68,26 +104,26 @@ const ContactRow: React.FC<{
   <div className={cls ?? 'flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 mt-2'}>
     {(phone.value || isEditable) && (
       <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
-        <Phone className="w-3 h-3 flex-shrink-0" />
+        <Phone className="w-3 h-3 flex-shrink-0 mt-[1px]" />
         <EF field={phone} isEditable={isEditable} ec={ec} />
       </span>
     )}
     {(email.value || isEditable) && (
       <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
-        <Mail className="w-3 h-3 flex-shrink-0" />
-        <EF field={email} isEditable={isEditable} ec={ec} />
+        <Mail className="w-3 h-3 flex-shrink-0 mt-[1px]" />
+        <EF field={email} isEditable={isEditable} ec={ec} href={isEditable ? undefined : `mailto:${email.value}`} />
       </span>
     )}
     {(location.value || isEditable) && (
       <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
-        <MapPin className="w-3 h-3 flex-shrink-0" />
+        <MapPin className="w-3 h-3 flex-shrink-0 mt-[1px]" />
         <EF field={location} isEditable={isEditable} ec={ec} />
       </span>
     )}
     {(linkedin.value || isEditable) && (
       <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
         <LI />
-        <EF field={linkedin} isEditable={isEditable} ec={ec} />
+        <EF field={linkedin} isEditable={isEditable} ec={ec} href={isEditable ? undefined : formatLinkedinUrl(linkedin.value)} />
       </span>
     )}
   </div>
