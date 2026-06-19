@@ -43,27 +43,94 @@ function convertOklToRgb(colorStr: string): string {
   }
 }
 
-function convertElementColors(original: HTMLElement, cloned: HTMLElement) {
+function copyComputedStyles(original: HTMLElement, cloned: HTMLElement) {
   const computed = window.getComputedStyle(original);
 
-  const propertiesToConvert = [
+  const propertiesToCopy = [
     'color',
-    'backgroundColor',
-    'borderColor',
-    'borderTopColor',
-    'borderBottomColor',
-    'borderLeftColor',
-    'borderRightColor',
+    'background-color',
+    'background-image',
+    'background-position',
+    'background-repeat',
+    'background-size',
+    'border-color',
+    'border-style',
+    'border-width',
+    'border-top-color',
+    'border-top-style',
+    'border-top-width',
+    'border-bottom-color',
+    'border-bottom-style',
+    'border-bottom-width',
+    'border-left-color',
+    'border-left-style',
+    'border-left-width',
+    'border-right-color',
+    'border-right-style',
+    'border-right-width',
+    'border-radius',
+    'border-top-left-radius',
+    'border-top-right-radius',
+    'border-bottom-left-radius',
+    'border-bottom-right-radius',
+    'font-family',
+    'font-size',
+    'font-weight',
+    'font-style',
+    'line-height',
+    'letter-spacing',
+    'text-align',
+    'text-decoration',
+    'text-transform',
+    'padding',
+    'padding-top',
+    'padding-bottom',
+    'padding-left',
+    'padding-right',
+    'margin',
+    'margin-top',
+    'margin-bottom',
+    'margin-left',
+    'margin-right',
+    'width',
+    'height',
+    'min-width',
+    'min-height',
+    'max-width',
+    'max-height',
+    'display',
+    'flex-direction',
+    'flex-wrap',
+    'flex-grow',
+    'flex-shrink',
+    'flex-basis',
+    'justify-content',
+    'align-items',
+    'align-self',
+    'gap',
+    'row-gap',
+    'column-gap',
+    'position',
+    'top',
+    'bottom',
+    'left',
+    'right',
+    'z-index',
+    'opacity',
+    'visibility',
+    'box-sizing',
+    'list-style-type',
+    'list-style-position',
     'fill',
-    'stroke'
+    'stroke',
+    'stroke-width'
   ];
 
-  propertiesToConvert.forEach((prop) => {
-    const cssProp = prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
-    const val = computed.getPropertyValue(cssProp);
+  propertiesToCopy.forEach((prop) => {
+    const val = computed.getPropertyValue(prop);
     if (val) {
-      const converted = (val.includes('oklch') || val.includes('oklab')) ? convertOklToRgb(val) : val;
-      cloned.style.setProperty(cssProp, converted);
+      const resolved = (val.includes('oklch') || val.includes('oklab')) ? convertOklToRgb(val) : val;
+      cloned.style.setProperty(prop, resolved);
     }
   });
 }
@@ -213,6 +280,16 @@ export class PdfService {
       });
     });
 
+    // Copy computed layout and typographic styles from original elements to cloned elements first
+    copyComputedStyles(sheetElement, clone);
+    const origEls = sheetElement.querySelectorAll('*');
+    const cloneEls = clone.querySelectorAll('*');
+    for (let i = 0; i < origEls.length; i++) {
+      if (origEls[i] && cloneEls[i]) {
+        copyComputedStyles(origEls[i] as HTMLElement, cloneEls[i] as HTMLElement);
+      }
+    }
+
     // Override specific layout properties for PDF generation while keeping original inline styles (like fonts, padding)
     clone.style.transform = 'none';
     clone.style.transition = 'none';
@@ -228,16 +305,6 @@ export class PdfService {
     clone.style.opacity = '1';
     clone.style.visibility = 'visible';
     clone.style.pointerEvents = 'none';
-
-    // Convert oklch/oklab color values to standard browser-compatible rgba
-    convertElementColors(sheetElement, clone);
-    const origEls = sheetElement.querySelectorAll('*');
-    const cloneEls = clone.querySelectorAll('*');
-    for (let i = 0; i < origEls.length; i++) {
-      if (origEls[i] && cloneEls[i]) {
-        convertElementColors(origEls[i] as HTMLElement, cloneEls[i] as HTMLElement);
-      }
-    }
 
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
