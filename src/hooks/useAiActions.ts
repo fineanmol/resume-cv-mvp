@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { GeminiService } from '../services/gemini';
 import type { ResumeState, CoverLetterState, DocType } from '../types';
 import type { ToastAPI } from './useToast';
+import { splitIntoBullets } from '../utils/bullets';
 
 interface Options {
   geminiKey: string;
@@ -41,7 +42,7 @@ export function useAiActions({
           resumeSkills: result.resumeSkills || prev.resumeSkills,
           resumeExperience: prev.resumeExperience.map((exp, idx) => ({
             ...exp,
-            bullets: result.resumeExperience?.[idx]?.bullets || exp.bullets,
+            bullets: result.resumeExperience?.[idx]?.bullets ? splitIntoBullets(result.resumeExperience[idx].bullets).join('\n') : exp.bullets,
           })),
         }));
       } else {
@@ -81,7 +82,7 @@ export function useAiActions({
           resumeSkills: result.resumeSkills || prev.resumeSkills,
           resumeExperience: prev.resumeExperience.map((exp, idx) => ({
             ...exp,
-            bullets: result.resumeExperience?.[idx]?.bullets || exp.bullets,
+            bullets: result.resumeExperience?.[idx]?.bullets ? splitIntoBullets(result.resumeExperience[idx].bullets).join('\n') : exp.bullets,
           })),
         }));
       } else {
@@ -118,7 +119,7 @@ export function useAiActions({
       );
       setResumeState(prev => {
         const updated = [...prev.resumeExperience];
-        updated[idx] = { ...updated[idx], bullets: improved };
+        updated[idx] = { ...updated[idx], bullets: splitIntoBullets(improved).join('\n') };
         return { ...prev, resumeExperience: updated };
       });
       toast.success('Bullet points improved!');

@@ -9,6 +9,7 @@ import {
   Upload, User, Briefcase, GraduationCap, Award,
   Loader, Star, Globe, FileText, AlignLeft
 } from 'lucide-react';
+import { splitIntoBullets } from '../utils/bullets';
 
 interface ResumeFormProps {
   state: ResumeState;
@@ -55,6 +56,18 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
       let avatar = '';
       try { const p = await PdfService.extractFirstPhoto(file); if (p) avatar = p; } catch { /* photo extraction optional */ }
       const parsed = await GeminiService.parseResumePdf(geminiKey, b64);
+      if (parsed.resumeExperience) {
+        parsed.resumeExperience = parsed.resumeExperience.map(exp => ({
+          ...exp,
+          bullets: splitIntoBullets(exp.bullets || '').join('\n')
+        }));
+      }
+      if (parsed.resumeEducation) {
+        parsed.resumeEducation = parsed.resumeEducation.map(edu => ({
+          ...edu,
+          bullets: splitIntoBullets(edu.bullets || '').join('\n')
+        }));
+      }
       onChange(prev => ({ ...prev, avatar: avatar || prev.avatar || '', ...parsed }) as ResumeState);
       alert('PDF Resume imported successfully!');
     } catch (err) {

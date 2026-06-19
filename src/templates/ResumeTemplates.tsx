@@ -3,6 +3,7 @@ import type { ResumeState, ExperienceItem, EducationItem, CertItem, AchievementI
 import { Star, Award, Phone, Mail, MapPin } from 'lucide-react';
 import { FONT_CSS } from '../config/fonts';
 import { TemplateHeader } from './TemplateHeader';
+import { splitIntoBullets } from '../utils/bullets';
 
 interface ResumeTemplateProps {
   state: ResumeState;
@@ -57,7 +58,7 @@ function BulletList({
   bullets: string; isEditable: boolean; editableClass: string;
   onBulletChange: (updated: string) => void; className?: string;
 }) {
-  const lines = bullets.split('\n').filter(l => l.trim());
+  const lines = splitIntoBullets(bullets);
   if (!lines.length) return null;
   return (
     <ul className={`list-disc list-outside pl-4 space-y-0.5 ${className}`}>
@@ -66,7 +67,7 @@ function BulletList({
           <li key={bIdx} className={`${editableClass}`}
             contentEditable={true} suppressContentEditableWarning={true}
             onBlur={(e) => {
-              const updated = bullets.split('\n');
+              const updated = [...lines];
               updated[bIdx] = (e.currentTarget as HTMLElement).textContent || '';
               onBulletChange(updated.join('\n'));
             }}

@@ -231,7 +231,10 @@ ${jobDesc}`;
                   company: { type: "STRING" },
                   dates: { type: "STRING" },
                   location: { type: "STRING" },
-                  bullets: { type: "STRING" }
+                  bullets: {
+                    type: "STRING",
+                    description: "Experience bullet points/achievements. Split multiple achievements with newlines (\\n). Do NOT include leading bullet characters."
+                  }
                 },
                 required: ["title", "company", "dates", "location", "bullets"]
               }
@@ -245,7 +248,10 @@ ${jobDesc}`;
                   school: { type: "STRING" },
                   dates: { type: "STRING" },
                   location: { type: "STRING" },
-                  bullets: { type: "STRING" }
+                  bullets: {
+                    type: "STRING",
+                    description: "Education details or bullet points. Split multiple items with newlines (\\n). Do NOT include leading bullet characters."
+                  }
                 },
                 required: ["degree", "school", "dates", "location", "bullets"]
               }
