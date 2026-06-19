@@ -301,7 +301,9 @@ export class PdfService {
     clone.style.zIndex = '9999';
     clone.style.width = '794px';
     clone.style.height = 'auto';
-    clone.style.display = 'block';
+    if (clone.style.display === 'none') {
+      clone.style.display = 'block';
+    }
     clone.style.opacity = '1';
     clone.style.visibility = 'visible';
     clone.style.pointerEvents = 'none';
