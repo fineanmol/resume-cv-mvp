@@ -22,6 +22,7 @@ describe('PdfService', () => {
     // Setup mock element in JSDOM
     const originalDiv = document.createElement('div');
     originalDiv.className = 'pdf-sheet';
+    originalDiv.id = 'resume-sheet';
     
     // Set style parameters
     originalDiv.style.color = 'oklch(0.6 0.2 240)';
@@ -43,20 +44,35 @@ describe('PdfService', () => {
       jsPDF: expect.objectContaining({ format: 'a4' })
     }));
 
-    // Verify the clone passed to html2pdf is correctly positioned and styled
-    expect(mockFrom).toHaveBeenCalled();
-    const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
-    expect(clonedElement).toBeTruthy();
-    
-    // Crucial positioning parameters to prevent blank page issues
-    expect(clonedElement.style.left).toBe('0px');
-    expect(clonedElement.style.top).toBe('0px');
-    expect(clonedElement.style.zIndex).toBe('-9999');
-    
-    // Verify that original inline styles are not wiped out by cssText
-    expect(clonedElement.style.fontSize).toBe('12pt');
-    expect(clonedElement.style.padding).toBe('20mm 15mm');
-    expect(clonedElement.style.fontFamily).toBe('Inter');
+    // Verify the live element is passed directly to html2pdf.from()
+    expect(mockFrom).toHaveBeenCalledWith(originalDiv);
+
+    // Retrieve the opt object passed to mockSet to test onclone callback
+    const opt = mockSet.mock.calls[0][0];
+    expect(opt).toBeTruthy();
+    expect(opt.html2canvas).toBeTruthy();
+    expect(opt.html2canvas.onclone).toBeTypeOf('function');
+
+    // Mock a cloned document structure to verify onclone styling modifications
+    const mockClonedDoc = document.implementation.createHTMLDocument('cloned');
+    const mockClonedSheet = mockClonedDoc.createElement('div');
+    mockClonedSheet.className = 'pdf-sheet';
+    mockClonedSheet.id = 'resume-sheet';
+    mockClonedDoc.body.appendChild(mockClonedSheet);
+
+    // Trigger the onclone callback
+    opt.html2canvas.onclone(mockClonedDoc);
+
+    // Assert that the cloned element had layout constraints stripped
+    expect(mockClonedSheet.style.boxShadow).toBe('none');
+    expect(mockClonedSheet.style.transform).toBe('none');
+    expect(mockClonedSheet.style.transition).toBe('none');
+
+    // Assert that the custom style element was added to hide borders and pseudo-elements
+    const styleTags = mockClonedDoc.head.querySelectorAll('style');
+    expect(styleTags.length).toBeGreaterThan(0);
+    expect(styleTags[0].innerHTML).toContain('.pdf-sheet::before, .pdf-sheet::after');
+    expect(styleTags[0].innerHTML).toContain('[contenteditable="true"]');
 
     document.body.removeChild(originalDiv);
   });

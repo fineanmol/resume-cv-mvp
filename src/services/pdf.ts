@@ -163,39 +163,6 @@ export class PdfService {
 
     const sheetElement = (element.querySelector('.pdf-sheet') || element) as HTMLElement;
 
-    // Clone and strip all transforms/shadows so html2canvas sees a plain A4 element
-    const clone = sheetElement.cloneNode(true) as HTMLElement;
-    
-    // Override specific layout properties for PDF generation while keeping original inline styles (like fonts, padding)
-    clone.style.transform = 'none';
-    clone.style.transition = 'none';
-    clone.style.boxShadow = 'none';
-    clone.style.position = 'absolute';
-    // Position at 0, 0 inside viewport so html2canvas captures it correctly (not blank/offscreen)
-    clone.style.left = '0px';
-    clone.style.top = '0px';
-    // Use negative z-index to place it behind the main application content to avoid visual flicker.
-    // html2canvas only renders the clone itself (since it's passed as target), so z-index doesn't hide it from the canvas.
-    clone.style.zIndex = '-9999';
-    clone.style.width = '794px';
-    clone.style.height = 'auto';
-    clone.style.display = 'block';
-    clone.style.opacity = '1';
-    clone.style.visibility = 'visible';
-    clone.style.pointerEvents = 'none';
-
-    // Convert oklch/oklab colours to rgba so html2canvas doesn't choke
-    convertElementColors(sheetElement, clone);
-    const origEls = sheetElement.querySelectorAll('*');
-    const cloneEls = clone.querySelectorAll('*');
-    for (let i = 0; i < origEls.length; i++) {
-      if (origEls[i] && cloneEls[i]) {
-        convertElementColors(origEls[i] as HTMLElement, cloneEls[i] as HTMLElement);
-      }
-    }
-
-    document.body.appendChild(clone);
-
     const opt = {
       margin: 0,
       filename,
@@ -207,18 +174,55 @@ export class PdfService {
         logging: false,
         scrollX: 0,
         scrollY: 0,
+        windowWidth: 794,
+        onclone: (clonedDoc: Document) => {
+          // Find the cloned sheet element in the cloned document
+          const clonedSheet = (sheetElement.id ? clonedDoc.getElementById(sheetElement.id) : null)
+            || clonedDoc.querySelector('.pdf-sheet')
+            || (clonedDoc.body.querySelector('*') as HTMLElement);
+
+          if (clonedSheet) {
+            // Strip layout constraints/transforms that shouldn't appear in the PDF
+            clonedSheet.style.boxShadow = 'none';
+            clonedSheet.style.transform = 'none';
+            clonedSheet.style.transition = 'none';
+
+            // Convert oklch/oklab color values to standard browser-compatible rgba
+            convertElementColors(sheetElement, clonedSheet);
+            const origEls = sheetElement.querySelectorAll('*');
+            const cloneEls = clonedSheet.querySelectorAll('*');
+            for (let i = 0; i < origEls.length; i++) {
+              if (origEls[i] && cloneEls[i]) {
+                convertElementColors(origEls[i] as HTMLElement, cloneEls[i] as HTMLElement);
+              }
+            }
+
+            // Append style override tag to cloned document to hide layout tools (pseudo-elements, focus outlines)
+            const style = clonedDoc.createElement('style');
+            style.innerHTML = `
+              .pdf-sheet::before, .pdf-sheet::after {
+                display: none !important;
+                content: none !important;
+              }
+              [contenteditable="true"] {
+                outline: none !important;
+                border-color: transparent !important;
+                background-color: transparent !important;
+              }
+            `;
+            clonedDoc.head.appendChild(style);
+          }
+        }
       },
       jsPDF: { unit: 'pt' as const, format: 'a4' as const, orientation: 'portrait' as const },
     };
 
     html2pdf()
       .set(opt)
-      .from(clone)
+      .from(sheetElement)
       .save()
-      .then(() => { document.body.removeChild(clone); })
       .catch((err: unknown) => {
         console.error('PDF download failed:', err);
-        document.body.removeChild(clone);
       });
   }
 }
