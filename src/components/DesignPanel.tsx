@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, Type, Layout, SlidersHorizontal, Image, List, Tag, AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-react';
+import { Palette, Type, Layout, SlidersHorizontal, Image, List, Tag, AlignLeft, AlignCenter, AlignRight, AlignJustify, Layers } from 'lucide-react';
 import type { LayoutSettings, FontFamily, HeaderStyle, TemplateId } from '../types';
 import { SectionHeader } from './SectionHeader';
 import { FONT_OPTIONS, FONT_CSS } from '../config/fonts';
@@ -13,6 +13,7 @@ const TEMPLATES: { id: TemplateId; name: string; accent: string; badge?: string 
   { id: 'tech',      name: 'Tech Monospace',  accent: '#10b981' },
   { id: 'ats',       name: 'Clean ATS',       accent: '#6366f1', badge: 'ATS' },
   { id: 'executive', name: 'Executive',       accent: '#b45309', badge: '★' },
+  { id: 'designer',  name: 'Modern Designer', accent: '#007ACC', badge: 'New' },
 ];
 
 const HEADER_STYLES: { id: HeaderStyle; label: string; desc: string }[] = [
@@ -500,13 +501,46 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
                     </button>
                   </label>
                   <p className="text-[10px] text-text-muted mt-2 leading-relaxed">
-                    Only visible in templates with a photo area (Sidebar, Executive). Upload via Import PDF or edit directly.
+                    Only visible in templates with a photo area (Sidebar, Executive, Modern Designer). Upload via Import PDF or edit directly.
                   </p>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
+
+        {/* ── LAYOUT BOUNDS ────────────────────────────────────── */}
+        {docType === 'resume' && (
+          <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
+            <SectionHeader id="layout-outlines" icon={Layers} label="Layout Outlines" openSection={open} onToggle={toggle} />
+            <AnimatePresence initial={false}>
+              {open === 'layout-outlines' && (
+                <motion.div key="layout-outlines" {...SECTION_ANIM} style={{ overflow: 'hidden' }}>
+                  <div className="p-3 border-t border-border-color/40 space-y-3">
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="text-xs text-text-main font-medium">Show layout outlines</span>
+                      <button
+                        role="switch"
+                        aria-checked={layout.showLayoutBounds ?? false}
+                        onClick={() => onChange({ showLayoutBounds: !(layout.showLayoutBounds ?? false) })}
+                        className={`relative w-9 h-5 rounded-full transition cursor-pointer ${
+                          (layout.showLayoutBounds ?? false) ? 'bg-brand-accent' : 'bg-border-color'
+                        }`}
+                      >
+                        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${
+                          (layout.showLayoutBounds ?? false) ? 'left-4' : 'left-0.5'
+                        }`} />
+                      </button>
+                    </label>
+                    <p className="text-[10px] text-text-muted leading-relaxed">
+                      Displays dotted borders around components. Drag and drop sections on the sheet to reorder them! (Invisible on download)
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
     </div>
   );

@@ -93,5 +93,8 @@ export const DEFAULT_RESUME_STATE: ResumeState = {
     educationAlign: 'left',
     certsAlign: 'left',
     achievementsAlign: 'left',
+    showLayoutBounds: false,
+    designerLeftSections: ['experience', 'education'],
+    designerRightSections: ['summary', 'skills', 'achievements', 'certs', 'languages'],
   }
 };

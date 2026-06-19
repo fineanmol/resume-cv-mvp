@@ -426,6 +426,22 @@ export class PdfService {
                 border-color: transparent !important;
                 background-color: transparent !important;
               }
+              [class*="group/draggable"] {
+                border: none !important;
+                padding: 0 !important;
+                background: transparent !important;
+                background-color: transparent !important;
+                box-shadow: none !important;
+              }
+              [class*="group/draggable"] > div {
+                display: none !important;
+              }
+              .designer-column {
+                border: none !important;
+                padding: 0 !important;
+                background: transparent !important;
+                background-color: transparent !important;
+              }
             `;
             clonedDoc.head.appendChild(style);
           }

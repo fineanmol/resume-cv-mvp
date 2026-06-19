@@ -18,7 +18,7 @@ const clWith = (patch: Partial<CoverLetterState['layoutSettings']>): CoverLetter
   layoutSettings: { ...DEFAULT_CL_STATE.layoutSettings, ...patch },
 });
 
-const ALL_TEMPLATES: TemplateId[] = ['navy', 'serif', 'sidebar', 'tech', 'ats', 'executive'];
+const ALL_TEMPLATES: TemplateId[] = ['navy', 'serif', 'sidebar', 'tech', 'ats', 'executive', 'designer'];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RESUME — smoke + name

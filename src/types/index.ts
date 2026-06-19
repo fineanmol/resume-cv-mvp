@@ -7,7 +7,7 @@ export interface LayoutSettings {
   paddingLeftRight: number;
   sectionSpacing: number;
   lineHeight: number;
-  template?: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive';
+  template?: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer';
   brandColor?: string;        // primary accent (headers, borders, bullets)
   accentColor2?: string;      // secondary accent (badges, highlights)
   fontFamily?: FontFamily;    // body font
@@ -21,6 +21,9 @@ export interface LayoutSettings {
   educationAlign?: 'left' | 'center' | 'right' | 'justify';
   certsAlign?: 'left' | 'center' | 'right' | 'justify';
   achievementsAlign?: 'left' | 'center' | 'right' | 'justify';
+  showLayoutBounds?: boolean;
+  designerLeftSections?: string[];
+  designerRightSections?: string[];
 }
 
 export interface HighlightItem {
@@ -114,7 +117,7 @@ export interface DocumentMetadata {
   updatedAt: number;
 }
 
-export type TemplateId = 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive';
+export type TemplateId = 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer';
 
 export type DocType = 'resume' | 'coverletter';
 
