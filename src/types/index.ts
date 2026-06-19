@@ -1,4 +1,4 @@
-export type FontFamily = 'inter' | 'merriweather' | 'outfit' | 'fira';
+export type FontFamily = 'inter' | 'outfit' | 'plus-jakarta' | 'poppins' | 'playfair' | 'eb-garamond' | 'lora' | 'jetbrains-mono';
 export type HeaderStyle = 'centered' | 'left' | 'banner' | 'minimal';
 
 export interface LayoutSettings {
@@ -14,6 +14,7 @@ export interface LayoutSettings {
   headingFont?: FontFamily;   // heading / name font (can differ from body)
   headerStyle?: HeaderStyle;  // layout variant for the name/contact block
   showPhoto?: boolean;        // whether to display avatar in templates that support it
+  bulletStyle?: 'disc' | 'circle' | 'square' | 'dash' | 'arrow' | 'number' | 'none';
 }
 
 export interface HighlightItem {
@@ -52,6 +53,7 @@ export interface ExperienceItem {
   dates: string;
   location: string;
   bullets: string;
+  url?: string;
 }
 
 export interface EducationItem {
@@ -65,6 +67,7 @@ export interface EducationItem {
 export interface CertItem {
   title: string;
   desc: string;
+  url?: string;
 }
 
 export interface AchievementItem {

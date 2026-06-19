@@ -45,7 +45,7 @@ describe('ResumeTemplates — candidate name shown in every template', () => {
 // RESUME — body font via sheetStyle
 // ─────────────────────────────────────────────────────────────────────────────
 describe('ResumeTemplates — body fontFamily applied to .pdf-sheet', () => {
-  (['inter', 'outfit', 'merriweather', 'fira'] as const).forEach(font => {
+  (['inter', 'outfit', 'eb-garamond', 'jetbrains-mono'] as const).forEach(font => {
     it(`fontFamily="${font}" → .pdf-sheet.style.fontFamily contains font name`, () => {
       const { container } = render(<ResumeTemplateRenderer state={resumeWith({ template: 'navy', fontFamily: font })} />);
       const sheet = container.querySelector('.pdf-sheet') as HTMLElement;
@@ -60,12 +60,12 @@ describe('ResumeTemplates — body fontFamily applied to .pdf-sheet', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe('ResumeTemplates — headingFont applied to name heading in all templates', () => {
   ALL_TEMPLATES.forEach(template => {
-    it(`${template}: headingFont=merriweather → Merriweather in DOM`, () => {
+    it(`${template}: headingFont=eb-garamond → EB Garamond in DOM`, () => {
       const { container } = render(
-        <ResumeTemplateRenderer state={resumeWith({ template, headingFont: 'merriweather' })} />
+        <ResumeTemplateRenderer state={resumeWith({ template, headingFont: 'eb-garamond' })} />
       );
       const withFont = Array.from(container.querySelectorAll<HTMLElement>('[style]'))
-        .filter(el => el.style.fontFamily?.includes('Merriweather'));
+        .filter(el => el.style.fontFamily?.includes('EB Garamond'));
       expect(withFont.length).toBeGreaterThan(0);
     });
   });
@@ -208,12 +208,12 @@ describe('CoverLetterTemplates — body fontFamily on .pdf-sheet', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe('CoverLetterTemplates — headingFont applied to name heading', () => {
   ALL_TEMPLATES.forEach(template => {
-    it(`${template}: headingFont=merriweather → Merriweather in DOM`, () => {
+    it(`${template}: headingFont=eb-garamond → EB Garamond in DOM`, () => {
       const { container } = render(
-        <CoverLetterTemplateRenderer state={clWith({ template, headingFont: 'merriweather' })} />
+        <CoverLetterTemplateRenderer state={clWith({ template, headingFont: 'eb-garamond' })} />
       );
       const withFont = Array.from(container.querySelectorAll<HTMLElement>('[style]'))
-        .filter(el => el.style.fontFamily?.includes('Merriweather'));
+        .filter(el => el.style.fontFamily?.includes('EB Garamond'));
       expect(withFont.length).toBeGreaterThan(0);
     });
   });
@@ -263,12 +263,64 @@ describe('CoverLetterTemplates — {{company}} / {{role}} interpolation', () => 
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COVER LETTER — highlights
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── COVER LETTER — highlights ───────────────────────────────────────────────
 describe('CoverLetterTemplates — highlights render', () => {
   it('navy: renders highlight category', () => {
     const { getByText } = render(<CoverLetterTemplateRenderer state={clWith({ template: 'navy' })} />);
     expect(getByText('Frontend Engineering')).toBeTruthy();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESUME — bulletStyle customization
+// ─────────────────────────────────────────────────────────────────────────────
+describe('ResumeTemplates — bulletStyle customization', () => {
+  it('renders arrow bullet points in navy when bulletStyle="arrow"', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'navy', bulletStyle: 'arrow' })} />
+    );
+    expect(container.textContent).toContain('➤');
+  });
+
+  it('renders number bullet points in navy when bulletStyle="number"', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'navy', bulletStyle: 'number' })} />
+    );
+    expect(container.textContent).toContain('1.');
+    expect(container.textContent).toContain('2.');
+  });
+
+  it('does not render bullet markers when bulletStyle="none"', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'navy', bulletStyle: 'none' })} />
+    );
+    expect(container.textContent).not.toContain('●');
+    expect(container.textContent).not.toContain('➤');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESUME — Work history and Certification links
+// ─────────────────────────────────────────────────────────────────────────────
+describe('ResumeTemplates — work and certification links', () => {
+  it('renders experience work link with correct href and data-href', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={DEFAULT_RESUME_STATE} />
+    );
+    // Find link for TechFlow Solutions
+    const link = container.querySelector('a[href="https://techflow.example.com"]');
+    expect(link).toBeTruthy();
+    expect(link?.getAttribute('data-href')).toBe('https://techflow.example.com');
+  });
+
+  it('renders certification link with correct href and data-href', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={DEFAULT_RESUME_STATE} />
+    );
+    // Find link for AWS certification
+    const link = container.querySelector('a[href="https://aws.amazon.com/verification"]');
+    expect(link).toBeTruthy();
+    expect(link?.getAttribute('data-href')).toBe('https://aws.amazon.com/verification');
+  });
+});
+

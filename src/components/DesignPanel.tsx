@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, Type, Layout, SlidersHorizontal, Image } from 'lucide-react';
+import { Palette, Type, Layout, SlidersHorizontal, Image, List } from 'lucide-react';
 import type { LayoutSettings, FontFamily, HeaderStyle, TemplateId } from '../types';
 import { SectionHeader } from './SectionHeader';
 import { FONT_OPTIONS, FONT_CSS } from '../config/fonts';
@@ -20,6 +20,16 @@ const HEADER_STYLES: { id: HeaderStyle; label: string; desc: string }[] = [
   { id: 'left',     label: 'Left Align', desc: 'Name left, contact right' },
   { id: 'banner',   label: 'Full Banner',desc: 'Coloured full-width header' },
   { id: 'minimal',  label: 'Minimal',    desc: 'Name only, no border' },
+];
+
+const BULLET_STYLES: { id: LayoutSettings['bulletStyle']; label: string; preview: string }[] = [
+  { id: 'disc', label: 'Disc', preview: '●' },
+  { id: 'circle', label: 'Circle', preview: '○' },
+  { id: 'square', label: 'Square', preview: '■' },
+  { id: 'dash', label: 'Dash', preview: '—' },
+  { id: 'arrow', label: 'Arrow', preview: '➤' },
+  { id: 'number', label: 'Numbered', preview: '1.' },
+  { id: 'none', label: 'None', preview: '(none)' },
 ];
 
 // ─── Shared accordion animation ───────────────────────────────────────────────
@@ -86,7 +96,7 @@ const FontPicker: React.FC<{
   return (
     <div className="space-y-1.5">
       <span className="block text-[10px] text-text-muted uppercase font-bold tracking-wider">{label}</span>
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-1 gap-1.5">
         {FONT_OPTIONS.map(f => (
           <button
             key={f.id}
@@ -196,9 +206,9 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
           <AnimatePresence initial={false}>
             {open === 'typography' && (
               <motion.div key="typography" {...SECTION_ANIM} style={{ overflow: 'hidden' }}>
-                <div className="p-3 border-t border-border-color/40 space-y-4">
-                  <FontPicker label="Body Font"    value={layout.fontFamily}  onChange={v => onChange({ fontFamily: v })} />
+                <div className="p-3 border-t border-border-color/40 grid grid-cols-2 gap-4">
                   <FontPicker label="Heading Font" value={layout.headingFont} onChange={v => onChange({ headingFont: v })} />
+                  <FontPicker label="Body Font"    value={layout.fontFamily}  onChange={v => onChange({ fontFamily: v })} />
                 </div>
               </motion.div>
             )}
@@ -255,6 +265,38 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
             )}
           </AnimatePresence>
         </div>
+
+        {/* ── BULLET STYLE ──────────────────────────────────────── */}
+        {docType === 'resume' && (
+          <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
+            <SectionHeader id="bullets" icon={List} label="Bullet Style" openSection={open} onToggle={toggle} />
+            <AnimatePresence initial={false}>
+              {open === 'bullets' && (
+                <motion.div key="bullets" {...SECTION_ANIM} style={{ overflow: 'hidden' }}>
+                  <div className="p-3 border-t border-border-color/40 grid grid-cols-2 gap-1.5">
+                    {BULLET_STYLES.map(b => {
+                      const isActive = (layout.bulletStyle ?? 'disc') === b.id;
+                      return (
+                        <button
+                          key={b.id ?? 'disc'}
+                          onClick={() => onChange({ bulletStyle: b.id })}
+                          className={`flex items-center justify-between px-2.5 py-2 rounded-lg border text-left transition cursor-pointer ${
+                            isActive
+                              ? 'border-brand-accent bg-brand-accent/8 text-brand-accent font-bold'
+                              : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                          }`}
+                        >
+                          <span className="text-[10px] font-semibold">{b.label}</span>
+                          <span className="text-xs font-semibold opacity-80" style={{ color: isActive ? undefined : layout.brandColor }}>{b.preview}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {/* ── PHOTO ─────────────────────────────────────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">

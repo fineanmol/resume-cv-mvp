@@ -79,11 +79,11 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
   };
 
   const updExp = (idx: number, k: string, v: string) =>
-    onChange(prev => { const u = [...prev.resumeExperience]; u[idx] = { ...u[idx], [k]: k === 'bullets' ? v : clean(v) }; return { ...prev, resumeExperience: u }; });
+    onChange(prev => { const u = [...prev.resumeExperience]; u[idx] = { ...u[idx], [k]: (k === 'bullets' || k === 'url') ? v : clean(v) }; return { ...prev, resumeExperience: u }; });
   const updEdu = (idx: number, k: string, v: string) =>
     onChange(prev => { const u = [...prev.resumeEducation]; u[idx] = { ...u[idx], [k]: k === 'bullets' ? v : clean(v) }; return { ...prev, resumeEducation: u }; });
   const updCert = (idx: number, k: string, v: string) =>
-    onChange(prev => { const u = [...prev.resumeCerts]; u[idx] = { ...u[idx], [k]: clean(v) }; return { ...prev, resumeCerts: u }; });
+    onChange(prev => { const u = [...prev.resumeCerts]; u[idx] = { ...u[idx], [k]: k === 'url' ? v : clean(v) }; return { ...prev, resumeCerts: u }; });
   const updAch = (idx: number, k: string, v: string) =>
     onChange(prev => { const u = [...prev.resumeAchievements]; u[idx] = { ...u[idx], [k]: clean(v) }; return { ...prev, resumeAchievements: u }; });
   const updLang = (idx: number, k: string, v: string) =>
@@ -210,9 +210,89 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
                           <input value={exp.dates} onChange={e => updExp(idx, 'dates', e.target.value)} className={inputCls} placeholder="Dates" />
                           <input value={exp.location} onChange={e => updExp(idx, 'location', e.target.value)} className={inputCls} placeholder="Location" />
                         </div>
-                        <textarea value={exp.bullets} onChange={e => updExp(idx, 'bullets', e.target.value)} rows={4}
-                          className="w-full bg-input-bg border border-border-color rounded-lg p-2.5 text-xs text-text-main focus:outline-none resize-y"
-                          placeholder="One bullet point per line. Use **bold** for emphasis." />
+                        <input value={exp.url || ''} onChange={e => updExp(idx, 'url', e.target.value)} className={inputCls} placeholder="Link / Project URL (optional)" />
+                        <div className="space-y-1.5">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-text-muted">Responsibilities & Achievements</label>
+                          <div className="space-y-1.5">
+                            {(exp.bullets ? exp.bullets.split('\n') : ['']).map((bullet, bIdx, arr) => (
+                              <div key={bIdx} className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-semibold text-text-muted select-none w-4 text-right">{bIdx + 1}.</span>
+                                <input
+                                  id={`exp-bullet-${idx}-${bIdx}`}
+                                  value={bullet}
+                                  onChange={(e) => {
+                                    const updated = [...arr];
+                                    updated[bIdx] = e.target.value;
+                                    updExp(idx, 'bullets', updated.join('\n'));
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      const inputEl = e.currentTarget;
+                                      const start = inputEl.selectionStart ?? bullet.length;
+                                      const textBefore = bullet.substring(0, start);
+                                      const textAfter = bullet.substring(start);
+
+                                      const updated = [...arr];
+                                      updated[bIdx] = textBefore;
+                                      updated.splice(bIdx + 1, 0, textAfter);
+                                      updExp(idx, 'bullets', updated.join('\n'));
+                                      setTimeout(() => {
+                                        const nextInput = document.getElementById(`exp-bullet-${idx}-${bIdx + 1}`) as HTMLInputElement | null;
+                                        if (nextInput) {
+                                          nextInput.focus();
+                                          nextInput.setSelectionRange(0, 0);
+                                        }
+                                      }, 0);
+                                    } else if (e.key === 'Backspace' && !bullet) {
+                                      e.preventDefault();
+                                      if (arr.length > 1) {
+                                        const updated = arr.filter((_, i) => i !== bIdx);
+                                        updExp(idx, 'bullets', updated.join('\n'));
+                                        setTimeout(() => {
+                                          document.getElementById(`exp-bullet-${idx}-${bIdx - 1}`)?.focus();
+                                        }, 0);
+                                      }
+                                    } else if (e.key === 'ArrowUp' && bIdx > 0) {
+                                      e.preventDefault();
+                                      document.getElementById(`exp-bullet-${idx}-${bIdx - 1}`)?.focus();
+                                    } else if (e.key === 'ArrowDown' && bIdx < arr.length - 1) {
+                                      e.preventDefault();
+                                      document.getElementById(`exp-bullet-${idx}-${bIdx + 1}`)?.focus();
+                                    }
+                                  }}
+                                  className={inputCls}
+                                  placeholder="Describe an achievement or responsibility... (Use **bold** for emphasis)"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = arr.filter((_, i) => i !== bIdx);
+                                    updExp(idx, 'bullets', updated.join('\n'));
+                                  }}
+                                  className="text-text-muted hover:text-red-400 p-1 cursor-pointer transition flex-shrink-0"
+                                  title="Delete bullet point"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const arr = exp.bullets ? exp.bullets.split('\n') : [''];
+                              const updated = [...arr, ''];
+                              updExp(idx, 'bullets', updated.join('\n'));
+                              setTimeout(() => {
+                                document.getElementById(`exp-bullet-${idx}-${arr.length}`)?.focus();
+                              }, 0);
+                            }}
+                            className="flex items-center gap-1 text-[10px] text-brand-accent hover:underline font-bold mt-1 cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" /> Add Bullet Point
+                          </button>
+                        </div>
                         {isOnline && (
                           <button type="button" disabled={aiLoading} onClick={() => onImproveBullet(idx, exp.bullets)}
                             className="flex items-center justify-center gap-1.5 py-1.5 px-3 bg-brand-accent/10 border border-brand-accent/25 hover:bg-brand-accent/20 rounded text-brand-accent text-[10px] font-bold cursor-pointer transition w-full disabled:opacity-50">
@@ -295,6 +375,9 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
                         <input value={cert.desc} onChange={e => updCert(idx, 'desc', e.target.value)}
                           className="bg-transparent border-b border-transparent hover:border-border-color/30 text-[11px] text-text-muted focus:outline-none w-full"
                           placeholder="Issuing Organization — Year" />
+                        <input value={cert.url || ''} onChange={e => updCert(idx, 'url', e.target.value)}
+                          className="bg-transparent border-b border-transparent hover:border-border-color/30 text-[10px] text-text-muted focus:outline-none w-full"
+                          placeholder="Credential URL / Verification Link (optional)" />
                       </motion.div>
                     ))}
                   </AnimatePresence>

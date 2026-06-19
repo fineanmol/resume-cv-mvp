@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ResumeState, ExperienceItem, EducationItem, CertItem, AchievementItem, LanguageItem } from '../types';
-import { Star, Award, Phone, Mail, MapPin } from 'lucide-react';
+import { Star, Award, Phone, Mail, MapPin, ExternalLink } from 'lucide-react';
 import { FONT_CSS } from '../config/fonts';
 import { TemplateHeader, formatLinkedinUrl } from './TemplateHeader';
 import { splitIntoBullets } from '../utils/bullets';
@@ -33,6 +33,7 @@ const E: React.FC<EditableProps> = ({ value, className, onSave, isEditable, edit
   if (isEditable) {
     return (
       <Tag
+        data-href={href}
         className={`${className || ''} ${editableClass}`}
         style={style}
         contentEditable={true}
@@ -61,29 +62,68 @@ const E: React.FC<EditableProps> = ({ value, className, onSave, isEditable, edit
 
 // ─── Bullet list renderer ─────────────────────────────────────────────────────
 function BulletList({
-  bullets, isEditable, editableClass, onBulletChange, className = ''
+  bullets, isEditable, editableClass, onBulletChange, className = '', bulletStyle = 'disc', brandColor
 }: {
   bullets: string; isEditable: boolean; editableClass: string;
   onBulletChange: (updated: string) => void; className?: string;
+  bulletStyle?: 'disc' | 'circle' | 'square' | 'dash' | 'arrow' | 'number' | 'none';
+  brandColor?: string;
 }) {
   const lines = splitIntoBullets(bullets);
   if (!lines.length) return null;
+
+  const getMarker = (index: number) => {
+    switch (bulletStyle) {
+      case 'none':
+        return null;
+      case 'dash':
+        return <span style={{ color: brandColor }} className="select-none font-semibold">—</span>;
+      case 'arrow':
+        return <span style={{ color: brandColor }} className="select-none text-[8px] align-middle">➤</span>;
+      case 'number':
+        return <span style={{ color: brandColor }} className="select-none font-semibold text-[10px]">{index + 1}.</span>;
+      case 'circle':
+        return <span style={{ color: brandColor }} className="select-none text-[8px] align-middle">○</span>;
+      case 'square':
+        return <span style={{ color: brandColor }} className="select-none text-[7px] align-middle">■</span>;
+      case 'disc':
+      default:
+        return <span style={{ color: brandColor }} className="select-none text-[8px] align-middle">●</span>;
+    }
+  };
+
+  const hasCustomMarker = bulletStyle !== 'none';
+
   return (
-    <ul className={`list-disc list-outside pl-4 space-y-0.5 ${className}`}>
-      {lines.map((bullet, bIdx) =>
-        isEditable ? (
-          <li key={bIdx} className={`${editableClass}`}
-            contentEditable={true} suppressContentEditableWarning={true}
-            onBlur={(e) => {
-              const updated = [...lines];
-              updated[bIdx] = (e.currentTarget as HTMLElement).textContent || '';
-              onBulletChange(updated.join('\n'));
-            }}
-          >{bullet}</li>
-        ) : (
-          <li key={bIdx} dangerouslySetInnerHTML={{ __html: formatMarkdownBold(bullet) }} />
-        )
-      )}
+    <ul className={`list-none pl-0 space-y-1 ${className}`}>
+      {lines.map((bullet, bIdx) => (
+        <li key={bIdx} className="flex items-start">
+          {hasCustomMarker && (
+            <span contentEditable={false} className="flex-shrink-0 mt-[4px] select-none flex items-center justify-start text-[10px] w-4">
+              {getMarker(bIdx)}
+            </span>
+          )}
+          {isEditable ? (
+            <span
+              className={`flex-1 min-w-0 ${editableClass}`}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              onBlur={(e) => {
+                const updated = [...lines];
+                updated[bIdx] = e.currentTarget.textContent || '';
+                onBulletChange(updated.join('\n'));
+              }}
+            >
+              {bullet}
+            </span>
+          ) : (
+            <span
+              className="flex-1 min-w-0"
+              dangerouslySetInnerHTML={{ __html: formatMarkdownBold(bullet) }}
+            />
+          )}
+        </li>
+      ))}
     </ul>
   );
 }
@@ -95,6 +135,111 @@ const LI: React.FC = () => (
     <rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" />
   </svg>
 );
+
+const WorkLink: React.FC<{ url?: string; brandColor?: string }> = ({ url, brandColor }) => {
+  if (!url) return null;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-href={url}
+      className="inline-flex items-center ml-1.5 hover:opacity-80 transition flex-shrink-0 align-middle cursor-pointer"
+      style={{ color: brandColor }}
+      title={url}
+    >
+      <ExternalLink className="w-3 h-3 mt-[1px]" />
+    </a>
+  );
+};
+
+const SkillsEditor: React.FC<{
+  value: string;
+  isEditable: boolean;
+  ec: string;
+  onSave: (v: string) => void;
+  accentColor2?: string;
+  brandColor: string;
+  badgeStyle: (i: number) => React.CSSProperties;
+  defaultBadgeStyle?: React.CSSProperties;
+  className?: string;
+  editClassName?: string;
+}> = ({ value, isEditable, ec, onSave, accentColor2, brandColor, badgeStyle, defaultBadgeStyle, className = '', editClassName = '' }) => {
+  const [editing, setEditing] = useState(false);
+  const skillsList = value ? value.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  useEffect(() => {
+    if (editing) {
+      const el = document.querySelector('.skills-editable-area[contenteditable="true"]') as HTMLElement | null;
+      if (el) {
+        el.focus();
+        try {
+          const range = document.createRange();
+          const sel = window.getSelection();
+          range.selectNodeContents(el);
+          range.collapse(false);
+          sel?.removeAllRanges();
+          sel?.addRange(range);
+        } catch (err) {
+          console.warn('Failed to set selection range:', err);
+        }
+      }
+    }
+  }, [editing]);
+
+  const fallbackDefaultStyle = defaultBadgeStyle || { background: brandColor, color: '#fff' };
+
+  if (!isEditable) {
+    return (
+      <div className={`flex flex-wrap gap-x-2 gap-y-1.5 text-xs ${className}`}>
+        {skillsList.map((s, i) => (
+          <span key={i} className="px-2 py-0.5 rounded font-medium border"
+            style={accentColor2 ? badgeStyle(i) : fallbackDefaultStyle}>
+            {s}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      {editing ? (
+        <div className="space-y-1">
+          <div className="text-[9px] text-brand-accent font-semibold select-none">Editing skills (comma-separated):</div>
+          <E
+            tag="div"
+            value={value}
+            isEditable={true}
+            editableClass={`${ec} skills-editable-area`}
+            className={`text-xs p-2 bg-slate-50 border border-dashed border-slate-200 text-slate-800 w-full ${editClassName}`}
+            onSave={(v) => {
+              onSave(v);
+              setEditing(false);
+            }}
+          />
+        </div>
+      ) : (
+        <div
+          onClick={() => setEditing(true)}
+          title="Click to edit skills"
+          className={`flex flex-wrap gap-x-2 gap-y-1.5 text-xs cursor-pointer hover:bg-slate-100/50 p-1 -m-1 rounded transition w-full ${className}`}
+        >
+          {skillsList.length > 0 ? (
+            skillsList.map((s, i) => (
+              <span key={i} className="px-2 py-0.5 rounded font-medium border select-none"
+                style={accentColor2 ? badgeStyle(i) : fallbackDefaultStyle}>
+                {s}
+              </span>
+            ))
+          ) : (
+            <span className="text-slate-400 italic select-none">Click to add skills...</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ─── Bottom sections: Certs / Achievements / Languages ───────────────────────
 interface BottomSectionsProps {
@@ -123,8 +268,11 @@ const BottomSections: React.FC<BottomSectionsProps> = ({
         <ul className="space-y-1.5 text-xs">
           {resumeCerts.map((cert, idx) => (
             <li key={idx}>
-              <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 block"
-                onSave={v => onCertChange?.(idx, 'title', v)} />
+              <div className="flex items-center gap-1">
+                <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 font-bold"
+                  onSave={v => onCertChange?.(idx, 'title', v)} />
+                <WorkLink url={cert.url} brandColor={accentColor} />
+              </div>
               <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[11px] mt-0.5"
                 onSave={v => onCertChange?.(idx, 'desc', v)} />
             </li>
@@ -188,6 +336,7 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
     headingFont,
     headerStyle = 'centered',
     showPhoto = true,
+    bulletStyle = 'disc',
   } = layoutSettings;
 
   const bodyFontCss    = FONT_CSS[fontFamily] ?? FONT_CSS.inter;
@@ -201,7 +350,6 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
     fontFamily: bodyFontCss,
   };
   const sec: React.CSSProperties = { marginBottom: `${sectionSpacing}px` };
-  const skillsList = resumeSkills ? resumeSkills.split(',').map(s => s.trim()).filter(Boolean) : [];
   const ec = isEditable ? 'outline-none hover:bg-slate-100/80 focus:bg-slate-100 rounded px-1 -mx-1 transition' : '';
   const ef = (field: keyof ResumeState) => (v: string) => onFieldChange?.(field, v);
   const showAvatar = showPhoto && !!avatar;
@@ -247,19 +395,16 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
         {(resumeSkills || isEditable) && (
           <section style={sec}>
             <h3 className={H} style={{ color: brandColor, borderColor: `${brandColor}40` }}>Skills</h3>
-            {isEditable
-              ? <E tag="div" value={resumeSkills} isEditable={isEditable} editableClass={ec}
-                  className="text-xs p-2 bg-slate-50 border border-dashed border-slate-200 text-slate-800"
-                  onSave={ef('resumeSkills')} />
-              : <div className="flex flex-wrap gap-x-2 gap-y-1.5 text-xs">
-                  {skillsList.map((s, i) => (
-                    <span key={i} className="px-2 py-0.5 rounded font-medium border"
-                      style={accentColor2 ? badgeStyle(i) : { background: '#f1f5f9', color: '#1e293b', borderColor: '#e2e8f0' }}>
-                      {s}
-                    </span>
-                  ))}
-                </div>
-            }
+            <SkillsEditor
+              value={resumeSkills}
+              isEditable={isEditable}
+              ec={ec}
+              onSave={ef('resumeSkills')}
+              accentColor2={accentColor2}
+              brandColor={brandColor}
+              badgeStyle={badgeStyle}
+              defaultBadgeStyle={{ background: '#f1f5f9', color: '#1e293b', borderColor: '#e2e8f0' }}
+            />
           </section>
         )}
 
@@ -274,11 +419,15 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
                     <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="text-slate-500 font-normal" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
                   </div>
                   <div className="flex justify-between text-slate-600 italic mb-1.5">
-                    <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                    <span className="flex items-center gap-1">
+                      <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                      <WorkLink url={exp.url} brandColor={brandColor} />
+                    </span>
                     <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
                   </div>
                   <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                    onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700" />
+                    onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
+                    bulletStyle={bulletStyle} brandColor={brandColor} />
                 </div>
               ))}
             </div>
@@ -331,18 +480,17 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
         {(resumeSkills || isEditable) && (
           <section style={sec} className="text-xs">
             <h3 className={H}>Skills &amp; Expertise</h3>
-            {isEditable
-              ? <E tag="div" value={resumeSkills} isEditable={isEditable} editableClass={ec}
-                  className="text-xs p-2 bg-slate-50 border border-dashed border-slate-200 font-sans text-center"
-                  onSave={ef('resumeSkills')} />
-              : accentColor2
-                ? <div className="flex flex-wrap justify-center gap-x-2 gap-y-1.5 text-xs font-sans">
-                    {skillsList.map((s, i) => (
-                      <span key={i} className="px-2 py-0.5 rounded font-medium border" style={badgeStyle(i)}>{s}</span>
-                    ))}
-                  </div>
-                : <p className="text-slate-700 leading-relaxed text-center font-sans">{skillsList.join('  •  ')}</p>
-            }
+            <SkillsEditor
+              value={resumeSkills}
+              isEditable={isEditable}
+              ec={ec}
+              onSave={ef('resumeSkills')}
+              accentColor2={accentColor2}
+              brandColor={brandColor}
+              badgeStyle={badgeStyle}
+              className="text-center font-sans"
+              editClassName="text-xs p-2 bg-slate-50 border border-dashed border-slate-200 font-sans text-center"
+            />
           </section>
         )}
 
@@ -353,10 +501,11 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               {resumeExperience.map((exp, idx) => (
                 <div key={idx} className="text-xs">
                   <div className="flex justify-between font-bold text-slate-950">
-                    <span>
+                    <span className="flex items-center gap-1">
                       <E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
                       <span> — </span>
                       <E value={exp.company} isEditable={isEditable} editableClass={ec} className="font-normal italic text-slate-700" onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                      <WorkLink url={exp.url} brandColor={brandColor} />
                     </span>
                     <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-normal font-sans text-slate-500" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
                   </div>
@@ -364,7 +513,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
                     <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
                   </div>
                   <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                    onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-800 leading-relaxed" />
+                    onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-800 leading-relaxed"
+                    bulletStyle={bulletStyle} brandColor={brandColor} />
                 </div>
               ))}
             </div>
@@ -428,18 +578,18 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
           {(resumeSkills || isEditable) && (
             <div>
               <h4 className={SH} style={{ borderColor: `${brandColor}60`, color: brandColor }}>Skills</h4>
-              {isEditable
-                ? <E tag="div" value={resumeSkills} isEditable={isEditable} editableClass={ec}
-                    className="text-[10px] p-1 bg-white/50 border border-dashed border-slate-300" onSave={ef('resumeSkills')} />
-                : <div className="flex flex-wrap gap-1 text-[10px]">
-                    {skillsList.map((s, i) => (
-                      <span key={i} className="px-1.5 py-0.5 rounded-full font-medium"
-                        style={accentColor2 ? badgeStyle(i) : { background: brandColor + 'cc', color: '#fff' }}>
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-              }
+              <SkillsEditor
+                value={resumeSkills}
+                isEditable={isEditable}
+                ec={ec}
+                onSave={ef('resumeSkills')}
+                accentColor2={accentColor2}
+                brandColor={brandColor}
+                badgeStyle={(i) => ({ ...badgeStyle(i), borderRadius: '9999px' })}
+                defaultBadgeStyle={{ background: brandColor + 'cc', color: '#fff', borderRadius: '9999px' }}
+                className="text-[10px] gap-1"
+                editClassName="text-[10px] p-1 bg-white/50 border border-dashed border-slate-300"
+              />
             </div>
           )}
 
@@ -449,7 +599,10 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               <ul className="space-y-2 text-[11px]">
                 {resumeCerts.map((cert, idx) => (
                   <li key={idx}>
-                    <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="block text-slate-900" onSave={v => onCertChange?.(idx, 'title', v)} />
+                    <span className="flex items-center gap-1">
+                      <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="block text-slate-900 font-bold" onSave={v => onCertChange?.(idx, 'title', v)} />
+                      <WorkLink url={cert.url} brandColor={brandColor} />
+                    </span>
                     <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[10px]" onSave={v => onCertChange?.(idx, 'desc', v)} />
                   </li>
                 ))}
@@ -514,11 +667,15 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
                       <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="text-slate-400 font-normal" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
                     </div>
                     <div className="flex justify-between text-slate-500 italic mb-1">
-                      <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                      <span className="flex items-center gap-1">
+                        <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                        <WorkLink url={exp.url} brandColor={brandColor} />
+                      </span>
                       <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
                     </div>
                     <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                      onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700" />
+                      onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
+                      bulletStyle={bulletStyle} brandColor={brandColor} />
                   </div>
                 ))}
               </div>
@@ -570,18 +727,18 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
         {(resumeSkills || isEditable) && (
           <section style={sec}>
             <div className={MH}>// Core_Tech_Stack</div>
-            {isEditable
-              ? <E tag="div" value={resumeSkills} isEditable={isEditable} editableClass={ec}
-                  className="text-[10px] font-mono p-2 bg-slate-50 border border-dashed border-slate-200" onSave={ef('resumeSkills')} />
-              : <div className="flex flex-wrap gap-1.5 text-[10px] font-mono">
-                  {skillsList.map((s, i) => (
-                    <span key={i} className="border rounded px-2 py-0.5"
-                      style={accentColor2 ? badgeStyle(i) : { borderColor: '#cbd5e1', color: '#334155', background: '#f8fafc' }}>
-                      {s}
-                    </span>
-                  ))}
-                </div>
-            }
+            <SkillsEditor
+              value={resumeSkills}
+              isEditable={isEditable}
+              ec={ec}
+              onSave={ef('resumeSkills')}
+              accentColor2={accentColor2}
+              brandColor={brandColor}
+              badgeStyle={badgeStyle}
+              defaultBadgeStyle={{ borderColor: '#cbd5e1', color: '#334155', background: '#f8fafc' }}
+              className="font-mono text-[10px]"
+              editClassName="text-[10px] font-mono p-2 bg-slate-50 border border-dashed border-slate-200"
+            />
           </section>
         )}
 
@@ -592,12 +749,13 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               {resumeExperience.map((exp, idx) => (
                 <div key={idx} className="text-xs">
                   <div className="flex justify-between font-bold text-slate-900">
-                    <span><E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} /><span> @ </span><E value={exp.company} isEditable={isEditable} editableClass={ec} className="text-slate-600 font-normal" onSave={v => onExperienceChange?.(idx, 'company', v)} /></span>
+                    <span className="flex items-center gap-1"><E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} /><span> @ </span><E value={exp.company} isEditable={isEditable} editableClass={ec} className="text-slate-600 font-normal" onSave={v => onExperienceChange?.(idx, 'company', v)} /><WorkLink url={exp.url} brandColor={brandColor} /></span>
                     <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-mono text-[10px] text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
                   </div>
                   <E value={exp.location} isEditable={isEditable} editableClass={ec} className="text-[11px] font-mono text-slate-500 italic mb-1.5 block" onSave={v => onExperienceChange?.(idx, 'location', v)} />
                   <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                    onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700" />
+                    onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
+                    bulletStyle={bulletStyle} brandColor={brandColor} />
                 </div>
               ))}
             </div>
@@ -628,7 +786,10 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
             <div className="flex flex-wrap gap-2 text-xs">
               {resumeCerts.map((cert, idx) => (
                 <div key={idx} className="border border-slate-200 rounded p-2 bg-slate-50 min-w-[140px]">
-                  <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 block text-[11px]" onSave={v => onCertChange?.(idx, 'title', v)} />
+                  <div className="flex items-center gap-1">
+                    <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 font-bold text-[11px]" onSave={v => onCertChange?.(idx, 'title', v)} />
+                    <WorkLink url={cert.url} brandColor={brandColor} />
+                  </div>
                   <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[10px] mt-0.5" onSave={v => onCertChange?.(idx, 'desc', v)} />
                 </div>
               ))}
@@ -691,17 +852,17 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
         {(resumeSkills || isEditable) && (
           <section style={sec}>
             <h2 className={H} style={{ borderColor: brandColor }}>Core Competencies</h2>
-            {isEditable
-              ? <E tag="div" value={resumeSkills} isEditable={isEditable} editableClass={ec}
-                  className="text-xs p-1 bg-slate-50 border border-dashed border-slate-200" onSave={ef('resumeSkills')} />
-              : accentColor2
-                ? <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs">
-                    {skillsList.map((s, i) => (
-                      <span key={i} className="px-1.5 py-0.5 rounded border" style={badgeStyle(i)}>{s}</span>
-                    ))}
-                  </div>
-                : <p className="text-xs text-slate-800 leading-relaxed">{skillsList.join(' • ')}</p>
-            }
+            <SkillsEditor
+              value={resumeSkills}
+              isEditable={isEditable}
+              ec={ec}
+              onSave={ef('resumeSkills')}
+              accentColor2={accentColor2}
+              brandColor={brandColor}
+              badgeStyle={badgeStyle}
+              className="text-xs text-slate-800"
+              editClassName="text-xs p-1 bg-slate-50 border border-dashed border-slate-200"
+            />
           </section>
         )}
 
@@ -716,11 +877,15 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
                     <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-normal" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
                   </div>
                   <div className="flex justify-between text-slate-700 mb-1">
-                    <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                    <span className="flex items-center gap-1">
+                      <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                      <WorkLink url={exp.url} brandColor={brandColor} />
+                    </span>
                     <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
                   </div>
                   <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                    onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-800" />
+                    onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-800"
+                    bulletStyle={bulletStyle} brandColor={brandColor} />
                 </div>
               ))}
             </div>
@@ -756,7 +921,10 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
                 <li key={idx} className="flex gap-1.5">
                   <span className="text-slate-400">▸</span>
                   <div>
-                    <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="text-slate-900" onSave={v => onCertChange?.(idx, 'title', v)} />
+                    <span className="inline-flex items-center gap-1">
+                      <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="text-slate-900 font-bold" onSave={v => onCertChange?.(idx, 'title', v)} />
+                      <WorkLink url={cert.url} brandColor={brandColor} />
+                    </span>
                     {cert.desc && <> — <E value={cert.desc} isEditable={isEditable} editableClass={ec} className="text-slate-600" onSave={v => onCertChange?.(idx, 'desc', v)} /></>}
                   </div>
                 </li>
@@ -820,18 +988,18 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
       {(resumeSkills || isEditable) && (
         <section style={sec}>
           <h3 className={H6} style={{ borderColor: brandColor, color: brandColor }}>Core Expertise</h3>
-          {isEditable
-            ? <E tag="div" value={resumeSkills} isEditable={isEditable} editableClass={ec}
-                className="text-xs p-2 bg-slate-50 border border-dashed border-slate-200" onSave={ef('resumeSkills')} />
-            : <div className="flex flex-wrap gap-x-2 gap-y-1.5 text-xs">
-                {skillsList.map((s, i) => (
-                  <span key={i} className="px-2.5 py-0.5 rounded-full text-[11px] font-medium"
-                    style={accentColor2 ? { ...badgeStyle(i), borderRadius: '9999px' } : { background: brandColor, color: '#fff' }}>
-                    {s}
-                  </span>
-                ))}
-              </div>
-          }
+            <SkillsEditor
+              value={resumeSkills}
+              isEditable={isEditable}
+              ec={ec}
+              onSave={ef('resumeSkills')}
+              accentColor2={accentColor2}
+              brandColor={brandColor}
+              badgeStyle={(i) => ({ ...badgeStyle(i), borderRadius: '9999px' })}
+              defaultBadgeStyle={{ background: brandColor, color: '#fff', borderRadius: '9999px' }}
+              className="text-[11px] gap-x-2 gap-y-1.5"
+              editClassName="text-xs p-2 bg-slate-50 border border-dashed border-slate-200"
+            />
         </section>
       )}
 
@@ -846,11 +1014,15 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
                   <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-normal text-slate-500" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
                 </div>
                 <div className="flex justify-between text-slate-600 italic mb-1.5">
-                  <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                  <span className="flex items-center gap-1">
+                    <E value={exp.company} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                    <WorkLink url={exp.url} brandColor={brandColor} />
+                  </span>
                   <E value={exp.location} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'location', v)} />
                 </div>
                 <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                  onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700" />
+                  onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
+                  bulletStyle={bulletStyle} brandColor={brandColor} />
               </div>
             ))}
           </div>

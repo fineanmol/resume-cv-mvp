@@ -64,6 +64,7 @@ const EF: React.FC<{
   if (isEditable) {
     return (
       <span
+        data-href={href}
         className={`${className ?? ''} ${ec}`}
         style={style}
         contentEditable={true}

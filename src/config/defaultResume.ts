@@ -19,14 +19,16 @@ export const DEFAULT_RESUME_STATE: ResumeState = {
       company: "TechFlow Solutions",
       dates: "08/2023 - Present",
       location: "San Francisco, CA",
-      bullets: "Led the architecture and migration of a legacy monolithic platform into microservices, improving deployment speed by 35%.\nMentored 6 junior and mid-level developers, establishing engineering best practices for testing, code reviews, and CI/CD pipelines.\nCollaborated closely with product managers and UX designers to deliver new client-facing dashboards, raising user retention by 22%."
+      bullets: "Led the architecture and migration of a legacy monolithic platform into microservices, improving deployment speed by 35%.\nMentored 6 junior and mid-level developers, establishing engineering best practices for testing, code reviews, and CI/CD pipelines.\nCollaborated closely with product managers and UX designers to deliver new client-facing dashboards, raising user retention by 22%.",
+      url: "https://techflow.example.com"
     },
     {
       title: "Software Engineer",
       company: "Apex Software Systems",
       dates: "05/2021 - 07/2023",
       location: "San Jose, CA",
-      bullets: "Developed and optimized high-throughput REST APIs handling over 10 million daily requests with average response times under 50ms.\nImplemented automated testing suites achieving 90%+ code coverage, reducing production bugs by 15%.\nConfigured containerized deployments using Docker and Kubernetes to ensure high availability and horizontal scaling."
+      bullets: "Developed and optimized high-throughput REST APIs handling over 10 million daily requests with average response times under 50ms.\nImplemented automated testing suites achieving 90%+ code coverage, reducing production bugs by 15%.\nConfigured containerized deployments using Docker and Kubernetes to ensure high availability and horizontal scaling.",
+      url: "https://apexsystems.example.com"
     }
   ],
 
@@ -43,7 +45,8 @@ export const DEFAULT_RESUME_STATE: ResumeState = {
   resumeCerts: [
     {
       title: "AWS Certified Solutions Architect - Associate",
-      desc: "Gained expertise in architecting secure, robust, and scalable systems on AWS."
+      desc: "Gained expertise in architecting secure, robust, and scalable systems on AWS.",
+      url: "https://aws.amazon.com/verification"
     },
     {
       title: "Certified ScrumMaster (CSM)",
@@ -83,5 +86,6 @@ export const DEFAULT_RESUME_STATE: ResumeState = {
     headingFont: 'inter',
     headerStyle: 'centered',
     showPhoto: true,
+    bulletStyle: 'disc',
   }
 };

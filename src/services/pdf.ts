@@ -123,7 +123,9 @@ function copyComputedStyles(original: HTMLElement, cloned: HTMLElement) {
     'list-style-position',
     'fill',
     'stroke',
-    'stroke-width'
+    'stroke-width',
+    'vertical-align',
+    'transform'
   ];
 
   propertiesToCopy.forEach((prop) => {
@@ -280,13 +282,35 @@ export class PdfService {
       });
     });
 
+    // Replace elements that have data-href with <a> anchor tags so that hyperlinks work on PDF
+    clone.querySelectorAll('[data-href]').forEach((el) => {
+      const href = el.getAttribute('data-href');
+      if (href) {
+        const anchor = el.ownerDocument.createElement('a');
+        anchor.href = href;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        anchor.innerHTML = el.innerHTML;
+        if (el instanceof HTMLElement) {
+          anchor.style.cssText = el.style.cssText;
+        }
+        anchor.className = el.className;
+        el.parentNode?.replaceChild(anchor, el);
+      }
+    });
+
     // Copy computed layout and typographic styles from original elements to cloned elements first
     copyComputedStyles(sheetElement, clone);
     const origEls = sheetElement.querySelectorAll('*');
     const cloneEls = clone.querySelectorAll('*');
     for (let i = 0; i < origEls.length; i++) {
       if (origEls[i] && cloneEls[i]) {
-        copyComputedStyles(origEls[i] as HTMLElement, cloneEls[i] as HTMLElement);
+        const origEl = origEls[i] as HTMLElement;
+        // Skip SVG children (path, rect, circle, g, etc.) to prevent layout and scale distortions
+        if (origEl.closest('svg') && origEl.tagName.toLowerCase() !== 'svg') {
+          continue;
+        }
+        copyComputedStyles(origEl, cloneEls[i] as HTMLElement);
       }
     }
 
