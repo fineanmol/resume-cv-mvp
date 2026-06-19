@@ -88,5 +88,8 @@ export const DEFAULT_RESUME_STATE: ResumeState = {
     showPhoto: true,
     bulletStyle: 'disc',
     skillsStyle: 'chips',
+    summaryAlign: 'justify',
+    experienceAlign: 'left',
+    educationAlign: 'left',
   }
 };

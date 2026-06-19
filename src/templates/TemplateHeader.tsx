@@ -101,34 +101,45 @@ const AvatarCircle: React.FC<{ src: string; name: string; size?: string; border?
 const ContactRow: React.FC<{
   phone: EditField; email: EditField; location: EditField; linkedin: EditField;
   isEditable: boolean; ec: string; cls?: string; itemCls?: string;
-}> = ({ phone, email, location, linkedin, isEditable, ec, cls, itemCls }) => (
-  <div className={cls ?? 'flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 mt-2'}>
-    {(phone.value || isEditable) && (
-      <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
-        <Phone className="w-3 h-3 flex-shrink-0 mt-[1px]" />
-        <EF field={phone} isEditable={isEditable} ec={ec} />
-      </span>
-    )}
-    {(email.value || isEditable) && (
-      <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
-        <Mail className="w-3 h-3 flex-shrink-0 mt-[1px]" />
-        <EF field={email} isEditable={isEditable} ec={ec} href={isEditable ? undefined : `mailto:${email.value}`} />
-      </span>
-    )}
-    {(location.value || isEditable) && (
-      <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
-        <MapPin className="w-3 h-3 flex-shrink-0 mt-[1px]" />
-        <EF field={location} isEditable={isEditable} ec={ec} />
-      </span>
-    )}
-    {(linkedin.value || isEditable) && (
-      <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
-        <LI />
-        <EF field={linkedin} isEditable={isEditable} ec={ec} href={isEditable ? undefined : formatLinkedinUrl(linkedin.value)} />
-      </span>
-    )}
-  </div>
-);
+}> = ({ phone, email, location, linkedin, isEditable, ec, cls, itemCls }) => {
+  const hasPhone = !!(phone?.value && phone.value.trim());
+  const hasEmail = !!(email?.value && email.value.trim());
+  const hasLocation = !!(location?.value && location.value.trim());
+  const hasLinkedin = !!(linkedin?.value && linkedin.value.trim());
+
+  if (!hasPhone && !hasEmail && !hasLocation && !hasLinkedin) {
+    return null;
+  }
+
+  return (
+    <div className={cls ?? 'flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 mt-2'}>
+      {hasPhone && (
+        <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
+          <Phone className="w-3 h-3 flex-shrink-0 mt-[1px]" />
+          <EF field={phone} isEditable={isEditable} ec={ec} />
+        </span>
+      )}
+      {hasEmail && (
+        <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
+          <Mail className="w-3 h-3 flex-shrink-0 mt-[1px]" />
+          <EF field={email} isEditable={isEditable} ec={ec} href={isEditable ? undefined : `mailto:${email.value}`} />
+        </span>
+      )}
+      {hasLocation && (
+        <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
+          <MapPin className="w-3 h-3 flex-shrink-0 mt-[1px]" />
+          <EF field={location} isEditable={isEditable} ec={ec} />
+        </span>
+      )}
+      {hasLinkedin && (
+        <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
+          <LI />
+          <EF field={linkedin} isEditable={isEditable} ec={ec} href={isEditable ? undefined : formatLinkedinUrl(linkedin.value)} />
+        </span>
+      )}
+    </div>
+  );
+};
 
 export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
   const lightEc = 'outline-none hover:bg-white/10 focus:bg-white/10 rounded px-1 -mx-1 transition';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, Type, Layout, SlidersHorizontal, Image, List, Tag } from 'lucide-react';
+import { Palette, Type, Layout, SlidersHorizontal, Image, List, Tag, AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-react';
 import type { LayoutSettings, FontFamily, HeaderStyle, TemplateId } from '../types';
 import { SectionHeader } from './SectionHeader';
 import { FONT_OPTIONS, FONT_CSS } from '../config/fonts';
@@ -334,6 +334,96 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
             </AnimatePresence>
           </div>
         )}
+
+        {/* ── TEXT ALIGNMENT ────────────────────────────────────── */}
+        <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
+          <SectionHeader id="textAlignment" icon={AlignLeft} label="Text Alignment" openSection={open} onToggle={toggle} />
+          <AnimatePresence initial={false}>
+            {open === 'textAlignment' && (
+              <motion.div key="textAlignment" {...SECTION_ANIM} style={{ overflow: 'hidden' }}>
+                <div className="p-3 border-t border-border-color/40 space-y-4">
+                  {/* Summary Alignment */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[10px] text-text-muted uppercase font-bold tracking-wider">Summary Alignment</span>
+                    <div className="grid grid-cols-4 gap-1">
+                      {(['left', 'center', 'right', 'justify'] as const).map(align => {
+                        const Icon = align === 'left' ? AlignLeft : align === 'center' ? AlignCenter : align === 'right' ? AlignRight : AlignJustify;
+                        const isActive = (layout.summaryAlign ?? 'justify') === align;
+                        return (
+                          <button
+                            key={align}
+                            onClick={() => onChange({ summaryAlign: align })}
+                            className={`flex flex-col items-center justify-center p-2 rounded-lg border transition cursor-pointer capitalize ${
+                              isActive
+                                ? 'border-brand-accent bg-brand-accent/8 text-brand-accent font-semibold'
+                                : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                            }`}
+                            title={`Align ${align}`}
+                          >
+                            <Icon className="w-4 h-4 mb-0.5" />
+                            <span className="text-[8px]">{align}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Experience Alignment */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[10px] text-text-muted uppercase font-bold tracking-wider">Experience Alignment</span>
+                    <div className="grid grid-cols-4 gap-1">
+                      {(['left', 'center', 'right', 'justify'] as const).map(align => {
+                        const Icon = align === 'left' ? AlignLeft : align === 'center' ? AlignCenter : align === 'right' ? AlignRight : AlignJustify;
+                        const isActive = (layout.experienceAlign ?? 'left') === align;
+                        return (
+                          <button
+                            key={align}
+                            onClick={() => onChange({ experienceAlign: align })}
+                            className={`flex flex-col items-center justify-center p-2 rounded-lg border transition cursor-pointer capitalize ${
+                              isActive
+                                ? 'border-brand-accent bg-brand-accent/8 text-brand-accent font-semibold'
+                                : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                            }`}
+                            title={`Align ${align}`}
+                          >
+                            <Icon className="w-4 h-4 mb-0.5" />
+                            <span className="text-[8px]">{align}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Education Alignment */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[10px] text-text-muted uppercase font-bold tracking-wider">Education Alignment</span>
+                    <div className="grid grid-cols-4 gap-1">
+                      {(['left', 'center', 'right', 'justify'] as const).map(align => {
+                        const Icon = align === 'left' ? AlignLeft : align === 'center' ? AlignCenter : align === 'right' ? AlignRight : AlignJustify;
+                        const isActive = (layout.educationAlign ?? 'left') === align;
+                        return (
+                          <button
+                            key={align}
+                            onClick={() => onChange({ educationAlign: align })}
+                            className={`flex flex-col items-center justify-center p-2 rounded-lg border transition cursor-pointer capitalize ${
+                              isActive
+                                ? 'border-brand-accent bg-brand-accent/8 text-brand-accent font-semibold'
+                                : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                            }`}
+                            title={`Align ${align}`}
+                          >
+                            <Icon className="w-4 h-4 mb-0.5" />
+                            <span className="text-[8px]">{align}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* ── PHOTO ─────────────────────────────────────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">

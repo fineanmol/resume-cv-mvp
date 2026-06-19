@@ -135,6 +135,51 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
                     <div><label className="block text-[10px] text-text-muted mb-1">LinkedIn URL</label>
                       <input className={inputCls} value={state.linkedin} onChange={e => onChange(p => ({ ...p, linkedin: clean(e.target.value) }))} /></div>
                   </div>
+                  <div className="pt-2 border-t border-border-color/20">
+                    <label className="block text-[10px] text-text-muted mb-1">Profile Photo</label>
+                    <div className="flex items-center gap-3">
+                      {state.avatar ? (
+                        <div className="relative w-12 h-12 rounded-full overflow-hidden border border-border-color/60 bg-slate-100 flex-shrink-0">
+                          <img src={state.avatar} alt="Profile preview" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-12 h-12 rounded-full border border-dashed border-border-color bg-slate-50 flex items-center justify-center flex-shrink-0">
+                          <User className="w-5 h-5 text-text-muted" />
+                        </div>
+                      )}
+                      <div className="flex flex-col gap-1">
+                        <label className="px-2.5 py-1.5 bg-brand-accent/10 border border-brand-accent/25 hover:bg-brand-accent/20 text-brand-accent text-[10px] font-bold rounded cursor-pointer transition text-center select-none">
+                          Upload Photo
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  if (typeof reader.result === 'string') {
+                                    onChange((p) => ({ ...p, avatar: reader.result as string }));
+                                  }
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+                        {state.avatar && (
+                          <button
+                            type="button"
+                            onClick={() => onChange((p) => ({ ...p, avatar: '' }))}
+                            className="px-2.5 py-1 border border-red-200 hover:bg-red-50 text-red-500 text-[10px] font-bold rounded cursor-pointer transition"
+                          >
+                            Remove Photo
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}

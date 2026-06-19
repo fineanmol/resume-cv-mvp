@@ -16,6 +16,9 @@ export interface LayoutSettings {
   showPhoto?: boolean;        // whether to display avatar in templates that support it
   bulletStyle?: 'disc' | 'circle' | 'square' | 'dash' | 'arrow' | 'number' | 'none';
   skillsStyle?: 'chips' | 'normal';
+  summaryAlign?: 'left' | 'center' | 'right' | 'justify';
+  experienceAlign?: 'left' | 'center' | 'right' | 'justify';
+  educationAlign?: 'left' | 'center' | 'right' | 'justify';
 }
 
 export interface HighlightItem {
