@@ -165,22 +165,24 @@ export class PdfService {
 
     // Clone and strip all transforms/shadows so html2canvas sees a plain A4 element
     const clone = sheetElement.cloneNode(true) as HTMLElement;
-    clone.style.cssText = [
-      'transform: none',
-      'transition: none',
-      'box-shadow: none',
-      'position: absolute',
-      // Push far left — DO NOT use z-index: negative, html2canvas treats that as invisible
-      'left: -9999px',
-      'top: 0',
-      'z-index: 0',
-      'width: 794px',
-      'height: auto',
-      'display: block',
-      'opacity: 1',
-      'visibility: visible',
-      'pointer-events: none',
-    ].join(';');
+    
+    // Override specific layout properties for PDF generation while keeping original inline styles (like fonts, padding)
+    clone.style.transform = 'none';
+    clone.style.transition = 'none';
+    clone.style.boxShadow = 'none';
+    clone.style.position = 'absolute';
+    // Position at 0, 0 inside viewport so html2canvas captures it correctly (not blank/offscreen)
+    clone.style.left = '0px';
+    clone.style.top = '0px';
+    // Use negative z-index to place it behind the main application content to avoid visual flicker.
+    // html2canvas only renders the clone itself (since it's passed as target), so z-index doesn't hide it from the canvas.
+    clone.style.zIndex = '-9999';
+    clone.style.width = '794px';
+    clone.style.height = 'auto';
+    clone.style.display = 'block';
+    clone.style.opacity = '1';
+    clone.style.visibility = 'visible';
+    clone.style.pointerEvents = 'none';
 
     // Convert oklch/oklab colours to rgba so html2canvas doesn't choke
     convertElementColors(sheetElement, clone);
