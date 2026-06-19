@@ -129,10 +129,19 @@ function copyComputedStyles(original: HTMLElement, cloned: HTMLElement) {
   ];
 
   propertiesToCopy.forEach((prop) => {
-    // Skip width, height, margins, and paddings for non-SVG elements to prevent scale/squeezing layout distortion
-    const isLayoutProp = prop.includes('width') || prop.includes('height') || prop.includes('margin') || prop.includes('padding');
-    if (isLayoutProp && original.tagName.toLowerCase() !== 'svg') {
+    // Skip width, min-width, and max-width for non-SVG elements to prevent scale/squeezing layout distortion
+    if ((prop === 'width' || prop === 'min-width' || prop === 'max-width') && original.tagName.toLowerCase() !== 'svg') {
       return;
+    }
+
+    // Skip height for block containers to prevent vertical overflow/clipping, but copy for SVGs and inline-block/inline-flex items (chips/links)
+    if (prop === 'height' || prop === 'min-height' || prop === 'max-height') {
+      const isSvg = original.tagName.toLowerCase() === 'svg';
+      const displayVal = computed.getPropertyValue('display') || '';
+      const isInline = displayVal.includes('inline');
+      if (!isSvg && !isInline) {
+        return;
+      }
     }
 
     const val = computed.getPropertyValue(prop);
