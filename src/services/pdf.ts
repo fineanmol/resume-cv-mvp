@@ -639,10 +639,6 @@ export class PdfService {
     // (matching the 16px the preview adds to push items below the separator band).
     clone.querySelectorAll<HTMLElement>('[data-pb-push]').forEach(el => {
       el.style.marginTop = el.getAttribute('data-pb-orig') ?? '';
-      // Add a small top padding so items at the top of subsequent pages aren't
-      // flush with the paper edge (mirrors the 16px gap in the preview).
-      const currentPT = parseFloat(el.style.paddingTop) || 0;
-      el.style.paddingTop = `${currentPT + 16}px`;
       el.removeAttribute('data-pb-push');
       el.removeAttribute('data-pb-orig');
     });
@@ -762,6 +758,20 @@ export class PdfService {
       break-inside: auto !important;
       page-break-inside: auto !important;
       overflow: visible !important;
+      display: block !important;
+      min-height: 0 !important;
+    }
+
+    header {
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+      break-after: avoid !important;
+      page-break-after: avoid !important;
+    }
+
+    .group\\/draggable {
+      break-inside: auto !important;
+      page-break-inside: auto !important;
     }
 
     .group\/section {
@@ -793,7 +803,9 @@ export class PdfService {
      * Switching to display:block restores per-entry fragmentation.
      */
     section > div.flex,
-    section > ul.flex {
+    section > ul.flex,
+    .designer-column section > div.flex,
+    .designer-column section > ul.flex {
       display: block !important;
     }
     /* Restore entry gap (flex gap is gone after the display change) */

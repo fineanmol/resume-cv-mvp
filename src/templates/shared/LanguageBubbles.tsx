@@ -30,7 +30,7 @@ export const LanguageBubbles: React.FC<LanguageBubblesProps> = ({
             type="button"
             title={`Set to ${getLanguageLevelFromBubbleCount(i)}`}
             aria-label={`Proficiency ${i} of 5`}
-            className={`${bubbleClass} edit-only cursor-pointer hover:scale-125 hover:opacity-90 p-0`}
+            className={`${bubbleClass} cursor-pointer hover:scale-125 hover:opacity-90 p-0`}
             style={style}
             onClick={(e) => {
               e.stopPropagation();

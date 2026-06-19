@@ -160,6 +160,8 @@ export const DesignerTemplate: React.FC = () => {
                   fontScale={scale}
                   gridFontFamily={_OS}
                   gridTextColor={C_BODY}
+                  chipFontFamily={_OS}
+                  chipTextColor={C_BODY}
                 />
               </section>
             </SectionWrapper>

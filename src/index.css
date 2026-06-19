@@ -264,6 +264,20 @@ body {
     break-inside: auto !important;
     page-break-inside: auto !important;
     overflow: visible !important;
+    display: block !important;
+    min-height: 0 !important;
+  }
+
+  .pdf-sheet header {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  .pdf-sheet .group\/draggable {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
   }
 
   /* Section wrappers: allow breaks between entries */
@@ -300,7 +314,9 @@ body {
    * Switching to block layout restores per-entry fragmentation.
    */
   .pdf-sheet section > div.flex,
-  .pdf-sheet section > ul.flex {
+  .pdf-sheet section > ul.flex,
+  .pdf-sheet .designer-column section > div.flex,
+  .pdf-sheet .designer-column section > ul.flex {
     display: block !important;
   }
   /* Restore spacing between sibling entries once gap is gone */

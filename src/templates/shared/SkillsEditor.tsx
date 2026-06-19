@@ -17,7 +17,11 @@ export const SkillsEditor = React.memo<{
   gridFontFamily?: string;
   /** Text color for grid mode skill items (defaults to #3E3E3E). */
   gridTextColor?: string;
-}>(function SkillsEditor({ value, isEditable, ec, onSave, badgeStyle, defaultBadgeStyle, className = '', skillsStyle = 'chips', fontScale = 1, gridFontFamily, gridTextColor = '#3E3E3E' }) {
+  /** Font family for chips mode. When set, overrides the hardcoded screen-pixel size. */
+  chipFontFamily?: string;
+  /** Text color for chips mode. When set, overrides default slate-600. */
+  chipTextColor?: string;
+}>(function SkillsEditor({ value, isEditable, ec, onSave, badgeStyle, defaultBadgeStyle, className = '', skillsStyle = 'chips', fontScale = 1, gridFontFamily, gridTextColor = '#3E3E3E', chipFontFamily, chipTextColor }) {
   const [focusedSkillIdx, setFocusedSkillIdx] = useState<number | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
@@ -228,21 +232,31 @@ export const SkillsEditor = React.memo<{
   }
 
   const chipBase =
-    'inline-flex w-max max-w-full shrink-0 items-center rounded-md font-medium border text-[11px] leading-snug whitespace-nowrap px-2 py-0.5 min-h-[22px] bg-white text-slate-600 border-slate-200 box-border';
+    'inline-flex w-max max-w-full shrink-0 items-center rounded-md font-medium border leading-snug whitespace-nowrap px-2 py-0.5 min-h-[22px] bg-white text-slate-600 border-slate-200 box-border';
 
-  const chipFieldStyle: React.CSSProperties = {};
+  // When a chip font family is provided (Designer template), use scaled pt sizes.
+  // Otherwise fall back to the hardcoded 11px Tailwind class.
+  const chipInlineStyle: React.CSSProperties = chipFontFamily
+    ? {
+        fontFamily: chipFontFamily,
+        fontSize: `${(7.61 * fontScale).toFixed(2)}pt`,
+        color: chipTextColor,
+      }
+    : {};
+
+  const chipSizeClass = chipFontFamily ? '' : 'text-[11px]';
 
   if (!isEditable) {
     return (
       <div className={className}>
-        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+        <div className="flex flex-wrap items-center gap-1.5">
         {skillsList.map((s, i) => {
           const baseStyle = getChipStyle();
           return (
             <span
               key={i}
-              className={chipBase}
-              style={baseStyle}
+              className={`${chipBase} ${chipSizeClass}`}
+              style={{ ...baseStyle, ...chipInlineStyle }}
               title={s}
             >
               {s}
@@ -256,7 +270,7 @@ export const SkillsEditor = React.memo<{
 
   return (
     <div className={`w-full ${className}`}>
-      <div className="flex flex-wrap items-center gap-1.5 text-xs">
+      <div className="flex flex-wrap items-center gap-1.5">
         {skillsList.map((s, i) => {
           const baseStyle = getChipStyle();
           const isFocused = focusedSkillIdx === i;
@@ -266,10 +280,10 @@ export const SkillsEditor = React.memo<{
               data-skill-chip
               onDragOver={(e) => handleDragOver(e, i)}
               onDrop={(e) => handleDrop(e, i)}
-              className={`${chipBase} relative group/chip transition-[border-color,opacity] duration-100 ${
+              className={`${chipBase} ${chipSizeClass} relative group/chip transition-[border-color,opacity] duration-100 ${
                 isFocused ? 'border-teal-400' : 'hover:border-slate-300'
               } ${chipDropClass(i)}`}
-              style={baseStyle}
+              style={{ ...baseStyle, ...chipInlineStyle }}
             >
               <span
                 draggable
@@ -289,7 +303,7 @@ export const SkillsEditor = React.memo<{
                 contentEditable={true}
                 suppressContentEditableWarning={true}
                 className="outline-none inline min-w-0 align-middle cursor-text"
-                style={chipFieldStyle}
+                style={chipInlineStyle}
                 onFocus={() => setFocusedSkillIdx(i)}
                 onBlur={(e) => {
                   setFocusedSkillIdx(null);

@@ -83,7 +83,7 @@ export const DateRangePicker: React.FC<Props> = ({ value, isEditable, onSave, st
         <button
           type="button"
           onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
-          className="edit-only text-slate-400 hover:text-teal-500 transition cursor-pointer rounded p-0.5 -m-0.5 focus:outline-none"
+          className="text-slate-400 hover:text-teal-500 transition cursor-pointer rounded p-0.5 -m-0.5 focus:outline-none"
           title="Pick date range"
           aria-label="Open date picker"
         >

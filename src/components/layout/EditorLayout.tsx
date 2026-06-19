@@ -23,6 +23,28 @@ const CoverLetterTemplateRenderer = lazy(() =>
 
 const PAGE_HEIGHT_PX = 1123;
 
+/** Wait for lazy-loaded `.pdf-sheet` to mount inside the preview wrapper. */
+function usePdfSheet(sheetRef: RefObject<HTMLDivElement | null>): HTMLElement | null {
+  const [sheet, setSheet] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const root = sheetRef.current;
+    if (!root) return;
+
+    const sync = () => {
+      const next = root.querySelector('.pdf-sheet') as HTMLElement | null;
+      setSheet((prev) => (prev === next ? prev : next));
+    };
+
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [sheetRef]);
+
+  return sheet;
+}
+
 /**
  * Simulates CSS `break-inside: avoid` in the live editor preview.
  *
@@ -38,20 +60,19 @@ const PAGE_HEIGHT_PX = 1123;
  * the PDF clone can reset them before generating the actual PDF.
  */
 function usePreviewPageBreaks(
-  sheetRef: RefObject<HTMLDivElement | null>,
+  sheet: HTMLElement | null,
   zoomScale: number,
 ): void {
   const zoomRef = useRef(zoomScale);
   useEffect(() => { zoomRef.current = zoomScale; }, [zoomScale]);
 
   useEffect(() => {
-    const getSheet = () =>
-      sheetRef.current?.querySelector('.pdf-sheet') as HTMLElement | null;
+    if (!sheet) return;
 
     let lastApply = 0;
     let rafId: number | null = null;
 
-    const resetAll = (sheet: HTMLElement) => {
+    const resetAll = () => {
       sheet.querySelectorAll<HTMLElement>('[data-pb-push]').forEach(el => {
         el.style.marginTop = el.getAttribute('data-pb-orig') ?? '';
         el.removeAttribute('data-pb-push');
@@ -60,17 +81,12 @@ function usePreviewPageBreaks(
     };
 
     const applyBreaks = () => {
-      const sheet = getSheet();
-      if (!sheet) return;
-
       lastApply = Date.now();
-      resetAll(sheet);
+      resetAll();
 
       const sheetRect = sheet.getBoundingClientRect();
       const scale = zoomRef.current;
 
-      // Process items in DOM order so each getBoundingClientRect() reflects
-      // prior adjustments within the same pass (handles cascading pushes).
       const items = Array.from(
         sheet.querySelectorAll<HTMLElement>('.group\\/item'),
       ).filter(el => !el.closest('[data-pdf-hide]'));
@@ -79,13 +95,9 @@ function usePreviewPageBreaks(
         const rect = el.getBoundingClientRect();
         const top    = (rect.top    - sheetRect.top) / scale;
         const bottom = (rect.bottom - sheetRect.top) / scale;
-        // Which page boundary does this item straddle (if any)?
         const boundary = Math.ceil((top + 1) / PAGE_HEIGHT_PX) * PAGE_HEIGHT_PX;
 
         if (top < boundary && bottom > boundary) {
-          // Push the item just past the band bottom (band sits from y-7 to y+15).
-          // Adding 16px means items on page 2+ get a small breathing gap matching
-          // the bottom edge of the separator strip.
           const push = boundary - top + 16;
           const currentMT = parseFloat(window.getComputedStyle(el).marginTop) || 0;
           el.setAttribute('data-pb-orig', el.style.marginTop);
@@ -99,29 +111,47 @@ function usePreviewPageBreaks(
       if (rafId !== null) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        // Debounce: skip if we just ran (our own DOM changes trigger the observer)
         if (Date.now() - lastApply < 150) return;
         applyBreaks();
       });
     };
 
-    const sheet = getSheet();
-    if (!sheet) return;
-
     const obs = new ResizeObserver(schedule);
     obs.observe(sheet);
-    // Small delay for initial run so fonts / images have time to load
     const initTimer = setTimeout(applyBreaks, 200);
+    const fontTimer = setTimeout(applyBreaks, 700);
 
     return () => {
       obs.disconnect();
       clearTimeout(initTimer);
+      clearTimeout(fontTimer);
       if (rafId !== null) cancelAnimationFrame(rafId);
-      const s = getSheet();
-      if (s) resetAll(s);
+      resetAll();
     };
-  // Re-register when zoom changes so positions are re-measured at the new scale
-  }, [sheetRef, zoomScale]);
+  }, [sheet, zoomScale]);
+}
+
+/** Reserve scroll height when the sheet is CSS-scaled so page 2+ stays visible in preview. */
+function useScaledSheetHeight(
+  sheet: HTMLElement | null,
+  zoomScale: number,
+): number | undefined {
+  const [height, setHeight] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!sheet) return;
+
+    const update = () => {
+      setHeight(Math.ceil(sheet.scrollHeight * zoomScale));
+    };
+
+    const obs = new ResizeObserver(update);
+    obs.observe(sheet);
+    update();
+    return () => obs.disconnect();
+  }, [sheet, zoomScale]);
+
+  return height;
 }
 
 /**
@@ -133,28 +163,29 @@ function usePreviewPageBreaks(
  * Note: strips are kept to left:0/right:0 (794 px wide) because the
  * EditorLayout wrapper has overflow:hidden which clips wider absolute children.
  */
-const PageBreakLabels: React.FC<{ sheetRef: RefObject<HTMLDivElement | null> }> = ({ sheetRef }) => {
+const PageBreakLabels: React.FC<{ sheet: HTMLElement | null }> = ({ sheet }) => {
   const [breakYs, setBreakYs] = useState<number[]>([]);
-  const [sheetEl, setSheetEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    const el = sheetRef.current?.querySelector('.pdf-sheet') as HTMLElement | null;
-    setSheetEl(el);
-    if (!el) return;
+    if (!sheet) return;
 
     const update = () => {
-      const h = el.scrollHeight;
+      const h = sheet.scrollHeight;
       const count = Math.max(0, Math.floor((h - 1) / PAGE_HEIGHT_PX));
       setBreakYs(Array.from({ length: count }, (_, i) => (i + 1) * PAGE_HEIGHT_PX));
     };
 
     const obs = new ResizeObserver(update);
-    obs.observe(el);
+    obs.observe(sheet);
     update();
-    return () => obs.disconnect();
-  }, [sheetRef]);
+    const fontTimer = setTimeout(update, 700);
+    return () => {
+      obs.disconnect();
+      clearTimeout(fontTimer);
+    };
+  }, [sheet]);
 
-  if (!sheetEl || breakYs.length === 0) return null;
+  if (!sheet || breakYs.length === 0) return null;
 
   return createPortal(
     <>
@@ -191,7 +222,7 @@ const PageBreakLabels: React.FC<{ sheetRef: RefObject<HTMLDivElement | null> }> 
         </React.Fragment>
       ))}
     </>,
-    sheetEl,
+    sheet,
   );
 };
 
@@ -270,8 +301,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
   const [isResizing, setIsResizing] = useState(false);
   const resizeCleanupRef = useRef<(() => void) | null>(null);
 
+  const pdfSheet = usePdfSheet(sheetRef);
+
   // Simulate print-style page breaks in the live preview
-  usePreviewPageBreaks(sheetRef, zoomScale);
+  usePreviewPageBreaks(pdfSheet, zoomScale);
+  const scaledSheetHeight = useScaledSheetHeight(pdfSheet, zoomScale);
 
   useEffect(() => {
     return () => {
@@ -375,29 +409,31 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
 
       <section className="flex-1 min-h-0 relative flex flex-col bg-[#dde3ec]">
         <div className="sheet-preview-container flex-1 w-full relative">
-          <div
-            ref={sheetRef}
-            style={{ transform: `scale(${zoomScale})`, transformOrigin: 'top center', transition: 'transform 0.25s ease-out' }}
-            className={`flex justify-center${sheetOverflow ? ' sheet-overflow-active' : ''}`}
-          >
-            <Suspense fallback={<div className="w-[794px] h-[1123px] bg-white animate-pulse rounded shadow-xl" />}>
-              {isResume ? (
-                <ResumeTemplateRenderer
-                  state={resumeState}
-                  isEditable
-                  {...resumeMutations}
-                />
-              ) : (
-                <CoverLetterTemplateRenderer
-                  state={clState}
-                  isEditable
-                  {...clMutations}
-                />
-              )}
-            </Suspense>
+          <div style={{ height: scaledSheetHeight }}>
+            <div
+              ref={sheetRef}
+              style={{ transform: `scale(${zoomScale})`, transformOrigin: 'top center', transition: 'transform 0.25s ease-out' }}
+              className={`flex justify-center${sheetOverflow ? ' sheet-overflow-active' : ''}`}
+            >
+              <Suspense fallback={<div className="w-[794px] h-[1123px] bg-white animate-pulse rounded shadow-xl" />}>
+                {isResume ? (
+                  <ResumeTemplateRenderer
+                    state={resumeState}
+                    isEditable
+                    {...resumeMutations}
+                  />
+                ) : (
+                  <CoverLetterTemplateRenderer
+                    state={clState}
+                    isEditable
+                    {...clMutations}
+                  />
+                )}
+              </Suspense>
+            </div>
           </div>
           {/* Multi-page break labels rendered as portal inside pdf-sheet */}
-          <PageBreakLabels sheetRef={sheetRef} />
+          <PageBreakLabels sheet={pdfSheet} />
         </div>
       </section>
 
