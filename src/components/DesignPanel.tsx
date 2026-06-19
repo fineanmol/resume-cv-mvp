@@ -419,6 +419,58 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
                       })}
                     </div>
                   </div>
+
+                  {/* Certifications Alignment */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[10px] text-text-muted uppercase font-bold tracking-wider">Certifications Alignment</span>
+                    <div className="grid grid-cols-4 gap-1">
+                      {(['left', 'center', 'right', 'justify'] as const).map(align => {
+                        const Icon = align === 'left' ? AlignLeft : align === 'center' ? AlignCenter : align === 'right' ? AlignRight : AlignJustify;
+                        const isActive = (layout.certsAlign ?? 'left') === align;
+                        return (
+                          <button
+                            key={align}
+                            onClick={() => onChange({ certsAlign: align })}
+                            className={`flex flex-col items-center justify-center p-2 rounded-lg border transition cursor-pointer capitalize ${
+                              isActive
+                                ? 'border-brand-accent bg-brand-accent/8 text-brand-accent font-semibold'
+                                : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                            }`}
+                            title={`Align ${align}`}
+                          >
+                            <Icon className="w-4 h-4 mb-0.5" />
+                            <span className="text-[8px]">{align}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Achievements Alignment */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[10px] text-text-muted uppercase font-bold tracking-wider">Achievements Alignment</span>
+                    <div className="grid grid-cols-4 gap-1">
+                      {(['left', 'center', 'right', 'justify'] as const).map(align => {
+                        const Icon = align === 'left' ? AlignLeft : align === 'center' ? AlignCenter : align === 'right' ? AlignRight : AlignJustify;
+                        const isActive = (layout.achievementsAlign ?? 'left') === align;
+                        return (
+                          <button
+                            key={align}
+                            onClick={() => onChange({ achievementsAlign: align })}
+                            className={`flex flex-col items-center justify-center p-2 rounded-lg border transition cursor-pointer capitalize ${
+                              isActive
+                                ? 'border-brand-accent bg-brand-accent/8 text-brand-accent font-semibold'
+                                : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                            }`}
+                            title={`Align ${align}`}
+                          >
+                            <Icon className="w-4 h-4 mb-0.5" />
+                            <span className="text-[8px]">{align}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}

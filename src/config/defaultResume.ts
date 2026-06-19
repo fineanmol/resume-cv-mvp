@@ -91,5 +91,7 @@ export const DEFAULT_RESUME_STATE: ResumeState = {
     summaryAlign: 'justify',
     experienceAlign: 'left',
     educationAlign: 'left',
+    certsAlign: 'left',
+    achievementsAlign: 'left',
   }
 };

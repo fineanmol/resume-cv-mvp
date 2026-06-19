@@ -311,12 +311,15 @@ interface BottomSectionsProps {
   onCertChange?: ResumeTemplateProps['onCertChange'];
   onAchievementChange?: ResumeTemplateProps['onAchievementChange'];
   onLanguageChange?: ResumeTemplateProps['onLanguageChange'];
+  certsAlign?: 'left' | 'center' | 'right' | 'justify';
+  achievementsAlign?: 'left' | 'center' | 'right' | 'justify';
 }
 
 const BottomSections: React.FC<BottomSectionsProps> = ({
   resumeCerts, resumeAchievements, resumeLanguages,
   sec, isEditable, ec, accentColor, headingClass,
   onCertChange, onAchievementChange, onLanguageChange,
+  certsAlign = 'left', achievementsAlign = 'left'
 }) => (
   <>
     {resumeCerts && resumeCerts.length > 0 && (
@@ -324,13 +327,13 @@ const BottomSections: React.FC<BottomSectionsProps> = ({
         <h3 className={headingClass} style={{ color: accentColor, borderColor: `${accentColor}40` }}>Certifications</h3>
         <ul className="space-y-1.5 text-xs">
           {resumeCerts.map((cert, idx) => (
-            <li key={idx}>
-              <div className="flex items-center gap-1">
+            <li key={idx} className={`text-${certsAlign}`}>
+              <div className={`flex items-center gap-1 ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
                 <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 font-bold"
                   onSave={v => onCertChange?.(idx, 'title', v)} />
                 <WorkLink url={cert.url} brandColor={accentColor} />
               </div>
-              <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[11px] mt-0.5"
+              <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[11px] mt-0.5 text-${certsAlign}`}
                 onSave={v => onCertChange?.(idx, 'desc', v)} />
             </li>
           ))}
@@ -342,9 +345,9 @@ const BottomSections: React.FC<BottomSectionsProps> = ({
         <h3 className={headingClass} style={{ color: accentColor, borderColor: `${accentColor}40` }}>Achievements</h3>
         <ul className="space-y-2 text-xs">
           {resumeAchievements.map((ach, idx) => (
-            <li key={idx} className="flex gap-2">
+            <li key={idx} className={`flex gap-2 text-${achievementsAlign} ${achievementsAlign === 'right' ? 'flex-row-reverse' : ''}`}>
               <Star className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
-              <div>
+              <div className="flex-1 min-w-0">
                 <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 block"
                   onSave={v => onAchievementChange?.(idx, 'title', v)} />
                 <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[11px]"
@@ -398,6 +401,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
     summaryAlign = 'justify',
     experienceAlign = 'left',
     educationAlign = 'left',
+    certsAlign = 'left',
+    achievementsAlign = 'left',
   } = layoutSettings;
 
   const bodyFontCss    = FONT_CSS[fontFamily] ?? FONT_CSS.inter;
@@ -434,7 +439,11 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
     : { background: undefined };
 
   // Shared props for BottomSections — avoids repeating at every call site
-  const bottomProps = { resumeCerts, resumeAchievements, resumeLanguages, sec, isEditable, ec, onCertChange, onAchievementChange, onLanguageChange };
+  const bottomProps = {
+    resumeCerts, resumeAchievements, resumeLanguages, sec, isEditable, ec,
+    onCertChange, onAchievementChange, onLanguageChange,
+    certsAlign, achievementsAlign
+  };
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 1. NAVY ELEGANT
@@ -639,9 +648,9 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               <h4 className={SH} style={{ borderColor: `${brandColor}60`, color: brandColor }}>Contact</h4>
               <ul className="space-y-1.5 text-[11px] leading-relaxed">
                 {hasPhone && <li className="flex items-center gap-1.5"><Phone className="w-3 h-3 flex-shrink-0 mt-[1px]" /><E value={phone} isEditable={isEditable} editableClass={ec} onSave={ef('phone')} /></li>}
-                {hasEmail && <li className="flex items-center gap-1.5"><Mail className="w-3 h-3 flex-shrink-0 mt-[1px]" /><E value={email} isEditable={isEditable} editableClass={ec} onSave={ef('email')} href={isEditable ? undefined : `mailto:${email}`} /></li>}
+                {hasEmail && <li className="flex items-center gap-1.5"><Mail className="w-3 h-3 flex-shrink-0 mt-[1px]" /><E value={email} isEditable={isEditable} editableClass={ec} onSave={ef('email')} href={`mailto:${email}`} /></li>}
                 {hasLocation && <li className="flex items-center gap-1.5"><MapPin className="w-3 h-3 flex-shrink-0 mt-[1px]" /><E value={location} isEditable={isEditable} editableClass={ec} onSave={ef('location')} /></li>}
-                {hasLinkedin && <li className="flex items-center gap-1.5"><LI /><E value={linkedin} isEditable={isEditable} editableClass={ec} onSave={ef('linkedin')} href={isEditable ? undefined : formatLinkedinUrl(linkedin)} /></li>}
+                {hasLinkedin && <li className="flex items-center gap-1.5"><LI /><E value={linkedin} isEditable={isEditable} editableClass={ec} onSave={ef('linkedin')} href={formatLinkedinUrl(linkedin)} /></li>}
               </ul>
             </div>
           )}
@@ -670,12 +679,12 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               <h4 className={SH} style={{ borderColor: `${brandColor}60`, color: brandColor }}>Certifications</h4>
               <ul className="space-y-2 text-[11px]">
                 {resumeCerts.map((cert, idx) => (
-                  <li key={idx}>
-                    <span className="flex items-center gap-1">
+                  <li key={idx} className={`text-${certsAlign}`}>
+                    <span className={`flex items-center gap-1 ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
                       <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="block text-slate-900 font-bold" onSave={v => onCertChange?.(idx, 'title', v)} />
                       <WorkLink url={cert.url} brandColor={brandColor} />
                     </span>
-                    <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[10px]" onSave={v => onCertChange?.(idx, 'desc', v)} />
+                    <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[10px] text-${certsAlign}`} onSave={v => onCertChange?.(idx, 'desc', v)} />
                   </li>
                 ))}
               </ul>
@@ -701,9 +710,9 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               <h4 className={SH} style={{ borderColor: `${brandColor}60`, color: brandColor }}>Achievements</h4>
               <ul className="space-y-2 text-[11px]">
                 {resumeAchievements.map((ach, idx) => (
-                  <li key={idx}>
-                    <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className="block text-slate-900" onSave={v => onAchievementChange?.(idx, 'title', v)} />
-                    <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[10px]" onSave={v => onAchievementChange?.(idx, 'desc', v)} />
+                  <li key={idx} className={`text-${achievementsAlign}`}>
+                    <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className={`block text-slate-900 text-${achievementsAlign}`} onSave={v => onAchievementChange?.(idx, 'title', v)} />
+                    <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[10px] text-${achievementsAlign}`} onSave={v => onAchievementChange?.(idx, 'desc', v)} />
                   </li>
                 ))}
               </ul>
@@ -856,14 +865,14 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
         {resumeCerts && resumeCerts.length > 0 && (
           <section style={sec}>
             <div className={MH}>// Certifications</div>
-            <div className="flex flex-wrap gap-2 text-xs">
+            <div className={`flex flex-wrap gap-2 text-xs ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
               {resumeCerts.map((cert, idx) => (
-                <div key={idx} className="border border-slate-200 rounded p-2 bg-slate-50 min-w-[140px]">
-                  <div className="flex items-center gap-1">
+                <div key={idx} className={`border border-slate-200 rounded p-2 bg-slate-50 min-w-[140px] text-${certsAlign}`}>
+                  <div className={`flex items-center gap-1 ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
                     <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 font-bold text-[11px]" onSave={v => onCertChange?.(idx, 'title', v)} />
                     <WorkLink url={cert.url} brandColor={brandColor} />
                   </div>
-                  <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[10px] mt-0.5" onSave={v => onCertChange?.(idx, 'desc', v)} />
+                  <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[10px] mt-0.5 text-${certsAlign}`} onSave={v => onCertChange?.(idx, 'desc', v)} />
                 </div>
               ))}
             </div>
@@ -875,11 +884,11 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
             <div className={MH}>// Achievements</div>
             <div className="space-y-2 text-xs">
               {resumeAchievements.map((ach, idx) => (
-                <div key={idx} className="flex gap-2 items-start">
+                <div key={idx} className={`flex gap-2 items-start text-${achievementsAlign} ${achievementsAlign === 'right' ? 'flex-row-reverse' : ''}`}>
                   <Award className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className="text-slate-800" onSave={v => onAchievementChange?.(idx, 'title', v)} />
-                    <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[11px]" onSave={v => onAchievementChange?.(idx, 'desc', v)} />
+                  <div className="flex-1 min-w-0">
+                    <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className={`text-slate-800 block text-${achievementsAlign}`} onSave={v => onAchievementChange?.(idx, 'title', v)} />
+                    <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[11px] text-${achievementsAlign}`} onSave={v => onAchievementChange?.(idx, 'desc', v)} />
                   </div>
                 </div>
               ))}
@@ -992,14 +1001,14 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
             <h2 className={H} style={{ borderColor: brandColor }}>Certifications</h2>
             <ul className="space-y-1 text-xs">
               {resumeCerts.map((cert, idx) => (
-                <li key={idx} className="flex gap-1.5">
+                <li key={idx} className={`flex gap-1.5 text-${certsAlign} ${certsAlign === 'right' ? 'flex-row-reverse' : ''}`}>
                   <span className="text-slate-400">▸</span>
-                  <div>
-                    <span className="inline-flex items-center gap-1">
+                  <div className="flex-1 min-w-0">
+                    <span className={`inline-flex items-center gap-1 ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
                       <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="text-slate-900 font-bold" onSave={v => onCertChange?.(idx, 'title', v)} />
                       <WorkLink url={cert.url} brandColor={brandColor} />
                     </span>
-                    {cert.desc && <> — <E value={cert.desc} isEditable={isEditable} editableClass={ec} className="text-slate-600" onSave={v => onCertChange?.(idx, 'desc', v)} /></>}
+                    {cert.desc && <> — <E value={cert.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-600 text-${certsAlign}`} onSave={v => onCertChange?.(idx, 'desc', v)} /></>}
                   </div>
                 </li>
               ))}
@@ -1012,11 +1021,11 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
             <h2 className={H} style={{ borderColor: brandColor }}>Key Achievements</h2>
             <ul className="space-y-1 text-xs">
               {resumeAchievements.map((ach, idx) => (
-                <li key={idx} className="flex gap-1.5">
+                <li key={idx} className={`flex gap-1.5 text-${achievementsAlign} ${achievementsAlign === 'right' ? 'flex-row-reverse' : ''}`}>
                   <span className="text-slate-400">▸</span>
-                  <div>
-                    <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className="text-slate-900" onSave={v => onAchievementChange?.(idx, 'title', v)} />
-                    {ach.desc && <> — <E value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-600" onSave={v => onAchievementChange?.(idx, 'desc', v)} /></>}
+                  <div className="flex-1 min-w-0">
+                    <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className={`text-slate-900 text-${achievementsAlign}`} onSave={v => onAchievementChange?.(idx, 'title', v)} />
+                    {ach.desc && <> — <E value={ach.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-600 text-${achievementsAlign}`} onSave={v => onAchievementChange?.(idx, 'desc', v)} /></>}
                   </div>
                 </li>
               ))}

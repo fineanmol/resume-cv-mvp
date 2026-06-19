@@ -122,7 +122,7 @@ const ContactRow: React.FC<{
       {hasEmail && (
         <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
           <Mail className="w-3 h-3 flex-shrink-0 mt-[1px]" />
-          <EF field={email} isEditable={isEditable} ec={ec} href={isEditable ? undefined : `mailto:${email.value}`} />
+          <EF field={email} isEditable={isEditable} ec={ec} href={`mailto:${email.value}`} />
         </span>
       )}
       {hasLocation && (
@@ -134,7 +134,7 @@ const ContactRow: React.FC<{
       {hasLinkedin && (
         <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
           <LI />
-          <EF field={linkedin} isEditable={isEditable} ec={ec} href={isEditable ? undefined : formatLinkedinUrl(linkedin.value)} />
+          <EF field={linkedin} isEditable={isEditable} ec={ec} href={formatLinkedinUrl(linkedin.value)} />
         </span>
       )}
     </div>

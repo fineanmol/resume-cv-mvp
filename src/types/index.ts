@@ -19,6 +19,8 @@ export interface LayoutSettings {
   summaryAlign?: 'left' | 'center' | 'right' | 'justify';
   experienceAlign?: 'left' | 'center' | 'right' | 'justify';
   educationAlign?: 'left' | 'center' | 'right' | 'justify';
+  certsAlign?: 'left' | 'center' | 'right' | 'justify';
+  achievementsAlign?: 'left' | 'center' | 'right' | 'justify';
 }
 
 export interface HighlightItem {
