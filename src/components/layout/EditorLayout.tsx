@@ -1,10 +1,12 @@
 import React, { useState, useCallback, useRef, useEffect, lazy, Suspense, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { ResumeForm } from '../ResumeForm';
 import { CoverLetterForm } from '../CoverLetterForm';
 import { DesignPanel } from '../DesignPanel';
+import { DESIGNER_STYLE_DEFAULTS } from '../../config/designerDefaults';
 import { JDPanel } from '../JDPanel';
 import { SettingsDropdown } from './SettingsDropdown';
 
@@ -18,6 +20,180 @@ const ResumeTemplateRenderer = lazy(() =>
 const CoverLetterTemplateRenderer = lazy(() =>
   import('../../templates/CoverLetterTemplates').then(m => ({ default: m.CoverLetterTemplateRenderer }))
 );
+
+const PAGE_HEIGHT_PX = 1123;
+
+/**
+ * Simulates CSS `break-inside: avoid` in the live editor preview.
+ *
+ * After every content change it scans every `.group/item` inside the sheet,
+ * identifies items that would be sliced by a page boundary, and pushes them
+ * down so they start at the top of the next page — exactly as the browser's
+ * print engine would do when the user downloads the PDF.
+ *
+ * Loop-prevention: a 150 ms cooldown prevents the ResizeObserver from
+ * triggering a re-run caused by our own `marginTop` adjustments.
+ *
+ * Adjustments are stored in `data-pb-push` / `data-pb-orig` attributes so
+ * the PDF clone can reset them before generating the actual PDF.
+ */
+function usePreviewPageBreaks(
+  sheetRef: RefObject<HTMLDivElement | null>,
+  zoomScale: number,
+): void {
+  const zoomRef = useRef(zoomScale);
+  useEffect(() => { zoomRef.current = zoomScale; }, [zoomScale]);
+
+  useEffect(() => {
+    const getSheet = () =>
+      sheetRef.current?.querySelector('.pdf-sheet') as HTMLElement | null;
+
+    let lastApply = 0;
+    let rafId: number | null = null;
+
+    const resetAll = (sheet: HTMLElement) => {
+      sheet.querySelectorAll<HTMLElement>('[data-pb-push]').forEach(el => {
+        el.style.marginTop = el.getAttribute('data-pb-orig') ?? '';
+        el.removeAttribute('data-pb-push');
+        el.removeAttribute('data-pb-orig');
+      });
+    };
+
+    const applyBreaks = () => {
+      const sheet = getSheet();
+      if (!sheet) return;
+
+      lastApply = Date.now();
+      resetAll(sheet);
+
+      const sheetRect = sheet.getBoundingClientRect();
+      const scale = zoomRef.current;
+
+      // Process items in DOM order so each getBoundingClientRect() reflects
+      // prior adjustments within the same pass (handles cascading pushes).
+      const items = Array.from(
+        sheet.querySelectorAll<HTMLElement>('.group\\/item'),
+      ).filter(el => !el.closest('[data-pdf-hide]'));
+
+      for (const el of items) {
+        const rect = el.getBoundingClientRect();
+        const top    = (rect.top    - sheetRect.top) / scale;
+        const bottom = (rect.bottom - sheetRect.top) / scale;
+        // Which page boundary does this item straddle (if any)?
+        const boundary = Math.ceil((top + 1) / PAGE_HEIGHT_PX) * PAGE_HEIGHT_PX;
+
+        if (top < boundary && bottom > boundary) {
+          // Push the item just past the band bottom (band sits from y-7 to y+15).
+          // Adding 16px means items on page 2+ get a small breathing gap matching
+          // the bottom edge of the separator strip.
+          const push = boundary - top + 16;
+          const currentMT = parseFloat(window.getComputedStyle(el).marginTop) || 0;
+          el.setAttribute('data-pb-orig', el.style.marginTop);
+          el.setAttribute('data-pb-push', 'true');
+          el.style.marginTop = `${currentMT + push}px`;
+        }
+      }
+    };
+
+    const schedule = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        // Debounce: skip if we just ran (our own DOM changes trigger the observer)
+        if (Date.now() - lastApply < 150) return;
+        applyBreaks();
+      });
+    };
+
+    const sheet = getSheet();
+    if (!sheet) return;
+
+    const obs = new ResizeObserver(schedule);
+    obs.observe(sheet);
+    // Small delay for initial run so fonts / images have time to load
+    const initTimer = setTimeout(applyBreaks, 200);
+
+    return () => {
+      obs.disconnect();
+      clearTimeout(initTimer);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      const s = getSheet();
+      if (s) resetAll(s);
+    };
+  // Re-register when zoom changes so positions are re-measured at the new scale
+  }, [sheetRef, zoomScale]);
+}
+
+/**
+ * Renders a visual "page gap" at every 1123 px boundary inside .pdf-sheet —
+ * a full-sheet-width grey band with paper-edge shadows, exactly like the
+ * Google Docs / Word page separator.  All elements carry data-pdf-hide so
+ * they are stripped before printing and never appear in the actual PDF.
+ *
+ * Note: strips are kept to left:0/right:0 (794 px wide) because the
+ * EditorLayout wrapper has overflow:hidden which clips wider absolute children.
+ */
+const PageBreakLabels: React.FC<{ sheetRef: RefObject<HTMLDivElement | null> }> = ({ sheetRef }) => {
+  const [breakYs, setBreakYs] = useState<number[]>([]);
+  const [sheetEl, setSheetEl] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const el = sheetRef.current?.querySelector('.pdf-sheet') as HTMLElement | null;
+    setSheetEl(el);
+    if (!el) return;
+
+    const update = () => {
+      const h = el.scrollHeight;
+      const count = Math.max(0, Math.floor((h - 1) / PAGE_HEIGHT_PX));
+      setBreakYs(Array.from({ length: count }, (_, i) => (i + 1) * PAGE_HEIGHT_PX));
+    };
+
+    const obs = new ResizeObserver(update);
+    obs.observe(el);
+    update();
+    return () => obs.disconnect();
+  }, [sheetRef]);
+
+  if (!sheetEl || breakYs.length === 0) return null;
+
+  return createPortal(
+    <>
+      {breakYs.map((y, i) => (
+        <React.Fragment key={y}>
+          {/* ── Page gap strip ─────────────────────────────────────────────────
+              Grey band across the full sheet width. Inset shadows simulate the
+              bottom edge of page N (top inset) and top edge of page N+1 (bottom
+              inset), giving the tactile "separate paper sheets" look. */}
+          <div
+            data-pdf-hide="true"
+            className="absolute left-0 right-0 pointer-events-none"
+            style={{
+              top: `${y - 7}px`,
+              height: '22px',
+              background: '#dde3ec',
+              borderTop: '1px solid rgba(0,0,0,0.07)',
+              borderBottom: '1px solid rgba(0,0,0,0.07)',
+              boxShadow:
+                'inset 0 6px 8px -5px rgba(0,0,0,0.22), inset 0 -6px 8px -5px rgba(0,0,0,0.22)',
+              zIndex: 50,
+            }}
+          />
+          {/* ── "Page N" label pinned to the bottom-right of the strip ─────── */}
+          <div
+            data-pdf-hide="true"
+            className="absolute right-3 pointer-events-none flex items-center gap-1"
+            style={{ top: `${y + 3}px`, zIndex: 51 }}
+          >
+            <span className="text-[8px] font-bold text-slate-400 select-none uppercase tracking-widest">
+              Page {i + 2}
+            </span>
+          </div>
+        </React.Fragment>
+      ))}
+    </>,
+    sheetEl,
+  );
+};
 
 type ResumeMutations = ReturnType<typeof useResumeMutations>;
 type CoverLetterMutations = ReturnType<typeof useCoverLetterMutations>;
@@ -93,6 +269,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
   const [rightWidth, setRightWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
   const resizeCleanupRef = useRef<(() => void) | null>(null);
+
+  // Simulate print-style page breaks in the live preview
+  usePreviewPageBreaks(sheetRef, zoomScale);
 
   useEffect(() => {
     return () => {
@@ -217,6 +396,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
               )}
             </Suspense>
           </div>
+          {/* Multi-page break labels rendered as portal inside pdf-sheet */}
+          <PageBreakLabels sheetRef={sheetRef} />
         </div>
       </section>
 
@@ -257,6 +438,10 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
                 docType="resume"
                 focusSection={designFocusSection}
                 onFocusHandled={onDesignFocusHandled}
+                onReset={() => resumeSet(p => ({
+                  ...p,
+                  layoutSettings: { ...p.layoutSettings, ...DESIGNER_STYLE_DEFAULTS },
+                }))}
               />
             ) : (
               <DesignPanel

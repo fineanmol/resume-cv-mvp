@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Palette, Type, Layout, SlidersHorizontal, Image, List, Tag, AlignLeft, AlignCenter, AlignRight, AlignJustify, Layers } from 'lucide-react';
+import { Palette, Type, Layout, SlidersHorizontal, Image, List, Tag, AlignLeft, AlignCenter, AlignRight, AlignJustify, Layers, RotateCcw } from 'lucide-react';
 import type { LayoutSettings, FontFamily, HeaderStyle } from '../types';
 import { AccordionSection, ToggleSwitch } from './ui';
 import { FONT_OPTIONS, FONT_CSS } from '../config/fonts';
@@ -35,6 +35,7 @@ interface DesignPanelProps {
   docType: 'resume' | 'coverletter';
   focusSection?: string | null;
   onFocusHandled?: () => void;
+  onReset?: () => void;
 }
 
 const ColorPicker: React.FC<{
@@ -169,8 +170,10 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
   docType,
   focusSection,
   onFocusHandled,
+  onReset,
 }) => {
   const [open, setOpen] = useState<string>('template');
+  const [resetConfirm, setResetConfirm] = useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const activeOpen = focusSection ?? open;
   const toggle = (s: string) => {
@@ -199,6 +202,41 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
       ref={scrollRef}
       className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3.5 pb-32 space-y-3 w-full flex flex-col"
     >
+
+      {/* ── Reset to defaults ──────────────────────────────────────────────── */}
+      {onReset && (layout.template ?? 'navy') === 'designer' && (
+        <div className="flex items-center justify-between px-2.5 py-2 rounded-lg border border-border-color/40 bg-sidebar">
+          <span className="text-[10px] text-text-muted leading-tight">
+            Restore Figma design defaults<br />
+            <span className="opacity-60">Raleway · Open Sans · #343334 · #00B6CB</span>
+          </span>
+          {resetConfirm ? (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => { onReset(); setResetConfirm(false); }}
+                className="px-2 py-1 rounded text-[10px] font-bold bg-red-500 hover:bg-red-600 text-white cursor-pointer transition"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => setResetConfirm(false)}
+                className="px-2 py-1 rounded text-[10px] font-semibold border border-border-color/60 text-text-muted hover:text-text-main cursor-pointer transition"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setResetConfirm(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border-color/60 hover:border-brand-accent/60 text-text-muted hover:text-brand-accent transition cursor-pointer text-[10px] font-semibold shrink-0"
+              title="Reset all style settings to Figma defaults"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset
+            </button>
+          )}
+        </div>
+      )}
 
       <AccordionSection
         id="template"
@@ -310,6 +348,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
         <Slider label="Pad Top/Bottom" value={layout.paddingTopBottom} unit="mm" min={6} max={25} step={1} onChange={v => onChange({ paddingTopBottom: v })} parse={parseInt} />
         <Slider label="Pad Left/Right" value={layout.paddingLeftRight} unit="mm" min={6} max={25} step={1} onChange={v => onChange({ paddingLeftRight: v })} parse={parseInt} />
         <Slider label="Section Gap" value={layout.sectionSpacing} unit="px" min={4} max={28} step={1} onChange={v => onChange({ sectionSpacing: v })} parse={parseInt} />
+        <Slider label="Entry Gap" value={layout.entrySpacing ?? 16} unit="px" min={4} max={32} step={1} onChange={v => onChange({ entrySpacing: v })} parse={parseInt} />
         {docType === 'resume' && (layout.template ?? 'navy') === 'designer' && (
           <Slider
             label="Column Gap"
@@ -362,7 +401,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
           openSection={activeOpen}
           onToggle={toggle}
           variant="design"
-          bodyClassName="p-3 border-t border-border-color/40 grid grid-cols-2 gap-1.5"
+          bodyClassName="p-3 border-t border-border-color/40 grid grid-cols-3 gap-1.5"
         >
           <button
             onClick={() => onChange({ skillsStyle: 'chips' })}
@@ -372,8 +411,8 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
                 : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
             }`}
           >
-            <span className="text-[10px] font-semibold block">Chips / Badges</span>
-            <span className="text-[8px] opacity-70 leading-tight block mt-0.5">Styled pill layout</span>
+            <span className="text-[10px] font-semibold block">Chips</span>
+            <span className="text-[8px] opacity-70 leading-tight block mt-0.5">Styled pill badges</span>
           </button>
           <button
             onClick={() => onChange({ skillsStyle: 'normal' })}
@@ -383,8 +422,19 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
                 : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
             }`}
           >
-            <span className="text-[10px] font-semibold block">Normal Text</span>
-            <span className="text-[8px] opacity-70 leading-tight block mt-0.5">Plain comma-separated list</span>
+            <span className="text-[10px] font-semibold block">Plain Text</span>
+            <span className="text-[8px] opacity-70 leading-tight block mt-0.5">Comma-separated list</span>
+          </button>
+          <button
+            onClick={() => onChange({ skillsStyle: 'grid' })}
+            className={`px-2.5 py-2 rounded-lg border text-left transition cursor-pointer ${
+              (layout.skillsStyle ?? 'chips') === 'grid'
+                ? 'border-brand-accent bg-brand-accent/8 text-brand-accent font-bold'
+                : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+            }`}
+          >
+            <span className="text-[10px] font-semibold block">Grid Table</span>
+            <span className="text-[8px] opacity-70 leading-tight block mt-0.5">4-col ATS layout</span>
           </button>
         </AccordionSection>
       )}

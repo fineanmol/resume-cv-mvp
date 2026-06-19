@@ -10,7 +10,7 @@ export const SkillsEditor = React.memo<{
   badgeStyle: () => React.CSSProperties;
   defaultBadgeStyle?: React.CSSProperties;
   className?: string;
-  skillsStyle?: 'chips' | 'normal';
+  skillsStyle?: 'chips' | 'normal' | 'grid';
 }>(function SkillsEditor({ value, isEditable, ec, onSave, badgeStyle, defaultBadgeStyle, className = '', skillsStyle = 'chips' }) {
   const [focusedSkillIdx, setFocusedSkillIdx] = useState<number | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -41,6 +41,18 @@ export const SkillsEditor = React.memo<{
   const resetDrag = () => {
     setDragIdx(null);
     setOverIdx(null);
+  };
+
+  const selectAll = (el: HTMLElement) => {
+    try {
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(el);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    } catch (err) {
+      console.warn('Failed to set selection range:', err);
+    }
   };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -103,8 +115,8 @@ export const SkillsEditor = React.memo<{
 
   const chipDropClass = (i: number) => {
     if (dragIdx === null) return '';
-    if (dragIdx === i) return 'opacity-40 ring-2 ring-red-200 ring-offset-1 cursor-not-allowed';
-    if (overIdx === i) return 'ring-2 ring-teal-500 ring-offset-1 shadow-sm';
+    if (dragIdx === i) return 'opacity-40 ring-2 ring-inset ring-red-200 cursor-not-allowed';
+    if (overIdx === i) return 'ring-2 ring-inset ring-teal-500';
     return 'opacity-70';
   };
 
@@ -128,12 +140,91 @@ export const SkillsEditor = React.memo<{
     );
   }
 
-  const chipBase =
-    'inline-flex w-max max-w-full shrink-0 items-center rounded-md font-medium border text-[11px] leading-snug whitespace-nowrap px-2 py-0.5 min-h-[22px] bg-white text-slate-600 border-slate-200';
+  // ── Grid style: 4-column plain-text table (like a classic ATS resume) ─────
+  if (skillsStyle === 'grid') {
+    if (!isEditable) {
+      return (
+        <div className={`flex flex-wrap gap-x-4 gap-y-0 ${className}`}>
+          {skillsList.map((s, i) => (
+            <span
+              key={i}
+              className="border-b border-slate-300 pb-1 pt-1 whitespace-nowrap"
+              style={{ fontFamily: "'Open Sans', sans-serif", fontSize: '8.25pt', fontWeight: 700, color: '#3E3E3E' }}
+            >
+              {s}
+            </span>
+          ))}
+        </div>
+      );
+    }
+    // Editable grid: each cell is a contenteditable span, same keyboard contract as chips
+    return (
+      <div className={`w-full ${className}`}>
+        <div className="flex flex-wrap gap-x-4 gap-y-0">
+          {skillsList.map((s, i) => (
+            <span
+              key={i}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              data-skill-index={i}
+              className={`min-w-0 outline-none border-b border-slate-300 pb-1 pt-1 whitespace-nowrap ${ec}`}
+              style={{ fontFamily: "'Open Sans', sans-serif", fontSize: '8.25pt', fontWeight: 700, color: '#3E3E3E' }}
+              onFocus={() => setFocusedSkillIdx(i)}
+              onBlur={(e) => {
+                setFocusedSkillIdx(null);
+                const text = e.currentTarget.textContent?.trim() || '';
+                const list = [...skillsList];
+                if (text === '') {
+                  list.splice(i, 1);
+                } else if (text !== s) {
+                  list[i] = text;
+                }
+                onSave(list.join(', '));
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const text = e.currentTarget.textContent?.trim() || '';
+                  const list = [...skillsList];
+                  if (text !== '') list[i] = text;
+                  list.splice(i + 1, 0, 'New Skill');
+                  onSave(list.join(', '));
+                  setTimeout(() => {
+                    const next = document.querySelector(`[data-skill-index="${i + 1}"]`) as HTMLElement | null;
+                    if (next) { next.focus(); selectAll(next); }
+                  }, 50);
+                } else if (e.key === 'Backspace' && !e.currentTarget.textContent?.trim()) {
+                  e.preventDefault();
+                  const list = [...skillsList];
+                  list.splice(i, 1);
+                  onSave(list.join(', '));
+                }
+              }}
+              title="Click to edit · Enter to add · Backspace on empty to delete"
+            >
+              {s}
+            </span>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            const list = [...skillsList, 'New Skill'];
+            onSave(list.join(', '));
+          }}
+          className="edit-only mt-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 hover:bg-teal-100 text-slate-400 hover:text-teal-600 border border-dashed border-slate-300 hover:border-teal-400 transition-colors cursor-pointer text-[11px] font-bold shrink-0"
+          title="Add skill"
+        >
+          +
+        </button>
+      </div>
+    );
+  }
 
-  const chipFieldStyle: React.CSSProperties = {
-    fieldSizing: 'content',
-  };
+  const chipBase =
+    'inline-flex w-max max-w-full shrink-0 items-center rounded-md font-medium border text-[11px] leading-snug whitespace-nowrap px-2 py-0.5 min-h-[22px] bg-white text-slate-600 border-slate-200 box-border';
+
+  const chipFieldStyle: React.CSSProperties = {};
 
   if (!isEditable) {
     return (
@@ -169,8 +260,8 @@ export const SkillsEditor = React.memo<{
               data-skill-chip
               onDragOver={(e) => handleDragOver(e, i)}
               onDrop={(e) => handleDrop(e, i)}
-              className={`${chipBase} relative group/chip transition-[box-shadow,opacity] duration-100 ${
-                isFocused ? 'border-teal-400 ring-1 ring-teal-400/30' : 'hover:border-slate-300'
+              className={`${chipBase} relative group/chip transition-[border-color,opacity] duration-100 ${
+                isFocused ? 'border-teal-400' : 'hover:border-slate-300'
               } ${chipDropClass(i)}`}
               style={baseStyle}
             >

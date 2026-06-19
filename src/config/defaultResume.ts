@@ -1,4 +1,5 @@
 import type { ResumeState } from '../types';
+import { DESIGNER_STYLE_DEFAULTS } from './designerDefaults';
 
 export const DEFAULT_RESUME_STATE: ResumeState = {
   name: "Jonathan Doe",
@@ -73,17 +74,7 @@ export const DEFAULT_RESUME_STATE: ResumeState = {
   ],
 
   layoutSettings: {
-    fontSize: 10,
-    paddingTopBottom: 12,
-    paddingLeftRight: 12,
-    sectionSpacing: 10,
-    lineHeight: 1.4,
-    columnGap: 16,
-    template: 'navy',
-    brandColor: '#314855',
-    accentColor2: '#0284c7',
-    fontFamily: 'inter',
-    headingFont: 'inter',
+    ...DESIGNER_STYLE_DEFAULTS,
     headerStyle: 'centered',
     showPhoto: true,
     roundPhoto: true,
@@ -93,13 +84,6 @@ export const DEFAULT_RESUME_STATE: ResumeState = {
     showLinkedin: true,
     showTitle: true,
     uppercaseName: false,
-    bulletStyle: 'disc',
-    skillsStyle: 'chips',
-    summaryAlign: 'justify',
-    experienceAlign: 'left',
-    educationAlign: 'left',
-    certsAlign: 'left',
-    achievementsAlign: 'left',
     showExperienceLogo: true,
     showEducationLogo: true,
     showLayoutBounds: false,

@@ -3,7 +3,8 @@ export const ACHIEVEMENT_ICON_NAMES = [
   'star', 'award', 'trophy', 'medal', 'ribbon', 'crown', 'target', 'flag', 'check',
   'zap', 'rocket', 'lightbulb', 'gem', 'shield', 'heart', 'terminal',
   'graduation-cap', 'badge-check', 'flame', 'trending-up', 'users', 'handshake',
-  'megaphone', 'thumbs-up', 'sparkles', 'circle-check', 'brain', 'microscope', 'chart-line',
+  'megaphone', 'thumbs-up', 'sparkles', 'circle-check', 'brain', 'brain-circuit',
+  'microscope', 'chart-line', 'wand-2', 'orbit',
 ] as const;
 
 /** Project / certification entry icons */
@@ -11,8 +12,9 @@ export const PROJECT_ICON_NAMES = [
   'briefcase', 'code', 'book', 'globe', 'folder', 'database', 'server', 'cloud',
   'smartphone', 'cpu', 'layers', 'palette', 'git-branch', 'box', 'terminal',
   'pen-tool', 'layout', 'monitor', 'blocks', 'package', 'ship', 'lock',
-  'bar-chart', 'file-code', 'puzzle', 'bot', 'circuit-board', 'link', 'hammer',
-  'building-2', 'webhook', 'radio', 'scan-line', 'star', 'trophy', 'target', 'award',
+  'bar-chart', 'file-code', 'puzzle', 'bot', 'brain-circuit', 'circuit-board',
+  'link', 'hammer', 'building-2', 'webhook', 'radio', 'scan-line', 'network',
+  'wand-2', 'orbit', 'star', 'trophy', 'target', 'award',
 ] as const;
 
 export type AchievementIconName = (typeof ACHIEVEMENT_ICON_NAMES)[number];

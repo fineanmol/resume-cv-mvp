@@ -98,41 +98,18 @@ body {
   font-size: calc(var(--sheet-fs) * 3.2pt) !important;
 }
 
-/* Dashed red line after every 1123px to show A4 page boundaries */
+/* Page break lines are rendered by the PageBreakLabels React component (portal into .pdf-sheet).
+   This ::after rule is kept only as a lightweight CSS fallback for the very first boundary. */
 .pdf-sheet::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 1123px;
-  height: 0;
-  border-top: 2px dashed rgba(239, 68, 68, 0.5);
-  pointer-events: none;
-  z-index: 10;
-}
-
-/* Overflow warning badge — shown when wrapper has sheet-overflow-active class */
-.sheet-overflow-active .pdf-sheet::before {
-  content: '⚠ Content exceeds 1 page — reduce sections or font size';
-  position: absolute;
-  top: 1130px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #fef2f2;
-  color: #dc2626;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 4px;
-  border: 1px solid #fca5a5;
-  white-space: nowrap;
-  z-index: 20;
-  pointer-events: none;
+  content: none;
 }
 
 /* Print media styles to ensure pixel-perfect browser printing to PDF */
 @media print {
-  /* Force A4 print size and strip default browser headers/footers (title, date, URL) */
+  /* margin: 0 is intentional — any non-zero margin creates space where Chrome
+   * injects its built-in date / title / URL / page-number headers & footers.
+   * With margin: 0 there is no space for them, so they are silently omitted.
+   * Per-page breathing room is provided by the content's own padding instead. */
   @page {
     size: A4;
     margin: 0;
@@ -208,17 +185,19 @@ body {
     box-sizing: border-box !important;
   }
 
-  /* Force A4 size matching on the sheet preview element */
+  /* Force A4 size matching on the sheet preview element.
+   * Do NOT set page-break-inside: avoid here — that would tell the browser
+   * "try to fit everything on one page", causing distorted layout on pages 2-3.
+   * Do NOT set min-height: 297mm — content height determines pages naturally. */
   .pdf-sheet {
     box-shadow: none !important;
     border: none !important;
     background: #ffffff !important;
+    background-image: none !important;   /* strip editor preview gradient */
     margin: 0 auto !important;
-    width: 210mm !important; /* Lock to exact A4 dimensions */
-    min-height: 297mm !important;
+    width: 210mm !important;
+    height: auto !important;
     box-sizing: border-box !important;
-    page-break-after: always !important;
-    page-break-inside: avoid !important;
   }
 
   /* Hide edit outline guides, dashed lines, and contenteditable highlights */
@@ -234,11 +213,13 @@ body {
     background-color: transparent !important;
   }
 
-  /* Preserve border-radius clipping so the circle photo stays circular */
-  .pdf-sheet .rounded-full,
-  .pdf-sheet .rounded-lg,
-  .pdf-sheet .rounded-md,
-  .pdf-sheet .rounded {
+  /* Preserve border-radius clipping so the circle photo stays circular.
+   * ONLY target the avatar container — applying overflow:hidden to .rounded
+   * globally blocks print page-breaking inside section wrappers (which also
+   * use the "rounded" class), causing whole sections to jump to the next page.
+   * Do NOT use border-radius: inherit — it zeroes out Tailwind rounded-full. */
+  .pdf-sheet .group\/avatar > div,
+  .pdf-sheet .group\/avatar img {
     overflow: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -256,6 +237,71 @@ body {
     outline: none !important;
     border: none !important;
     background-color: transparent !important;
+  }
+
+  /* ── Page-break management ──────────────────────────────
+   * Strategy (same as Resume.io / Zety):
+   *   - Each individual entry (job, degree, project, etc.) is atomic: never split mid-entry
+   *   - Section headings stay with their first entry
+   *   - Page breaks are allowed between entries inside a long section
+   *   - The two-column CSS grid is kept as-is — Chrome's print engine naturally
+   *     maintains both column positions across page boundaries without floats.
+   * ──────────────────────────────────────────────────────── */
+
+  /* Allow the two-column designer grid to break across pages.
+   * Keep display: grid — Chrome handles grid layout correctly across print pages. */
+  .pdf-sheet [data-testid="designer-column-grid"] {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    overflow: visible !important;
+  }
+  .pdf-sheet .designer-column {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Section wrappers: allow breaks between entries */
+  .pdf-sheet .group\/section {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  /* Section headings: stay attached to whatever comes after them */
+  .pdf-sheet section h3,
+  .pdf-sheet h3 {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Individual entries: never slice mid-entry */
+  .pdf-sheet .group\/item,
+  .pdf-sheet .relative.group\/item {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* List items in projects / achievements / languages */
+  .pdf-sheet ul > li {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /*
+   * Force entry containers to block layout in print.
+   * Chrome won't fragment a flex container when all its children have
+   * break-inside:avoid — it treats the whole flex box as an unbreakable unit
+   * and shunts the entire section to the next page.
+   * Switching to block layout restores per-entry fragmentation.
+   */
+  .pdf-sheet section > div.flex,
+  .pdf-sheet section > ul.flex {
+    display: block !important;
+  }
+  /* Restore spacing between sibling entries once gap is gone */
+  .pdf-sheet section > div > .group\/item + .group\/item,
+  .pdf-sheet section > ul > li + li {
+    margin-top: 8px;
   }
 
   /* Force background graphics to print across all elements */
@@ -282,7 +328,7 @@ body {
   opacity: 1 !important;
   filter: none !important;
   background-color: transparent !important;
-  border: none !important;
+  border: 1px dashed transparent !important;
   border-radius: 6px !important;
   outline: none !important;
   box-shadow: none;

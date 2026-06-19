@@ -107,11 +107,11 @@ export function EditorRoute({
     const filename = activeDocType === 'resume'
       ? `${resume.state.name.replace(/\s+/g, '_')}_Resume.pdf`
       : `${cl.state.name.replace(/\s+/g, '_')}_Cover_Letter.pdf`;
-    toast.info('Opening print dialog — select "Save as PDF" to download…');
+    toast.info('Opening print dialog — choose "Save as PDF", set Margins to None, and uncheck Headers & footers.');
     try {
       const { PdfService } = await import('../services/pdf');
       await PdfService.downloadPdf(sheetRef.current, filename);
-      toast.success('Print dialog opened. Choose "Save as PDF".');
+      toast.success('Print dialog opened. Select "Save as PDF" → Margins: None → uncheck Headers & footers → Save.');
     } catch {
       toast.error('PDF download failed. Please try again.');
     }

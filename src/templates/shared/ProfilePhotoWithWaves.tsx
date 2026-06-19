@@ -6,7 +6,7 @@ import { HeaderWaveLines } from './HeaderWaveLines';
 import { PhotoDecorativeFrame } from './PhotoDecorativeFrame';
 
 /** Gap between photo edge and dashed ring (px) */
-const FRAME_GAP = 4;
+const FRAME_GAP = 3;
 
 export const ProfilePhotoWithWaves: React.FC<{
   avatar: string;

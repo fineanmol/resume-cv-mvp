@@ -8,6 +8,8 @@ export interface HeaderWrapperProps {
   isEditable: boolean;
   layoutSettings?: LayoutSettings;
   onLayoutSettingsChange?: (patch: Partial<LayoutSettings>) => void;
+  /** When false, marks the header so PDF export can strip the subtitle row. */
+  showTitle?: boolean;
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
@@ -17,6 +19,7 @@ export const HeaderWrapper: React.FC<HeaderWrapperProps> = ({
   isEditable,
   layoutSettings,
   onLayoutSettingsChange,
+  showTitle,
   className = '',
   style,
   children,
@@ -49,6 +52,7 @@ export const HeaderWrapper: React.FC<HeaderWrapperProps> = ({
   return (
     <header
       onClick={handleSelect}
+      data-show-title={showTitle === false ? 'false' : 'true'}
       className={`relative group/header overflow-visible ${isEditable ? 'cursor-pointer' : ''} ${isActive ? 'header-active' : ''} ${className}`}
       style={style}
     >

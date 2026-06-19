@@ -22,8 +22,8 @@ export interface SectionWrapperProps {
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   children: React.ReactNode;
-  skillsStyle?: 'chips' | 'normal';
-  onSkillsStyleChange?: (style: 'chips' | 'normal') => void;
+  skillsStyle?: 'chips' | 'normal' | 'grid';
+  onSkillsStyleChange?: (style: 'chips' | 'normal' | 'grid') => void;
   skillsValue?: string;
   onSkillsValueChange?: (val: string) => void;
   layoutSettings?: LayoutSettings;
@@ -85,10 +85,10 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
   return (
     <div
       onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
-      className={`relative group/section rounded overflow-visible ${
+      className={`relative group/section rounded overflow-visible border border-dashed border-transparent ${
         isActive
           ? 'z-[30] section-active'
-          : 'border border-dashed border-transparent hover:border-gray-200 hover:bg-slate-50/30'
+          : 'hover:border-gray-200 hover:bg-slate-50/30'
       } ${showSettings ? '!z-[100]' : ''}`}
     >
       {children}
@@ -185,7 +185,7 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
                   <div className="flex flex-col gap-1">
                     <span className={sectionLabelClass}>Layout</span>
                     <div className="flex gap-1">
-                      {(['chips', 'normal'] as const).map(style => (
+                      {(['chips', 'normal', 'grid'] as const).map(style => (
                         <button key={style} type="button"
                           onClick={(e) => { e.stopPropagation(); onSkillsStyleChange(style); }}
                           className={`flex-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border cursor-pointer transition ${skillsStyle === style ? 'bg-teal-500 text-white border-teal-500' : 'text-slate-500 border-slate-200 hover:border-slate-400'}`}

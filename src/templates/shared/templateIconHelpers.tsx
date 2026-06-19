@@ -9,7 +9,7 @@ import {
   Megaphone, ThumbsUp, Sparkles, CircleCheck, Brain, Microscope, ChartLine,
   PenTool, Layout, Monitor, Blocks, Package, Ship, Lock, BarChart,
   FileCode, Puzzle, Bot, CircuitBoard, Link, Hammer, Building2, Webhook,
-  Radio, ScanLine,
+  Radio, ScanLine, BrainCircuit, Wand2, Orbit, Network,
 } from 'lucide-react';
 import { isAchievementIcon, isProjectIcon } from './entryIcons';
 
@@ -81,15 +81,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
   webhook: Webhook,
   radio: Radio,
   'scan-line': ScanLine,
+  'brain-circuit': BrainCircuit,
+  'wand-2': Wand2,
+  orbit: Orbit,
+  network: Network,
 };
-
-const STROKE_HEAVY = new Set([
-  'target', 'terminal', 'code', 'globe', 'cpu', 'cloud', 'smartphone', 'git-branch', 'check',
-  'graduation-cap', 'badge-check', 'trending-up', 'users', 'handshake', 'megaphone',
-  'thumbs-up', 'circle-check', 'brain', 'microscope', 'chart-line',
-  'pen-tool', 'layout', 'monitor', 'blocks', 'circuit-board', 'link', 'webhook', 'radio',
-  'scan-line', 'file-code', 'bar-chart', 'bot', 'puzzle', 'lock', 'hammer', 'building-2',
-]);
 
 export const renderEntryIcon = (
   iconName?: string,
@@ -99,31 +95,19 @@ export const renderEntryIcon = (
   const color = accentColor || '#314855';
   const name = iconName && ICON_MAP[iconName] ? iconName : 'star';
   const Icon = ICON_MAP[name] ?? Star;
-  const fill = color;
-  const fillOpacity = STROKE_HEAVY.has(name) ? (name === 'check' ? undefined : 0.2) : undefined;
-  const strokeWidth = name === 'check' ? 3 : STROKE_HEAVY.has(name) ? 2 : 1.5;
-
-  const bgStyle: React.CSSProperties = {
-    backgroundColor: `${color}15`,
-    padding: '4px',
-    borderRadius: '6px',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color,
-    width: '20px',
-    height: '20px',
-    flexShrink: 0,
-  };
 
   return (
-    <span style={bgStyle} className={`${className} !mt-0 !p-1 inline-flex items-center justify-center`}>
+    <span
+      className={`${className} !mt-0 inline-flex items-center justify-center flex-shrink-0`}
+      style={{ color, width: '14px', height: '14px' }}
+    >
       <Icon
         className="w-3.5 h-3.5"
-        fill={name === 'check' ? undefined : fill}
-        fillOpacity={fillOpacity}
+        fill="none"
         stroke={color}
-        strokeWidth={strokeWidth}
+        strokeWidth={1.75}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </span>
   );
@@ -176,6 +160,9 @@ export const getDynamicAchievementIcon = (
   if (t.includes('research') || t.includes('paper') || t.includes('published') || t.includes('study')) {
     return renderEntryIcon('microscope', accentColor, className);
   }
+  if (t.includes('ai') || t.includes(' ml ') || t.includes('machine learning') || t.includes('llm') || t.includes('neural') || t.includes('nlp')) {
+    return renderEntryIcon('brain-circuit', accentColor, className);
+  }
   if (t.includes('hackathon') || t.includes('participat') || t.includes('world') || t.includes('smart')) {
     return renderEntryIcon('target', accentColor, className);
   }
@@ -215,8 +202,9 @@ export const getDynamicProjectIcon = (
   if (t.includes('dashboard') || t.includes('layout') || t.includes('frontend')) {
     return renderEntryIcon('layout', accentColor, className);
   }
-  if (t.includes('ai') || t.includes('ml') || t.includes('chatbot') || t.includes('agent')) {
-    return renderEntryIcon('bot', accentColor, className);
+  if (t.includes('ai') || t.includes('ml') || t.includes('chatbot') || t.includes('agent')
+      || t.includes('llm') || t.includes('gpt') || t.includes('neural') || t.includes('nlp')) {
+    return renderEntryIcon('brain-circuit', accentColor, className);
   }
   if (t.includes('security') || t.includes('auth') || t.includes('encrypt')) {
     return renderEntryIcon('lock', accentColor, className);

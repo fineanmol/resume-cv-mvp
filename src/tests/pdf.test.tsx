@@ -114,6 +114,38 @@ describe('PdfService.downloadPdf', () => {
     expect(written).toContain('Text');
   });
 
+  it('preserves circular avatar border-radius in the printed HTML', async () => {
+    const sheet = makeSheet('');
+    const avatarWrap = document.createElement('div');
+    avatarWrap.className = 'relative group/avatar flex-shrink-0';
+    const avatarInner = document.createElement('div');
+    avatarInner.className = 'w-28 h-28 rounded-full overflow-hidden';
+    avatarInner.style.borderRadius = '9999px';
+    const img = document.createElement('img');
+    img.src = 'https://example.com/photo.jpg';
+    img.alt = 'Profile';
+    avatarInner.appendChild(img);
+    avatarWrap.appendChild(avatarInner);
+    sheet.appendChild(avatarWrap);
+
+    await PdfService.downloadPdf(sheet, 'avatar.pdf');
+    const written = (iframeWriteSpy.mock.calls[0]?.[0] ?? '') as string;
+    expect(written).toContain('border-radius: 9999px');
+  });
+
+  it('strips header subtitle from printed HTML when data-show-title is false', async () => {
+    const sheet = makeSheet(`
+      <header data-show-title="false">
+        <h1>Name</h1>
+        <span data-header-subtitle><p>Hidden Title</p></span>
+      </header>
+    `);
+    await PdfService.downloadPdf(sheet, 'header.pdf');
+    const written = (iframeWriteSpy.mock.calls[0]?.[0] ?? '') as string;
+    expect(written).not.toContain('Hidden Title');
+    expect(written).toContain('Name');
+  });
+
   it('preserves profile photo decorative SVGs in the printed HTML', async () => {
     const inner = `
       <svg class="profile-photo-frame pdf-keep" data-pdf-keep></svg>

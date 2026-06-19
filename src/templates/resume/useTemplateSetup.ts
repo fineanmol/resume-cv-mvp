@@ -74,6 +74,7 @@ export function useTemplateSetup({
     showLayoutBounds = false,
     designerLeftSections = ['experience', 'education'],
     designerRightSections = ['summary', 'skills', 'achievements', 'certs', 'languages'],
+    entrySpacing = 16,
   } = layoutSettings;
 
   const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
@@ -389,6 +390,7 @@ export function useTemplateSetup({
     designerRightSections,
     lineHeight,
     columnGap,
+    entrySpacing,
     sectionContextValue,
     sheetActiveClass,
     clearActive,

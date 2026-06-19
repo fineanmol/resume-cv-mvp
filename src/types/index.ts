@@ -1,4 +1,4 @@
-export type FontFamily = 'inter' | 'outfit' | 'plus-jakarta' | 'poppins' | 'playfair' | 'eb-garamond' | 'lora' | 'jetbrains-mono';
+export type FontFamily = 'inter' | 'outfit' | 'plus-jakarta' | 'poppins' | 'playfair' | 'eb-garamond' | 'lora' | 'jetbrains-mono' | 'raleway' | 'open-sans';
 export type HeaderStyle = 'centered' | 'left' | 'banner' | 'minimal' | 'enhancv';
 
 export interface LayoutSettings {
@@ -7,6 +7,8 @@ export interface LayoutSettings {
   paddingLeftRight: number;
   sectionSpacing: number;
   lineHeight: number;
+  /** Gap between individual entries within a section (px) */
+  entrySpacing?: number;
   /** Gap between designer template left/right columns (px) */
   columnGap?: number;
   template?: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer';
@@ -17,7 +19,7 @@ export interface LayoutSettings {
   headerStyle?: HeaderStyle;  // layout variant for the name/contact block
   showPhoto?: boolean;        // whether to display avatar in templates that support it
   bulletStyle?: 'disc' | 'circle' | 'square' | 'dash' | 'arrow' | 'number' | 'none';
-  skillsStyle?: 'chips' | 'normal';
+  skillsStyle?: 'chips' | 'normal' | 'grid';
   summaryAlign?: 'left' | 'center' | 'right' | 'justify';
   experienceAlign?: 'left' | 'center' | 'right' | 'justify';
   educationAlign?: 'left' | 'center' | 'right' | 'justify';

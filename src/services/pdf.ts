@@ -279,6 +279,30 @@ function stripClonedDocStyles(clonedDoc: Document) {
   clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach((el) => el.remove());
 }
 
+/** Copy computed border-radius from live avatar nodes so print/PDF keeps circle/rounded shapes. */
+function preserveAvatarShapesForPrint(clone: HTMLElement, source: HTMLElement) {
+  const srcAvatars = source.querySelectorAll('.group\\/avatar');
+  const cloneAvatars = clone.querySelectorAll('.group\\/avatar');
+
+  srcAvatars.forEach((src, i) => {
+    const cloneAvatar = cloneAvatars[i];
+    if (!(src instanceof HTMLElement) || !(cloneAvatar instanceof HTMLElement)) return;
+
+    const srcInner = src.querySelector(':scope > div');
+    const cloneInner = cloneAvatar.querySelector(':scope > div');
+    if (!(srcInner instanceof HTMLElement) || !(cloneInner instanceof HTMLElement)) return;
+
+    const cs = window.getComputedStyle(srcInner);
+    cloneInner.style.borderRadius = cs.borderRadius;
+    cloneInner.style.overflow = 'hidden';
+
+    const cloneImg = cloneInner.querySelector('img');
+    if (cloneImg instanceof HTMLImageElement) {
+      cloneImg.style.borderRadius = cs.borderRadius;
+    }
+  });
+}
+
 function injectSanitizedStyles(clonedDoc: Document) {
   let css = '';
   for (const sheet of Array.from(document.styleSheets)) {
@@ -602,6 +626,27 @@ export class PdfService {
     clone.querySelectorAll('.edit-only, [data-pdf-hide]').forEach(el => el.remove());
     clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
 
+    if (sheetElement.querySelector('header[data-show-title="false"]')) {
+      clone.querySelectorAll('[data-header-subtitle]').forEach(el => el.remove());
+    }
+
+    preserveAvatarShapesForPrint(clone, sheetElement);
+
+    // Reset any preview page-break margin adjustments (data-pb-push) so they
+    // don't affect the PDF layout — the browser's print engine handles breaks itself.
+    // We do preserve a small padding-top (16px) on previously-pushed items so that
+    // elements which land at the top of page 2+ have a bit of breathing room
+    // (matching the 16px the preview adds to push items below the separator band).
+    clone.querySelectorAll<HTMLElement>('[data-pb-push]').forEach(el => {
+      el.style.marginTop = el.getAttribute('data-pb-orig') ?? '';
+      // Add a small top padding so items at the top of subsequent pages aren't
+      // flush with the paper edge (mirrors the 16px gap in the preview).
+      const currentPT = parseFloat(el.style.paddingTop) || 0;
+      el.style.paddingTop = `${currentPT + 16}px`;
+      el.removeAttribute('data-pb-push');
+      el.removeAttribute('data-pb-orig');
+    });
+
     // Strip the gray placeholder background from the avatar container (bg-slate-100)
     clone.querySelectorAll('.group\\/avatar > div').forEach(el => {
       if (el instanceof HTMLElement) el.style.backgroundColor = 'transparent';
@@ -624,10 +669,10 @@ export class PdfService {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
   ${fontLinks}
   <style>
     ${allStyles}
-    @page { size: A4; margin: 0; }
 
     html, body {
       margin: 0 !important;
@@ -645,6 +690,7 @@ export class PdfService {
     .pdf-sheet {
       box-shadow: none !important;
       margin: 0 !important;
+      height: auto !important;         /* let content determine height across pages */
       min-height: auto !important;
       width: 210mm !important;
       box-sizing: border-box !important;
@@ -658,11 +704,13 @@ export class PdfService {
       background-color: transparent !important;
     }
 
-    /* Preserve border-radius clipping for circle/rounded photos */
-    .rounded-full,
-    .rounded-lg,
-    .rounded-md,
-    .rounded {
+    /* Preserve border-radius clipping ONLY for the avatar/photo container.
+     * Applying overflow:hidden to .rounded globally would make every SectionWrapper
+     * (which also uses the "rounded" class) non-breakable, causing whole sections
+     * to jump to the next page instead of breaking between individual entries.
+     * Do NOT use border-radius: inherit — it zeroes out Tailwind rounded-full. */
+    .group\\/avatar > div,
+    .group\\/avatar img {
       overflow: hidden !important;
     }
 
@@ -692,6 +740,66 @@ export class PdfService {
     * {
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
+    }
+
+    /* ── Page-break management ─────────────────────────────────
+     * Keep the CSS grid as-is — Chrome's print engine maintains the two-column
+     * grid layout naturally across page boundaries. Floats are NOT used because
+     * they cause one column to disappear on pages 2/3 when column heights differ.
+     * ──────────────────────────────────────────────────────────── */
+
+    /* margin: 0 prevents Chrome from printing its built-in date/title/URL/page-number
+     * headers & footers — those only render when there is non-zero @page margin space. */
+    @page { size: A4; margin: 0; }
+
+    /* Allow the grid and its columns to break across pages */
+    [data-testid="designer-column-grid"] {
+      break-inside: auto !important;
+      page-break-inside: auto !important;
+      overflow: visible !important;
+    }
+    .designer-column {
+      break-inside: auto !important;
+      page-break-inside: auto !important;
+      overflow: visible !important;
+    }
+
+    .group\/section {
+      break-inside: auto !important;
+      page-break-inside: auto !important;
+    }
+
+    section h3, h3 {
+      break-after: avoid !important;
+      page-break-after: avoid !important;
+    }
+
+    .group\/item,
+    .relative.group\/item {
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+    }
+
+    ul > li {
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+    }
+
+    /*
+     * Force entry containers to block layout in print.
+     * Chrome refuses to fragment a flex container whose children all have
+     * break-inside:avoid — it treats the whole flex box as one unbreakable unit
+     * and pushes the entire section to the next page.
+     * Switching to display:block restores per-entry fragmentation.
+     */
+    section > div.flex,
+    section > ul.flex {
+      display: block !important;
+    }
+    /* Restore entry gap (flex gap is gone after the display change) */
+    section > div > .group\/item + .group\/item,
+    section > ul > li + li {
+      margin-top: 8px;
     }
   </style>
 </head>

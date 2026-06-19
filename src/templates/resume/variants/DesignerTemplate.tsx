@@ -35,7 +35,7 @@ export const DesignerTemplate: React.FC = () => {
     resumeCerts, resumeAchievements, resumeLanguages, layoutSettings,
     brandColor, accentColor2, bulletStyle, skillsStyle, summaryAlign, badgeStyle,
     experienceAlign, educationAlign, certsAlign,
-    showPhoto, headingFontCss, dragProps, handleSectionDragOver, handleColumnDrop,
+    showPhoto, headingFontCss: _headingFontCss, dragProps, handleSectionDragOver, handleColumnDrop,
     designerLeftSections, designerRightSections, showLayoutBounds,
     onLayoutSettingsChange, onAddExperience, onDeleteExperience,
     onExperienceChange, onAddEducation, onDeleteEducation, onEducationChange,
@@ -43,10 +43,28 @@ export const DesignerTemplate: React.FC = () => {
     onEntryVisibilityChange, onDuplicateExperience, onAddSimilarExperience,
     onDuplicateEducation, onAddSimilarEducation,
     onAddCert, onDeleteCert, onAddAchievement, onDeleteAchievement, onAddLanguage, onDeleteLanguage,
+    entrySpacing,
   } = useTemplateRenderContext();
 
-  const H = 'text-xs font-bold uppercase tracking-widest border-b-2 pb-0.5 mb-2 text-slate-800';
-  const entryTitleColor = accentColor2 || brandColor;
+  // ── Figma design tokens (Anmol Agarwal resume) ─────────────────────────────
+  // Sizes in CSS `pt` — accurate for both screen (210mm sheet) and print output.
+  const _R  = "'Raleway', sans-serif";
+  const _OS = "'Open Sans', sans-serif";
+  const FG = {
+    name:     { fontFamily: _R,  fontSize: '21.5pt',  fontWeight: 700 } as React.CSSProperties,
+    subtitle: { fontFamily: _R,  fontSize: '10.78pt', fontWeight: 700 } as React.CSSProperties,
+    section:  { fontFamily: _R,  fontSize: '11.4pt',  fontWeight: 700 } as React.CSSProperties,
+    entry:    { fontFamily: _R,  fontSize: '9.5pt',   fontWeight: 400 } as React.CSSProperties,
+    company:  { fontFamily: _OS, fontSize: '8.88pt',  fontWeight: 700 } as React.CSSProperties,
+    body:     { fontFamily: _OS, fontSize: '7.61pt',  fontWeight: 400, color: '#3E3E3E' } as React.CSSProperties,
+    contact:  { fontFamily: _OS, fontSize: '7.6pt',   fontWeight: 700, color: '#3E3E3E' } as React.CSSProperties,
+    meta:     { fontFamily: _OS, fontSize: '7pt',     fontWeight: 400, color: '#3E3E3E' } as React.CSSProperties,
+  };
+  // Colour defaults — user's brandColor / accentColor2 override the Figma defaults
+  const C_HEAD    = brandColor   ?? '#343334';  // name, headings, entry titles
+  const C_COMPANY = accentColor2 ?? '#00B6CB';  // company / school name
+
+  const H = 'font-bold uppercase tracking-widest border-b-2 pb-0.5 mb-2';
   const showTitle = layoutSettings?.showTitle ?? true;
   const uppercaseName = layoutSettings?.uppercaseName ?? false;
   const hasPhone = (layoutSettings?.showPhone ?? true) && !!(phone && phone.trim());
@@ -87,9 +105,9 @@ export const DesignerTemplate: React.FC = () => {
               align={summaryAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ summaryAlign: a })}
             >
               <section style={sec}>
-                <h3 className={H} style={{ borderColor: brandColor, color: brandColor }}>Summary</h3>
+                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Summary</h3>
                 <E tag="p" value={resumeSummary || 'Summary...'} isEditable={isEditable} editableClass={ec}
-                  className={`text-[11px] text-slate-700 leading-relaxed text-${summaryAlign}`} onSave={ef('resumeSummary')} />
+                  className={`leading-relaxed text-${summaryAlign}`} style={FG.body} onSave={ef('resumeSummary')} />
               </section>
             </SectionWrapper>
           </DraggableSection>
@@ -107,14 +125,13 @@ export const DesignerTemplate: React.FC = () => {
               onAddEntry={handleAddSkill}
             >
               <section style={sec}>
-                <h3 className={H} style={{ borderColor: brandColor, color: brandColor }}>Skills</h3>
+                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Skills</h3>
                 <SkillsEditor
                   value={resumeSkills}
                   isEditable={isEditable}
                   ec={ec}
                   onSave={ef('resumeSkills')}
                   badgeStyle={badgeStyle}
-                  className="text-[11px]"
                   skillsStyle={skillsStyle}
                 />
               </section>
@@ -132,8 +149,8 @@ export const DesignerTemplate: React.FC = () => {
               layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
             >
               <section style={sec}>
-                <h3 className={H} style={{ borderColor: brandColor, color: brandColor }}>Experience</h3>
-                <div className="space-y-4">
+                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Experience</h3>
+                <div className="flex flex-col" style={{ gap: `${entrySpacing}px` }}>
                   {resumeExperience.map((exp, idx) => {
                     const showLogo = (layoutSettings?.showExperienceLogo ?? true) && showExp(exp, 'logo');
                     const showDates = (layoutSettings?.showExperienceDates ?? true) && showExp(exp, 'dates');
@@ -161,35 +178,35 @@ export const DesignerTemplate: React.FC = () => {
                           />
                         )}
                       >
-                        <div className="text-[11px]">
-                          <div className="flex items-start gap-2">
-                            <span className="flex items-start gap-1.5 flex-1 min-w-0">
+                        <div style={FG.body}>
+                          <div className="flex items-center gap-2">
+                            <span className="flex items-center gap-1.5 flex-1 min-w-0">
                               {showLogo && (
-                                <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
+                                <ItemLogo logo={exp.logo} brandColor={C_COMPANY} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
                               )}
-                              <E value={exp.title} isEditable={isEditable} editableClass={ec} className="min-w-0 break-words font-bold leading-snug" style={{ color: entryTitleColor }} onSave={v => onExperienceChange?.(idx, 'title', v)} />
+                              <E value={exp.title} isEditable={isEditable} editableClass={ec} className="min-w-0 break-words leading-snug" style={{ ...FG.entry, color: C_HEAD }} onSave={v => onExperienceChange?.(idx, 'title', v)} />
                             </span>
                             {showDates && (
-                              <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-normal text-slate-500 shrink-0 text-right whitespace-nowrap" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
+                              <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="shrink-0 text-right whitespace-nowrap" style={FG.meta} onSave={v => onExperienceChange?.(idx, 'dates', v)} />
                             )}
                           </div>
                           {(showCompany || showLocation || (showLink && exp.url)) && (
-                            <div className="flex items-start justify-between gap-2 text-slate-600 mb-1 font-medium">
+                            <div className="flex items-start justify-between gap-2 mb-0.5">
                               <span className="flex items-center gap-1 flex-1 min-w-0">
                                 {showCompany && (
-                                  <E value={exp.company} isEditable={isEditable} editableClass={ec} className="text-[#007ACC] font-semibold min-w-0 break-words" onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                                  <E value={exp.company} isEditable={isEditable} editableClass={ec} className="min-w-0 break-words" style={{ ...FG.company, color: C_COMPANY }} onSave={v => onExperienceChange?.(idx, 'company', v)} />
                                 )}
-                                {showLink && <WorkLink url={exp.url} brandColor={brandColor} />}
+                                {showLink && <WorkLink url={exp.url} brandColor={C_COMPANY} />}
                               </span>
                               {showLocation && (
-                                <E value={exp.location} isEditable={isEditable} editableClass={ec} className="shrink-0 text-right whitespace-nowrap" onSave={v => onExperienceChange?.(idx, 'location', v)} />
+                                <E value={exp.location} isEditable={isEditable} editableClass={ec} className="shrink-0 text-right whitespace-nowrap" style={FG.meta} onSave={v => onExperienceChange?.(idx, 'location', v)} />
                               )}
                             </div>
                           )}
                           {showBullets && (
                             <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                              onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700 leading-relaxed"
-                              bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} prefixId={`exp-${idx}`} />
+                              onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="leading-snug"
+                              bulletStyle={bulletStyle} brandColor={C_HEAD} align={experienceAlign} prefixId={`exp-${idx}`} />
                           )}
                         </div>
                       </ItemWrapper>
@@ -211,8 +228,8 @@ export const DesignerTemplate: React.FC = () => {
               layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
             >
               <section style={sec}>
-                <h3 className={H} style={{ borderColor: brandColor, color: brandColor }}>Education</h3>
-                <div className="space-y-4">
+                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Education</h3>
+                <div className="flex flex-col" style={{ gap: `${entrySpacing}px` }}>
                   {resumeEducation.map((edu, idx) => {
                     const { gradeText } = parseEducationGrade(edu.bullets);
                     const showLogo = (layoutSettings?.showEducationLogo ?? true) && showEdu(edu, 'logo');
@@ -239,21 +256,21 @@ export const DesignerTemplate: React.FC = () => {
                           />
                         )}
                       >
-                        <div className="text-[11px] flex gap-3 justify-between items-start">
-                          <div className="flex-1 space-y-1.5">
-                            <div className="font-bold flex items-start gap-1.5 leading-snug">
+                        <div className="flex gap-3 justify-between items-start" style={FG.body}>
+                          <div className="flex-1 space-y-0.5">
+                            <div className="flex items-center gap-1.5 leading-snug">
                               {showLogo && (
-                                <ItemLogo logo={edu.logo} brandColor={brandColor} placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} />
+                                <ItemLogo logo={edu.logo} brandColor={C_COMPANY} placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} />
                               )}
-                              <E value={edu.degree} isEditable={isEditable} editableClass={ec} style={{ color: entryTitleColor }} onSave={v => onEducationChange?.(idx, 'degree', v)} />
+                              <E value={edu.degree} isEditable={isEditable} editableClass={ec} className="break-words" style={{ ...FG.entry, color: C_HEAD }} onSave={v => onEducationChange?.(idx, 'degree', v)} />
                             </div>
                             {edu.school && (
-                              <div className="flex justify-between text-slate-600 font-medium leading-snug">
-                                <E value={edu.school} isEditable={isEditable} editableClass={ec} className="text-[#007ACC] font-semibold" onSave={v => onEducationChange?.(idx, 'school', v)} />
+                              <div className="flex justify-between leading-snug">
+                                <E value={edu.school} isEditable={isEditable} editableClass={ec} style={{ ...FG.company, color: C_COMPANY }} onSave={v => onEducationChange?.(idx, 'school', v)} />
                               </div>
                             )}
                             {(showDates || showLocation) && (
-                              <div className="flex justify-between text-slate-500 text-[10px] leading-snug">
+                              <div className="flex justify-between leading-snug" style={FG.meta}>
                                 {showDates && (
                                   <E value={edu.dates} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'dates', v)} />
                                 )}
@@ -267,9 +284,9 @@ export const DesignerTemplate: React.FC = () => {
                               isEditable={isEditable}
                               editableClass={ec}
                               onBulletChange={(v) => onEducationChange?.(idx, 'bullets', v)}
-                              className={`text-slate-600 leading-relaxed text-${educationAlign}`}
+                              className={`leading-snug text-${educationAlign}`}
                               bulletStyle={bulletStyle}
-                              brandColor={brandColor}
+                              brandColor={C_HEAD}
                               align={educationAlign}
                               prefixId={`edu-${idx}`}
                               showBullets={showBullets}
@@ -279,7 +296,7 @@ export const DesignerTemplate: React.FC = () => {
                           {showGpa && gradeText && (
                             <div className="flex items-center gap-2 h-full flex-shrink-0 self-stretch mt-1">
                               <div className="w-[1px] bg-slate-300 self-stretch min-h-[30px]" />
-                              <div className="text-[10px] font-bold text-[#007ACC] text-center whitespace-pre-line leading-tight px-1 min-w-[60px]">
+                              <div className="text-center whitespace-pre-line leading-tight px-1 min-w-[60px]" style={{ ...FG.company, color: C_COMPANY }}>
                                 {gradeText}
                               </div>
                             </div>
@@ -304,8 +321,8 @@ export const DesignerTemplate: React.FC = () => {
               layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
             >
               <section style={sec}>
-                <h3 className={H} style={{ borderColor: brandColor, color: brandColor }}>Projects</h3>
-                <ul className="space-y-3 text-[11px]">
+                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Projects</h3>
+                <ul className="flex flex-col" style={{ ...FG.body, gap: `${entrySpacing - 4}px` }}>
                   {(resumeCerts ?? []).map((cert, idx) => {
                     const desc = cert.desc || '';
                     const isTechIdx = desc.toLowerCase().indexOf('tech:');
@@ -329,7 +346,7 @@ export const DesignerTemplate: React.FC = () => {
                         )}
                       >
                         <li className={`text-${certsAlign}`}>
-                          <div className={`flex items-start gap-1.5 font-bold leading-snug ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
+                          <div className={`flex items-start gap-1.5 leading-snug ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
                             {showProjectIcons && showCert(cert, 'icon') && (
                               isEditable ? (
                                 <EntryIconPicker
@@ -337,28 +354,28 @@ export const DesignerTemplate: React.FC = () => {
                                   currentIcon={cert.icon || 'briefcase'}
                                   onChange={(icon) => onCertChange?.(idx, 'icon', icon)}
                                   isEditable={isEditable}
-                                  accentColor={brandColor}
-                                  accentColor2={accentColor2}
+                                  accentColor={C_HEAD}
+                                  accentColor2={C_COMPANY}
                                   index={idx}
                                   title={cert.title}
                                 />
                               ) : (
-                                getDynamicProjectIcon(idx, cert.title, cert.icon, brandColor, 'w-3 h-3 flex-shrink-0 mt-0.5', accentColor2)
+                                getDynamicProjectIcon(idx, cert.title, cert.icon, C_HEAD, 'w-3 h-3 flex-shrink-0 mt-0.5', C_COMPANY)
                               )
                             )}
                             <span className={`flex items-center gap-1 min-w-0 ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
-                              <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="font-bold"
-                                style={{ color: entryTitleColor }}
+                              <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec}
+                                style={{ ...FG.entry, color: C_HEAD }}
                                 onSave={v => onCertChange?.(idx, 'title', v)} />
-                              {showCert(cert, 'link') && <WorkLink url={cert.url} brandColor={brandColor} />}
+                              {showCert(cert, 'link') && <WorkLink url={cert.url} brandColor={C_COMPANY} />}
                             </span>
                           </div>
                           {showProjectDesc && cleanDesc && (
-                            <E tag="p" value={cleanDesc} isEditable={isEditable} editableClass={ec} className={`text-slate-600 mt-0.5 leading-relaxed text-${certsAlign}`}
-                              onSave={v => onCertChange?.(idx, 'desc', v)} />
+                            <E tag="p" value={cleanDesc} isEditable={isEditable} editableClass={ec} className={`mt-0.5 leading-snug text-${certsAlign}`}
+                              style={FG.body} onSave={v => onCertChange?.(idx, 'desc', v)} />
                           )}
                           {showProjectDesc && techStack && (
-                            <div className={`text-slate-500 italic mt-0.5 text-[10px] text-${certsAlign}`}>
+                            <div className={`italic mt-0.5 text-${certsAlign}`} style={FG.meta}>
                               {techStack}
                             </div>
                           )}
@@ -383,8 +400,8 @@ export const DesignerTemplate: React.FC = () => {
               layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
             >
               <section style={sec}>
-                <h3 className={H} style={{ borderColor: brandColor, color: brandColor }}>Key Achievements</h3>
-                <ul className="space-y-3 text-[11px]">
+                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Key Achievements</h3>
+                <ul className="flex flex-col" style={{ ...FG.body, gap: `${entrySpacing - 4}px` }}>
                   {(resumeAchievements ?? []).map((ach, idx) => {
                     const showLink = showAch(ach, 'link');
                     return (
@@ -401,7 +418,7 @@ export const DesignerTemplate: React.FC = () => {
                       )}
                     >
                       <li>
-                        <div className="flex items-start gap-1.5 font-bold leading-snug">
+                        <div className="flex items-start gap-1.5 leading-snug">
                           {showAchievementIcons && showAch(ach, 'icon') && (
                             isEditable ? (
                               <EntryIconPicker
@@ -409,25 +426,25 @@ export const DesignerTemplate: React.FC = () => {
                                 currentIcon={ach.icon || 'star'}
                                 onChange={(icon) => onAchievementChange?.(idx, 'icon', icon)}
                                 isEditable={isEditable}
-                                accentColor={brandColor}
-                                accentColor2={accentColor2}
+                                accentColor={C_HEAD}
+                                accentColor2={C_COMPANY}
                                 index={idx}
                                 title={ach.title}
                               />
                             ) : (
-                              getDynamicAchievementIcon(idx, ach.title, ach.icon, brandColor, 'w-3 h-3 flex-shrink-0 mt-0.5', accentColor2)
+                              getDynamicAchievementIcon(idx, ach.title, ach.icon, C_HEAD, 'w-3 h-3 flex-shrink-0 mt-0.5', C_COMPANY)
                             )
                           )}
                           <span className="flex items-center gap-1 min-w-0">
-                            <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className="font-bold"
-                              style={{ color: entryTitleColor }}
+                            <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec}
+                              style={{ ...FG.entry, color: C_HEAD }}
                               onSave={v => onAchievementChange?.(idx, 'title', v)} />
-                            {showLink && <WorkLink url={ach.url} brandColor={brandColor} />}
+                            {showLink && <WorkLink url={ach.url} brandColor={C_COMPANY} />}
                           </span>
                         </div>
                         {showAchievementDesc && showAch(ach, 'desc') && (
-                          <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-600 text-[10px] mt-0.5 leading-relaxed"
-                            onSave={v => onAchievementChange?.(idx, 'desc', v)} />
+                          <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className="mt-0.5 leading-snug"
+                            style={FG.body} onSave={v => onAchievementChange?.(idx, 'desc', v)} />
                         )}
                       </li>
                     </ItemWrapper>
@@ -449,8 +466,8 @@ export const DesignerTemplate: React.FC = () => {
               layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
             >
               <section style={sec}>
-                <h3 className={H} style={{ borderColor: brandColor, color: brandColor }}>Languages</h3>
-                <div className="space-y-2">
+                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Languages</h3>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                   {(resumeLanguages ?? []).map((lang, idx) => {
                     const bubbles = getLanguageBubbleCount(lang.level);
                     return (
@@ -458,19 +475,18 @@ export const DesignerTemplate: React.FC = () => {
                         key={idx} sectionId="languages" index={idx} totalItems={(resumeLanguages ?? []).length}
                         isEditable={isEditable} onDelete={() => onDeleteLanguage?.(idx)}
                       >
-                        <div className="flex justify-between items-center text-[11px]">
+                        <div className="flex justify-between items-center">
                           <div>
-                            <E value={lang.name} isEditable={isEditable} editableClass={ec} className="font-semibold"
-                              style={{ color: entryTitleColor }}
+                            <E tag="p" value={lang.name} isEditable={isEditable} editableClass={ec}
+                              style={{ ...FG.entry, color: C_HEAD }}
                               onSave={v => onLanguageChange?.(idx, 'name', v)} />
-                            <div className="text-[10px] text-slate-500">
-                              <E value={lang.level} isEditable={isEditable} editableClass={ec}
-                                onSave={v => onLanguageChange?.(idx, 'level', v)} />
-                            </div>
+                            <E tag="p" value={lang.level} isEditable={isEditable} editableClass={ec}
+                              style={FG.meta}
+                              onSave={v => onLanguageChange?.(idx, 'level', v)} />
                           </div>
                           <LanguageBubbles
                             count={bubbles}
-                            activeColor={brandColor}
+                            activeColor={C_HEAD}
                             isEditable={isEditable}
                             onCountChange={(bubbleCount) =>
                               onLanguageChange?.(idx, 'level', getLanguageLevelFromBubbleCount(bubbleCount))
@@ -498,19 +514,22 @@ export const DesignerTemplate: React.FC = () => {
       <HeaderWrapper
         isEditable={isEditable}
         layoutSettings={layoutSettings}
-        onLayoutSettingsChange={(patch) => onLayoutSettingsChange?.({ ...layoutSettings, ...patch })}
+        showTitle={showTitle}
+        onLayoutSettingsChange={onLayoutSettingsChange}
         className="flex justify-between items-start pb-2 mb-2 overflow-visible"
       >
         <div className="flex-1 relative z-[3] min-w-0 pr-4">
           <E tag="h1" value={name} isEditable={isEditable} editableClass={ec}
-            className={`text-3xl font-extrabold tracking-tight ${uppercaseName ? 'uppercase' : ''}`}
-            style={{ color: brandColor, fontFamily: headingFontCss }} onSave={ef('name')} />
+            className={`tracking-tight leading-tight ${uppercaseName ? 'uppercase' : ''}`}
+            style={{ ...FG.name, color: C_HEAD }} onSave={ef('name')} />
           {showTitle && (
-            <E tag="p" value={subtitle} isEditable={isEditable} editableClass={ec}
-              className="text-xs font-semibold uppercase mt-1.5 tracking-wider" style={{ color: accentColor2 || brandColor }} onSave={ef('subtitle')} />
+            <span data-header-subtitle className="contents">
+              <E tag="p" value={subtitle} isEditable={isEditable} editableClass={ec}
+                className="uppercase mt-1 tracking-wider" style={{ ...FG.subtitle, color: C_COMPANY }} onSave={ef('subtitle')} />
+            </span>
           )}
 
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 text-[10px] text-slate-500 font-medium">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2" style={FG.contact}>
             {hasPhone && (
               <span className="inline-flex items-center gap-1.5 align-middle">
                 <Phone className="w-3 h-3 text-slate-400 flex-shrink-0 inline-block" aria-hidden />
@@ -547,6 +566,7 @@ export const DesignerTemplate: React.FC = () => {
             onAvatarChange={(url) => onFieldChange?.('avatar', url)}
             layoutSettings={layoutSettings}
             onLayoutSettingsChange={onLayoutSettingsChange}
+            size="w-28 h-28"
           />
         )}
       </HeaderWrapper>
