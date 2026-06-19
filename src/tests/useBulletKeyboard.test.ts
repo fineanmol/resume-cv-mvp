@@ -4,6 +4,7 @@ import {
   handleBulletEnterKey,
   handleBulletBackspaceKey,
   setContentEditableCaret,
+  getContentEditableCursorOffset,
 } from '../hooks/useBulletKeyboard';
 
 describe('useBulletKeyboard', () => {
@@ -30,6 +31,19 @@ describe('useBulletKeyboard', () => {
         prefixId: 'test',
       });
       expect(result).toBe('Hello\n world');
+    });
+
+    it('appends a new empty bullet when enter is pressed at end of line', () => {
+      let result = '';
+      handleBulletEnterKey({
+        bullets: ['Hello world'],
+        bIdx: 0,
+        text: 'Hello world',
+        cursorPos: 11,
+        onChange: (value) => { result = value; },
+        prefixId: 'test',
+      });
+      expect(result).toBe('Hello world\n');
     });
   });
 
@@ -85,6 +99,26 @@ describe('useBulletKeyboard', () => {
       });
       expect(handled).toBe(false);
       expect(result).toBe('unchanged');
+    });
+  });
+
+  describe('getContentEditableCursorOffset', () => {
+    it('returns full text length when caret is after a trailing br', () => {
+      const el = document.createElement('span');
+      el.appendChild(document.createTextNode('Hello'));
+      el.appendChild(document.createElement('br'));
+      document.body.appendChild(el);
+
+      const range = document.createRange();
+      range.setStart(el, 2);
+      range.collapse(true);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+
+      expect(getContentEditableCursorOffset(el)).toBe(5);
+
+      el.remove();
     });
   });
 

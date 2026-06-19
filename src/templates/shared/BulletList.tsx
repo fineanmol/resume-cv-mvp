@@ -1,5 +1,6 @@
 import {
   createContentEditableBulletKeyDownHandler,
+  normalizeBulletText,
   parseEditableBullets,
 } from '../../hooks/useBulletKeyboard';
 import { splitIntoBullets } from '../../utils/bullets';
@@ -68,7 +69,7 @@ export function BulletList({
               suppressContentEditableWarning={true}
               onBlur={(e) => {
                 const updated = [...lines];
-                updated[bIdx] = e.currentTarget.textContent || '';
+                updated[bIdx] = normalizeBulletText(e.currentTarget.textContent ?? '');
                 onBulletChange(updated.join('\n'));
               }}
               onKeyDown={createContentEditableBulletKeyDownHandler({
@@ -78,7 +79,7 @@ export function BulletList({
                 onChange: onBulletChange,
               })}
             >
-              {bullet}
+              {bullet || '\u200B'}
             </span>
           ) : (
             <span

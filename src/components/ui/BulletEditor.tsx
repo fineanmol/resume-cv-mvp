@@ -22,7 +22,7 @@ export const BulletEditor: React.FC<BulletEditorProps> = ({
   return (
     <div className="space-y-1.5">
       {arr.map((bullet, bIdx) => (
-        <div key={bIdx} className="flex items-center gap-1.5">
+        <div key={`${prefixId}-${arr.length}-${bIdx}`} className="flex items-center gap-1.5">
           <span className="text-[10px] font-semibold text-text-muted select-none w-4 text-right">
             {bIdx + 1}.
           </span>

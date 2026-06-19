@@ -13,21 +13,44 @@ export function parseEditableBullets(value: string): string[] {
   return lines.length ? lines : [''];
 }
 
+export function getContentEditableText(element: HTMLElement): string {
+  return normalizeBulletText(element.textContent ?? '');
+}
+
 export function getContentEditableCursorOffset(element: HTMLElement): number {
   const selection = window.getSelection();
+  const textLen = getContentEditableText(element).length;
+
   if (!selection || selection.rangeCount === 0) {
-    return element.textContent?.length ?? 0;
+    return textLen;
   }
 
   const range = selection.getRangeAt(0);
   if (!element.contains(range.startContainer)) {
-    return element.textContent?.length ?? 0;
+    return textLen;
+  }
+
+  // Caret after trailing <br> or at end of element node
+  if (range.startContainer === element) {
+    let offset = 0;
+    const limit = Math.min(range.startOffset, element.childNodes.length);
+    for (let i = 0; i < limit; i++) {
+      offset += normalizeBulletText(element.childNodes[i].textContent ?? '').length;
+    }
+    return Math.min(offset, textLen);
+  }
+
+  if (range.startContainer.nodeName === 'BR') {
+    const preRange = range.cloneRange();
+    preRange.selectNodeContents(element);
+    preRange.setEndBefore(range.startContainer);
+    return normalizeBulletText(preRange.toString()).length;
   }
 
   const preRange = range.cloneRange();
   preRange.selectNodeContents(element);
   preRange.setEnd(range.startContainer, range.startOffset);
-  return preRange.toString().length;
+  return Math.min(normalizeBulletText(preRange.toString()).length, textLen);
 }
 
 export function setContentEditableCaret(el: HTMLElement, offset: number): void {
@@ -102,7 +125,13 @@ export function focusBulletElement(
   };
 
   // Wait for React to commit remounted bullet rows after merge/delete
-  setTimeout(() => requestAnimationFrame(applyFocus), 0);
+  setTimeout(() => {
+    requestAnimationFrame(() => {
+      applyFocus();
+      // Retry once if the new bullet row wasn't mounted yet
+      requestAnimationFrame(applyFocus);
+    });
+  }, 0);
 }
 
 export function handleBulletEnterKey(options: {
@@ -114,9 +143,13 @@ export function handleBulletEnterKey(options: {
   prefixId: string;
 }): void {
   const { bullets, bIdx, text, cursorPos, onChange, prefixId } = options;
-  const textBefore = text.substring(0, cursorPos);
-  const textAfter = text.substring(cursorPos);
+  const normalizedText = normalizeBulletText(text);
+  const safeCursor = Math.min(Math.max(0, cursorPos), normalizedText.length);
+  const textBefore = normalizedText.substring(0, safeCursor);
+  const textAfter = normalizedText.substring(safeCursor);
+
   const updated = [...bullets];
+  while (updated.length <= bIdx) updated.push('');
   updated[bIdx] = textBefore;
   updated.splice(bIdx + 1, 0, textAfter);
   onChange(updated.join('\n'));
@@ -208,11 +241,12 @@ export function createContentEditableBulletKeyDownHandler(options: {
   const { bullets, bIdx, prefixId, onChange } = options;
 
   return (e: KeyboardEvent<HTMLElement>) => {
-    const text = e.currentTarget.textContent ?? '';
+    const el = e.currentTarget;
+    const text = getContentEditableText(el);
 
     if (e.key === 'Enter') {
       e.preventDefault();
-      const cursorPos = getContentEditableCursorOffset(e.currentTarget);
+      const cursorPos = getContentEditableCursorOffset(el);
       handleBulletEnterKey({
         bullets,
         bIdx,
@@ -225,12 +259,12 @@ export function createContentEditableBulletKeyDownHandler(options: {
     }
 
     if (e.key === 'Backspace') {
-      const cursorPos = getContentEditableCursorOffset(e.currentTarget);
-      const text = e.currentTarget.textContent ?? '';
+      const cursorPos = getContentEditableCursorOffset(el);
+      const backspaceText = getContentEditableText(el);
       if (handleBulletBackspaceKey({
         bullets,
         bIdx,
-        text,
+        text: backspaceText,
         cursorPos,
         onChange,
         prefixId,
