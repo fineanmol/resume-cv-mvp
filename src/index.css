@@ -108,9 +108,9 @@ body {
     margin: 0;
   }
 
-  /* Hide all editor chrome and navigation items */
-  header,
-  aside,
+  /* Hide all editor chrome and navigation items, without matching template contents */
+  .min-h-screen > header,
+  .min-h-screen > div > aside,
   nav,
   .offline-banner,
   .toast-container,
@@ -133,11 +133,9 @@ body {
     print-color-adjust: exact !important;
   }
 
-  /* Reset parent wrappers containing flex layout blocks */
+  /* Reset only parent editor wrappers containing flex layout blocks */
   .min-h-screen,
-  .flex-col,
-  .flex-1,
-  .flex {
+  .min-h-screen > div {
     display: block !important;
     overflow: visible !important;
     height: auto !important;
