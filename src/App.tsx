@@ -1,575 +1,383 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useRef, lazy, Suspense } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AlertTriangle, Sparkles } from 'lucide-react';
+
 import { LandingPage } from './components/LandingPage';
 import { Dashboard } from './components/Dashboard';
 import { EditorHeader } from './components/EditorHeader';
 import { ResumeForm } from './components/ResumeForm';
 import { CoverLetterForm } from './components/CoverLetterForm';
 import { JDPanel } from './components/JDPanel';
+import { DesignPanel } from './components/DesignPanel';
+import { ToastContainer } from './components/ToastContainer';
 
-const ResumeTemplateRenderer = lazy(() =>
-  import('./templates/ResumeTemplates').then((m) => ({ default: m.ResumeTemplateRenderer }))
-);
-const CoverLetterTemplateRenderer = lazy(() =>
-  import('./templates/CoverLetterTemplates').then((m) => ({ default: m.CoverLetterTemplateRenderer }))
-);
 import { useUndoRedo } from './hooks/useUndoRedo';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { useAutoSave } from './hooks/useAutoSave';
+import { useAiActions } from './hooks/useAiActions';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useSheetOverflow } from './hooks/useSheetOverflow';
+import { useToast } from './hooks/useToast';
+
 import { dbService } from './services/db';
-import { GeminiService } from './services/gemini';
 import { PdfService } from './services/pdf';
 import { DEFAULT_RESUME_STATE } from './config/defaultResume';
 import { DEFAULT_CL_STATE } from './config/defaultCL';
-import type { ResumeState, CoverLetterState } from './types';
-import type { User } from 'firebase/auth';
 
-type LocalUser = { email: string; isLocal: boolean };
-type AuthUser = User | LocalUser;
+import type { ResumeState, CoverLetterState, AuthUser, DocType, SaveStatus, TemplateId } from './types';
+import { isLocalUser, userEmail } from './types';
 
-const isLocalUser = (u: AuthUser): u is LocalUser => 'isLocal' in u;
-const userEmail = (u: AuthUser): string => u.email ?? '';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, Sparkles } from 'lucide-react';
+// Lazy-load heavy template renderers — they share a chunk with LandingPage/Carousel imports
+const ResumeTemplateRenderer = lazy(() =>
+  import('./templates/ResumeTemplates').then(m => ({ default: m.ResumeTemplateRenderer }))
+);
+const CoverLetterTemplateRenderer = lazy(() =>
+  import('./templates/CoverLetterTemplates').then(m => ({ default: m.CoverLetterTemplateRenderer }))
+);
 
+// ─── Settings dropdown ────────────────────────────────────────────────────────
+interface SettingsDropdownProps {
+  geminiKey: string;
+  onChange: (v: string) => void;
+  onSave: (e: React.FormEvent) => void;
+}
+const SettingsDropdown: React.FC<SettingsDropdownProps> = ({ geminiKey, onChange, onSave }) => (
+  <div className="absolute right-20 top-16 z-50 w-80 bg-sidebar border border-brand-accent/30 rounded-xl p-4 shadow-xl">
+    <form onSubmit={onSave} className="space-y-3">
+      <div className="text-xs font-bold text-brand-accent flex items-center gap-1">
+        <Sparkles className="w-4 h-4" /> Gemini API Key
+      </div>
+      <p className="text-[10px] text-text-muted leading-relaxed">
+        Provide your Gemini API Key to enable AI tailoring, keyword injection, and bullet improvers.
+      </p>
+      <input
+        type="password"
+        required
+        placeholder="AIzaSy..."
+        value={geminiKey}
+        onChange={e => onChange(e.target.value)}
+        className="w-full bg-input-bg border border-border-color rounded-lg px-3 py-2 text-xs text-text-main placeholder-text-muted/30 focus:outline-none focus:border-brand-accent"
+      />
+      <button
+        type="submit"
+        className="w-full py-2 bg-brand-accent hover:bg-brand-accent-hover text-editor font-bold rounded-lg text-xs transition cursor-pointer"
+      >
+        Save API Key
+      </button>
+    </form>
+  </div>
+);
+
+// ─── Offline banner ───────────────────────────────────────────────────────────
+const OfflineBanner: React.FC = () => (
+  <div className="bg-amber-950/80 border-b border-amber-600/40 text-amber-200 text-xs py-2 px-8 flex items-center justify-center gap-2">
+    <AlertTriangle className="w-4 h-4 text-amber-400" />
+    <span>Offline — AI features are disabled. Reconnect to resume.</span>
+  </div>
+);
+
+// ─── Page transition wrapper ──────────────────────────────────────────────────
+const PAGE_ANIM = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.22 } },
+  exit:    { opacity: 0, y: -8, transition: { duration: 0.18 } },
+} as const;
+
+// ─── Root App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  // Authentication state
+  // Auth
   const [user, setUser] = useState<AuthUser | null>(null);
-  
+
   // Workspace navigation
-  const [activeDocId, setActiveDocId] = useState<string | null>(null);
-  const [activeDocType, setActiveDocType] = useState<'resume' | 'coverletter' | null>(null);
-  
+  const [activeDocId,   setActiveDocId]   = useState<string | null>(null);
+  const [activeDocType, setActiveDocType] = useState<DocType | null>(null);
+
   // Settings
-  const [geminiKey, setGeminiKey] = useState(localStorage.getItem("GEMINI_API_KEY") || "");
+  const [geminiKey,    setGeminiKey]    = useState(() => localStorage.getItem('GEMINI_API_KEY') ?? '');
   const [showSettings, setShowSettings] = useState(false);
-  const [zoomScale, setZoomScale] = useState(0.85);
-  
-  // Connection state
+  const [zoomScale,    setZoomScale]    = useState(0.85);
+  const [rightTab,     setRightTab]     = useState<'design' | 'ats'>('design');
+
+  // Job Description
+  const [jobDescription, setJobDescription] = useState(() => localStorage.getItem('LAST_JD') ?? '');
+
+  // Save status
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+
+  // Notifications
+  const toast = useToast();
+
+  // Connection
   const isOnline = useOnlineStatus();
-  
-  // Document state using custom history tracking hooks
-  const { 
-    state: resumeState, 
-    set: setResumeState, 
-    undo: undoResume, 
-    redo: redoResume, 
-    canUndo: canUndoResume, 
-    canRedo: canRedoResume, 
-    reset: resetResume 
-  } = useUndoRedo<ResumeState>(DEFAULT_RESUME_STATE);
 
-  const { 
-    state: clState, 
-    set: setClState, 
-    undo: undoCl, 
-    redo: redoCl, 
-    canUndo: canUndoCl, 
-    canRedo: canRedoCl, 
-    reset: resetCl 
-  } = useUndoRedo<CoverLetterState>(DEFAULT_CL_STATE);
+  // Document history stacks
+  const resume = useUndoRedo<ResumeState>(DEFAULT_RESUME_STATE);
+  const cl     = useUndoRedo<CoverLetterState>(DEFAULT_CL_STATE);
 
-  // Job Description state
-  const [jobDescription, setJobDescription] = useState(localStorage.getItem("LAST_JD") || "");
-  const [aiLoading, setAiLoading] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [sheetOverflow, setSheetOverflow] = useState(false);
+  // Sheet overflow detector
+  const sheetRef    = useRef<HTMLDivElement>(null);
+  const sheetOverflow = useSheetOverflow(sheetRef, [activeDocId, activeDocType]);
 
-  // References for PDF export
-  const sheetRef = useRef<HTMLDivElement>(null);
+  // Auto-save
+  useAutoSave({
+    user, activeDocId, activeDocType,
+    resumeState: resume.state, clState: cl.state,
+    setSaveStatus,
+  });
 
-  // Detect when the rendered sheet exceeds one A4 page height (1123px)
-  useEffect(() => {
-    const el = sheetRef.current?.querySelector('.pdf-sheet') as HTMLElement | null;
-    if (!el) return;
-    const observer = new ResizeObserver(() => {
-      setSheetOverflow(el.scrollHeight > 1123);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [activeDocId, activeDocType]);
+  // AI actions (tailoring, keyword injection, bullet improvement)
+  const ai = useAiActions({
+    geminiKey,
+    activeDocType,
+    resumeState: resume.state,
+    clState: cl.state,
+    jobDescription,
+    setResumeState: resume.set,
+    setClState: cl.set,
+    onNeedKey: () => setShowSettings(true),
+    toast,
+  });
 
-  // Save current Gemini Key to LocalStorage
+  // Keyboard shortcuts (Undo/Redo)
+  const activeUndo = activeDocType === 'resume' ? resume.undo : cl.undo;
+  const activeRedo = activeDocType === 'resume' ? resume.redo : cl.redo;
+  useKeyboardShortcuts({ activeDocType, onUndo: activeUndo, onRedo: activeRedo });
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
   const handleSaveGeminiKey = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem("GEMINI_API_KEY", geminiKey);
+    localStorage.setItem('GEMINI_API_KEY', geminiKey);
     setShowSettings(false);
+    toast.success('Gemini API Key saved.');
   };
 
-  // Log in user
-  const handleAuthSuccess = (authUser: AuthUser | null) => {
-    setUser(authUser);
+  const handleJdChange = (text: string) => {
+    setJobDescription(text);
+    localStorage.setItem('LAST_JD', text);
   };
 
-  // Log out user
-  const handleLogout = () => {
-    setUser(null);
-    setActiveDocId(null);
-    setActiveDocType(null);
+  const handleDownloadPdf = () => {
+    if (!sheetRef.current) return;
+    const filename = activeDocType === 'resume'
+      ? `${resume.state.name.replace(/\s+/g, '_')}_Resume.pdf`
+      : `${cl.state.name.replace(/\s+/g, '_')}_Cover_Letter.pdf`;
+    PdfService.downloadPdf(sheetRef.current, filename);
+    toast.info('Preparing PDF download…');
   };
 
-  // Keyboard shortcut listener for Undo/Redo
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
-        if (e.key.toLowerCase() === 'z') {
-          e.preventDefault();
-          if (activeDocType === 'resume') undoResume();
-          if (activeDocType === 'coverletter') undoCl();
-        } else if (e.key.toLowerCase() === 'y') {
-          e.preventDefault();
-          if (activeDocType === 'resume') redoResume();
-          if (activeDocType === 'coverletter') redoCl();
-        }
-      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
-        e.preventDefault();
-        if (activeDocType === 'resume') redoResume();
-        if (activeDocType === 'coverletter') redoCl();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeDocType, undoResume, redoResume, undoCl, redoCl]);
-
-  // Load document draft
-  const handleSelectDocument = async (id: string, type: 'resume' | 'coverletter') => {
+  const handleSelectDocument = async (id: string, type: DocType) => {
     if (!user) return;
     setSaveStatus('idle');
     const uid = userEmail(user);
     if (type === 'resume') {
       const data = await dbService.getResume(uid, id);
-      if (data) resetResume(data);
+      if (data) resume.reset(data);
     } else {
       const data = await dbService.getCoverLetter(uid, id);
-      if (data) resetCl(data);
+      if (data) cl.reset(data);
     }
     setActiveDocId(id);
     setActiveDocType(type);
   };
 
-  // Create new document draft
-  const handleCreateNew = async (
-    type: 'resume' | 'coverletter',
-    template: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive'
-  ) => {
+  const handleCreateNew = async (type: DocType, template: TemplateId) => {
     if (!user) return;
     const uid = userEmail(user);
-    const id = `${type}_${Date.now()}`;
+    const id  = `${type}_${Date.now()}`;
     if (type === 'resume') {
-      const stateToSave = {
-        ...DEFAULT_RESUME_STATE,
-        id,
-        title: `New Resume (${new Date().toLocaleDateString()})`,
-        layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template }
-      };
-      await dbService.saveResume(uid, id, stateToSave);
-      resetResume(stateToSave);
+      const state = { ...DEFAULT_RESUME_STATE, id, title: `New Resume (${new Date().toLocaleDateString()})`, layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template } };
+      await dbService.saveResume(uid, id, state);
+      resume.reset(state);
     } else {
-      const stateToSave = {
-        ...DEFAULT_CL_STATE,
-        id,
-        title: `New Cover Letter (${new Date().toLocaleDateString()})`,
-        layoutSettings: { ...DEFAULT_CL_STATE.layoutSettings, template }
-      };
-      await dbService.saveCoverLetter(uid, id, stateToSave);
-      resetCl(stateToSave);
+      const state = { ...DEFAULT_CL_STATE, id, title: `New Cover Letter (${new Date().toLocaleDateString()})`, layoutSettings: { ...DEFAULT_CL_STATE.layoutSettings, template } };
+      await dbService.saveCoverLetter(uid, id, state);
+      cl.reset(state);
     }
     setActiveDocId(id);
     setActiveDocType(type);
   };
 
-  // Debounced auto-save hook
-  useEffect(() => {
-    if (!activeDocId || !user) return;
+  const getDocumentText = () =>
+    activeDocType === 'resume'
+      ? `${resume.state.name} ${resume.state.subtitle} ${resume.state.resumeSummary} ${resume.state.resumeSkills} ${resume.state.resumeExperience.map(e => `${e.title} ${e.bullets}`).join(' ')}`
+      : `${cl.state.name} ${cl.state.subtitle} ${cl.state.p1} ${cl.state.p2} ${cl.state.p3} ${cl.state.p4} ${cl.state.highlights.map(h => `${h.category} ${h.text}`).join(' ')}`;
 
-    const timer = setTimeout(async () => {
-      setSaveStatus('saving');
-      try {
-        const uid = userEmail(user);
-        if (activeDocType === 'resume') {
-          await dbService.saveResume(uid, activeDocId, resumeState);
-        } else {
-          await dbService.saveCoverLetter(uid, activeDocId, clState);
-        }
-        setSaveStatus('saved');
-      } catch {
-        setSaveStatus('error');
-      }
-    }, 1200);
-
-    return () => clearTimeout(timer);
-  }, [resumeState, clState, activeDocId, activeDocType, user]);
-
-  // Cache Job Description
-  const handleJdChange = (text: string) => {
-    setJobDescription(text);
-    localStorage.setItem("LAST_JD", text);
-  };
-
-  // Trigger Client-Side PDF Generation
-  const handleDownloadPdf = () => {
-    if (!sheetRef.current) return;
-    const filename = activeDocType === 'resume'
-      ? `${resumeState.name.replace(/\s+/g, '_')}_Resume.pdf`
-      : `${clState.name.replace(/\s+/g, '_')}_Cover_Letter.pdf`;
-    // PdfService clones the DOM and strips transform before rendering — no zoom reset needed
-    PdfService.downloadPdf(sheetRef.current, filename);
-  };
-
-  // AI Document Tailoring
-  const handleAiTailoring = async () => {
-    if (!geminiKey) {
-      alert("Please configure your Gemini API Key in settings (top right) to use AI tailoring.");
-      setShowSettings(true);
-      return;
-    }
-    if (!jobDescription.trim()) {
-      alert("Please paste a Job Description in the right column first.");
-      return;
-    }
-
-    setAiLoading(true);
-    try {
-      if (activeDocType === 'resume') {
-        const result = await GeminiService.tailorResume(geminiKey, resumeState, jobDescription);
-        setResumeState((prev) => ({
-          ...prev,
-          resumeSummary: result.resumeSummary || prev.resumeSummary,
-          resumeSkills: result.resumeSkills || prev.resumeSkills,
-          resumeExperience: prev.resumeExperience.map((exp, idx) => ({
-            ...exp,
-            bullets: result.resumeExperience?.[idx]?.bullets || exp.bullets
-          }))
-        }));
-      } else {
-        const result = await GeminiService.tailorCoverLetter(geminiKey, clState, jobDescription);
-        setClState((prev) => ({
-          ...prev,
-          companyName: result.companyName || prev.companyName,
-          jobTitle: result.jobTitle || prev.jobTitle,
-          salutation: result.salutation || prev.salutation,
-          p1: result.p1 || prev.p1,
-          p2: result.p2 || prev.p2,
-          p3: result.p3 || prev.p3,
-          p4: result.p4 || prev.p4,
-          highlights: prev.highlights.map((hl, idx) => ({
-            ...hl,
-            category: result.highlights?.[idx]?.category || hl.category,
-            text: result.highlights?.[idx]?.text || hl.text
-          }))
-        }));
-      }
-    } catch (err) {
-      alert(`AI Tailoring failed: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  // AI Keyword Injection
-  const handleKeywordInjection = async (kw: string) => {
-    if (!geminiKey) {
-      alert("Please configure your Gemini API Key in settings.");
-      setShowSettings(true);
-      return;
-    }
-
-    try {
-      if (activeDocType === 'resume') {
-        const result = await GeminiService.injectKeywordIntoResume(geminiKey, resumeState, kw);
-        setResumeState((prev) => ({
-          ...prev,
-          resumeSummary: result.resumeSummary || prev.resumeSummary,
-          resumeSkills: result.resumeSkills || prev.resumeSkills,
-          resumeExperience: prev.resumeExperience.map((exp, idx) => ({
-            ...exp,
-            bullets: result.resumeExperience?.[idx]?.bullets || exp.bullets
-          }))
-        }));
-      } else {
-        const result = await GeminiService.injectKeywordIntoCoverLetter(geminiKey, clState, kw);
-        setClState((prev) => ({
-          ...prev,
-          p1: result.p1 || prev.p1,
-          p2: result.p2 || prev.p2,
-          p3: result.p3 || prev.p3,
-          p4: result.p4 || prev.p4,
-          highlights: prev.highlights.map((hl, idx) => ({
-            ...hl,
-            category: result.highlights?.[idx]?.category || hl.category,
-            text: result.highlights?.[idx]?.text || hl.text
-          }))
-        }));
-      }
-    } catch (err) {
-      alert(`AI Keyword injection failed: ${err instanceof Error ? err.message : String(err)}`);
-      throw err;
-    }
-  };
-
-  // AI Bullet Point Improver
-  const handleImproveBullet = async (idx: number, currentText: string) => {
-    if (!geminiKey) {
-      alert("Please configure your Gemini API Key in settings.");
-      setShowSettings(true);
-      return;
-    }
-    setAiLoading(true);
-    try {
-      const improved = await GeminiService.improveExperienceBullet(
-        geminiKey, 
-        currentText, 
-        resumeState.resumeExperience[idx].title, 
-        jobDescription
-      );
-      setResumeState((prev) => {
-        const updated = [...prev.resumeExperience];
-        updated[idx] = { ...updated[idx], bullets: improved };
-        return { ...prev, resumeExperience: updated };
-      });
-    } catch (err) {
-      alert(`AI Bullet Improvement failed: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const getDocumentText = () => {
-    if (activeDocType === 'resume') {
-      return `${resumeState.name} ${resumeState.subtitle} ${resumeState.resumeSummary} ${resumeState.resumeSkills} ${resumeState.resumeExperience.map(e => e.title + ' ' + e.bullets).join(' ')}`;
-    } else {
-      return `${clState.name} ${clState.subtitle} ${clState.p1} ${clState.p2} ${clState.p3} ${clState.p4} ${clState.highlights.map(h => h.category + ' ' + h.text).join(' ')}`;
-    }
-  };
-
-  // -------------------------------------------------------------
-  // RENDER: Unauthenticated (Landing Page & Auth Modal Overlay)
-  // -------------------------------------------------------------
+  // ── Render: Landing ──────────────────────────────────────────────────────────
   if (!user) {
     return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="landing"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
-          className="min-h-screen w-full"
-        >
-          <LandingPage onAuthSuccess={handleAuthSuccess} />
-        </motion.div>
-      </AnimatePresence>
+      <>
+        <AnimatePresence mode="wait">
+          <motion.div key="landing" {...PAGE_ANIM} className="min-h-screen w-full">
+            <LandingPage onAuthSuccess={u => setUser(u)} />
+          </motion.div>
+        </AnimatePresence>
+        <ToastContainer toasts={toast.toasts} dismiss={toast.dismiss} />
+      </>
     );
   }
 
-  // -------------------------------------------------------------
-  // RENDER: Dashboard view
-  // -------------------------------------------------------------
+  // ── Render: Dashboard ────────────────────────────────────────────────────────
   if (!activeDocId) {
     return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="dashboard"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.25 }}
-          className="min-h-screen w-full"
-        >
-          <Dashboard
-            userId={userEmail(user)}
-            isLocal={isLocalUser(user)}
-            onSelectDocument={handleSelectDocument}
-            onCreateNew={handleCreateNew}
-            onLogout={handleLogout}
-          />
-        </motion.div>
-      </AnimatePresence>
+      <>
+        <AnimatePresence mode="wait">
+          <motion.div key="dashboard" {...PAGE_ANIM} className="min-h-screen w-full">
+            <Dashboard
+              userId={userEmail(user)}
+              isLocal={isLocalUser(user)}
+              onSelectDocument={handleSelectDocument}
+              onCreateNew={handleCreateNew}
+              onLogout={() => { setUser(null); setActiveDocId(null); setActiveDocType(null); }}
+            />
+          </motion.div>
+        </AnimatePresence>
+        <ToastContainer toasts={toast.toasts} dismiss={toast.dismiss} />
+      </>
     );
   }
 
-  // -------------------------------------------------------------
-  // RENDER: Workspace Editor view
-  // -------------------------------------------------------------
+  // ── Render: Editor ───────────────────────────────────────────────────────────
+  const isResume  = activeDocType === 'resume';
+  const canUndo   = isResume ? resume.canUndo : cl.canUndo;
+  const canRedo   = isResume ? resume.canRedo : cl.canRedo;
+
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key="editor"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.25 }}
-        className="min-h-screen bg-editor text-text-main flex flex-col h-screen overflow-hidden"
-      >
-        {/* Offline Alert Banner */}
-        {!isOnline && (
-          <div className="bg-amber-950/80 border-b border-amber-600/40 text-amber-200 text-xs py-2 px-8 flex items-center justify-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span>Offline Mode: AI features (tailoring, polishing, keyword injections) are disabled. Reconnect to resume.</span>
-          </div>
-        )}
+    <>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key="editor"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="min-h-screen bg-editor text-text-main flex flex-col h-screen overflow-hidden"
+        >
+          {!isOnline && <OfflineBanner />}
 
-        {/* Header toolbar */}
-        <EditorHeader
-          title={activeDocType === 'resume' ? resumeState.title || '' : clState.title || ''}
-          onTitleChange={(val) => {
-            if (activeDocType === 'resume') {
-              setResumeState(prev => ({ ...prev, title: val }), true);
-            } else {
-              setClState(prev => ({ ...prev, title: val }), true);
+          <EditorHeader
+            title={isResume ? resume.state.title ?? '' : cl.state.title ?? ''}
+            onTitleChange={val => isResume
+              ? resume.set(prev => ({ ...prev, title: val }), true)
+              : cl.set(prev => ({ ...prev, title: val }), true)
             }
-          }}
-          saveStatus={saveStatus}
-          canUndo={activeDocType === 'resume' ? canUndoResume : canUndoCl}
-          canRedo={activeDocType === 'resume' ? canRedoResume : canRedoCl}
-          onUndo={activeDocType === 'resume' ? undoResume : undoCl}
-          onRedo={activeDocType === 'resume' ? redoResume : redoCl}
-          zoomScale={zoomScale}
-          setZoomScale={setZoomScale}
-          showSettings={showSettings}
-          setShowSettings={setShowSettings}
-          onDownload={handleDownloadPdf}
-          onBack={() => setActiveDocId(null)}
-        />
-
-        {/* Split Screen panels */}
-        <div className="flex-1 flex overflow-hidden">
-          
-          {/* Settings overlay dropdown */}
-          {showSettings && (
-            <div className="absolute right-20 top-16 z-50 w-80 bg-sidebar border border-brand-accent/30 rounded-xl p-4 shadow-xl">
-              <form onSubmit={handleSaveGeminiKey} className="space-y-3">
-                <div className="text-xs font-bold text-brand-accent flex items-center gap-1">
-                  <Sparkles className="w-4 h-4" />
-                  Gemini API Key
-                </div>
-                <p className="text-[10px] text-text-muted leading-relaxed">
-                  Provide your Gemini API Key to enable instant AI tailoring and bullet improvers. 
-                </p>
-                <input
-                  type="password"
-                  required
-                  placeholder="AIzaSy..."
-                  value={geminiKey}
-                  onChange={(e) => setGeminiKey(e.target.value)}
-                  className="w-full bg-input-bg border border-border-color rounded-lg px-3 py-2 text-xs text-text-main placeholder-text-muted/30 focus:outline-none focus:border-brand-accent"
-                />
-                <button
-                  type="submit"
-                  className="w-full py-2 bg-brand-accent hover:bg-brand-accent-hover text-editor font-bold rounded-lg text-xs transition cursor-pointer"
-                >
-                  Save API Key
-                </button>
-              </form>
-            </div>
-          )}
-
-          {/* Left panel: Form editor */}
-          {activeDocType === 'resume' ? (
-            <ResumeForm
-              state={resumeState}
-              onChange={setResumeState}
-              onImproveBullet={handleImproveBullet}
-              aiLoading={aiLoading}
-              isOnline={isOnline}
-              geminiKey={geminiKey}
-            />
-          ) : (
-            <CoverLetterForm
-              state={clState}
-              onChange={setClState}
-            />
-          )}
-
-          {/* Center panel: A4 preview canvas */}
-          <section className="flex-1 overflow-hidden relative flex flex-col items-center justify-center bg-editor">
-            <div className="sheet-preview-container flex-1 w-full relative">
-              <div
-                style={{
-                  transform: `scale(${zoomScale})`,
-                  transformOrigin: 'top center',
-                  transition: 'transform 0.25s ease-out'
-                }}
-                ref={sheetRef}
-                className={`flex justify-center${sheetOverflow ? ' sheet-overflow-active' : ''}`}
-              >
-                <Suspense fallback={<div className="w-[794px] h-[1123px] bg-white animate-pulse" />}>
-                {activeDocType === 'resume' ? (
-                  <ResumeTemplateRenderer
-                    state={resumeState}
-                    isEditable={true}
-                    onFieldChange={(field, val) => {
-                      setResumeState((prev) => ({ ...prev, [field]: val }));
-                    }}
-                    onExperienceChange={(idx, field, val) => {
-                      setResumeState((prev) => {
-                        const updated = [...prev.resumeExperience];
-                        updated[idx] = { ...updated[idx], [field]: val };
-                        return { ...prev, resumeExperience: updated };
-                      });
-                    }}
-                    onEducationChange={(idx, field, val) => {
-                      setResumeState((prev) => {
-                        const updated = [...prev.resumeEducation];
-                        updated[idx] = { ...updated[idx], [field]: val };
-                        return { ...prev, resumeEducation: updated };
-                      });
-                    }}
-                    onCertChange={(idx, field, val) => {
-                      setResumeState((prev) => {
-                        const updated = [...prev.resumeCerts];
-                        updated[idx] = { ...updated[idx], [field]: val };
-                        return { ...prev, resumeCerts: updated };
-                      });
-                    }}
-                    onAchievementChange={(idx, field, val) => {
-                      setResumeState((prev) => {
-                        const updated = [...prev.resumeAchievements];
-                        updated[idx] = { ...updated[idx], [field]: val };
-                        return { ...prev, resumeAchievements: updated };
-                      });
-                    }}
-                    onLanguageChange={(idx, field, val) => {
-                      setResumeState((prev) => {
-                        const updated = [...prev.resumeLanguages];
-                        updated[idx] = { ...updated[idx], [field]: val };
-                        return { ...prev, resumeLanguages: updated };
-                      });
-                    }}
-                  />
-                ) : (
-                  <CoverLetterTemplateRenderer
-                    state={clState}
-                    isEditable={true}
-                    onFieldChange={(field, val) => {
-                      setClState((prev) => ({ ...prev, [field]: val }));
-                    }}
-                    onHighlightChange={(idx, field, val) => {
-                      setClState((prev) => {
-                        const updated = [...prev.highlights];
-                        updated[idx] = { ...updated[idx], [field]: val };
-                        return { ...prev, highlights: updated };
-                      });
-                    }}
-                  />
-                )}
-                </Suspense>
-              </div>
-            </div>
-          </section>
-
-          {/* Right panel: AI & ATS Checkers */}
-          <JDPanel
-            jobDescription={jobDescription}
-            onJdChange={handleJdChange}
-            docText={getDocumentText()}
-            onInjectKeyword={handleKeywordInjection}
-            aiLoading={aiLoading}
-            onAiTailor={handleAiTailoring}
-            isOnline={isOnline}
-            geminiKey={geminiKey}
+            saveStatus={saveStatus}
+            canUndo={canUndo} canRedo={canRedo}
+            onUndo={activeUndo} onRedo={activeRedo}
+            zoomScale={zoomScale} setZoomScale={setZoomScale}
+            showSettings={showSettings} setShowSettings={setShowSettings}
+            onDownload={handleDownloadPdf}
+            onBack={() => setActiveDocId(null)}
           />
 
-        </div>
-      </motion.div>
-    </AnimatePresence>
+          {/* ── Three-panel editor layout ───────────────────────── */}
+          <div className="flex-1 flex overflow-hidden relative">
+            {showSettings && (
+              <SettingsDropdown
+                geminiKey={geminiKey}
+                onChange={setGeminiKey}
+                onSave={handleSaveGeminiKey}
+              />
+            )}
+
+            {/* LEFT — Content form (sections) */}
+            {isResume ? (
+              <ResumeForm
+                state={resume.state}
+                onChange={resume.set}
+                onImproveBullet={ai.improveBullet}
+                aiLoading={ai.aiLoading}
+                isOnline={isOnline}
+                geminiKey={geminiKey}
+              />
+            ) : (
+              <CoverLetterForm state={cl.state} onChange={cl.set} />
+            )}
+
+            {/* CENTRE — Live A4 preview (always visible, no modal) */}
+            <section className="flex-1 overflow-hidden relative flex flex-col bg-[#dde3ec]">
+              <div className="sheet-preview-container flex-1 w-full relative">
+                <div
+                  ref={sheetRef}
+                  style={{ transform: `scale(${zoomScale})`, transformOrigin: 'top center', transition: 'transform 0.25s ease-out' }}
+                  className={`flex justify-center${sheetOverflow ? ' sheet-overflow-active' : ''}`}
+                >
+                  <Suspense fallback={<div className="w-[794px] h-[1123px] bg-white animate-pulse rounded shadow-xl" />}>
+                    {isResume ? (
+                      <ResumeTemplateRenderer
+                        state={resume.state}
+                        isEditable
+                        onFieldChange={(f, v) => resume.set(p => ({ ...p, [f]: v }))}
+                        onExperienceChange={(i, f, v) => resume.set(p => { const u = [...p.resumeExperience]; u[i] = { ...u[i], [f]: v }; return { ...p, resumeExperience: u }; })}
+                        onEducationChange={(i, f, v) => resume.set(p => { const u = [...p.resumeEducation]; u[i] = { ...u[i], [f]: v }; return { ...p, resumeEducation: u }; })}
+                        onCertChange={(i, f, v) => resume.set(p => { const u = [...p.resumeCerts]; u[i] = { ...u[i], [f]: v }; return { ...p, resumeCerts: u }; })}
+                        onAchievementChange={(i, f, v) => resume.set(p => { const u = [...p.resumeAchievements]; u[i] = { ...u[i], [f]: v }; return { ...p, resumeAchievements: u }; })}
+                        onLanguageChange={(i, f, v) => resume.set(p => { const u = [...p.resumeLanguages]; u[i] = { ...u[i], [f]: v }; return { ...p, resumeLanguages: u }; })}
+                      />
+                    ) : (
+                      <CoverLetterTemplateRenderer
+                        state={cl.state}
+                        isEditable
+                        onFieldChange={(f, v) => cl.set(p => ({ ...p, [f]: v }))}
+                        onHighlightChange={(i, f, v) => cl.set(p => { const u = [...p.highlights]; u[i] = { ...u[i], [f]: v }; return { ...p, highlights: u }; })}
+                      />
+                    )}
+                  </Suspense>
+                </div>
+              </div>
+            </section>
+
+            {/* RIGHT — Design + ATS tabs */}
+            <aside className="w-[260px] flex-shrink-0 border-l border-border-color/60 bg-sidebar flex flex-col overflow-hidden">
+              {/* Tab switcher */}
+              <div className="flex border-b border-border-color/60 flex-shrink-0">
+                <button
+                  onClick={() => setRightTab('design')}
+                  className={`flex-1 py-2.5 text-[11px] font-bold uppercase tracking-wider transition cursor-pointer ${rightTab === 'design' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-text-muted hover:text-text-main'}`}
+                >
+                  Design
+                </button>
+                <button
+                  onClick={() => setRightTab('ats')}
+                  className={`flex-1 py-2.5 text-[11px] font-bold uppercase tracking-wider transition cursor-pointer ${rightTab === 'ats' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-text-muted hover:text-text-main'}`}
+                >
+                  ATS &amp; AI
+                </button>
+              </div>
+
+              {rightTab === 'design' ? (
+                <div className="flex-1 overflow-hidden flex flex-col">
+                  {isResume ? (
+                    <DesignPanel
+                      layout={resume.state.layoutSettings}
+                      onChange={patch => resume.set(p => ({ ...p, layoutSettings: { ...p.layoutSettings, ...patch } }))}
+                      docType="resume"
+                    />
+                  ) : (
+                    <DesignPanel
+                      layout={cl.state.layoutSettings}
+                      onChange={patch => cl.set(p => ({ ...p, layoutSettings: { ...p.layoutSettings, ...patch } }))}
+                      docType="coverletter"
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="flex-1 overflow-hidden flex flex-col">
+                  <JDPanel
+                    jobDescription={jobDescription}
+                    onJdChange={handleJdChange}
+                    docText={getDocumentText()}
+                    onInjectKeyword={ai.injectKeyword}
+                    aiLoading={ai.aiLoading}
+                    onAiTailor={ai.tailorDocument}
+                    isOnline={isOnline}
+                    geminiKey={geminiKey}
+                  />
+                </div>
+              )}
+            </aside>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+      <ToastContainer toasts={toast.toasts} dismiss={toast.dismiss} />
+    </>
   );
 }

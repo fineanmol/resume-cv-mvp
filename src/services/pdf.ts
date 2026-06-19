@@ -161,40 +161,34 @@ export class PdfService {
       return;
     }
 
-    // Locate the actual sheet content
-    const sheetElement = element.querySelector('.pdf-sheet') || element;
+    const sheetElement = (element.querySelector('.pdf-sheet') || element) as HTMLElement;
 
-    // Clone the element to render it unscaled and clean
+    // Clone and strip all transforms/shadows so html2canvas sees a plain A4 element
     const clone = sheetElement.cloneNode(true) as HTMLElement;
-    
-    // Clear scaling transforms, transitions and shadows on the clone
-    clone.style.transform = 'none';
-    clone.style.transition = 'none';
-    clone.style.boxShadow = 'none';
-    
-    // Position the clone at the top-left (0,0) of the document so html2canvas (with scrollX/scrollY overrides)
-    // can capture it correctly. Set z-index to -9999 and pointer-events to none so it stays completely hidden
-    // behind the application UI and does not intercept any user interactions.
-    clone.style.position = 'absolute';
-    clone.style.top = '0';
-    clone.style.left = '0';
-    clone.style.zIndex = '-9999';
-    clone.style.pointerEvents = 'none';
-    clone.style.width = '794px'; // A4 width at 96 DPI
-    clone.style.height = 'auto';
-    clone.style.display = 'block';
-    clone.style.opacity = '1';
-    clone.style.visibility = 'visible';
+    clone.style.cssText = [
+      'transform: none',
+      'transition: none',
+      'box-shadow: none',
+      'position: absolute',
+      // Push far left — DO NOT use z-index: negative, html2canvas treats that as invisible
+      'left: -9999px',
+      'top: 0',
+      'z-index: 0',
+      'width: 794px',
+      'height: auto',
+      'display: block',
+      'opacity: 1',
+      'visibility: visible',
+      'pointer-events: none',
+    ].join(';');
 
-    // Walk the original DOM tree and copy standard RGB colors into the cloned elements to override oklch properties
-    convertElementColors(sheetElement as HTMLElement, clone);
-    const allClonedElements = clone.querySelectorAll('*');
-    const allOriginalElements = sheetElement.querySelectorAll('*');
-    for (let i = 0; i < allClonedElements.length; i++) {
-      const origEl = allOriginalElements[i] as HTMLElement;
-      const cloneEl = allClonedElements[i] as HTMLElement;
-      if (origEl && cloneEl) {
-        convertElementColors(origEl, cloneEl);
+    // Convert oklch/oklab colours to rgba so html2canvas doesn't choke
+    convertElementColors(sheetElement, clone);
+    const origEls = sheetElement.querySelectorAll('*');
+    const cloneEls = clone.querySelectorAll('*');
+    for (let i = 0; i < origEls.length; i++) {
+      if (origEls[i] && cloneEls[i]) {
+        convertElementColors(origEls[i] as HTMLElement, cloneEls[i] as HTMLElement);
       }
     }
 
@@ -202,29 +196,26 @@ export class PdfService {
 
     const opt = {
       margin: 0,
-      filename: filename,
+      filename,
       image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: {
-        scale: 2.0,
+        scale: 2,
         useCORS: true,
         letterRendering: true,
         logging: false,
         scrollX: 0,
         scrollY: 0,
-        windowWidth: 794,
       },
-      jsPDF: { unit: 'pt' as const, format: 'a4' as const, orientation: 'portrait' as const }
+      jsPDF: { unit: 'pt' as const, format: 'a4' as const, orientation: 'portrait' as const },
     };
 
     html2pdf()
       .set(opt)
       .from(clone)
       .save()
-      .then(() => {
-        document.body.removeChild(clone);
-      })
+      .then(() => { document.body.removeChild(clone); })
       .catch((err: unknown) => {
-        console.error("PDF download failed:", err);
+        console.error('PDF download failed:', err);
         document.body.removeChild(clone);
       });
   }

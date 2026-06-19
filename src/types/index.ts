@@ -1,3 +1,6 @@
+export type FontFamily = 'inter' | 'merriweather' | 'outfit' | 'fira';
+export type HeaderStyle = 'centered' | 'left' | 'banner' | 'minimal';
+
 export interface LayoutSettings {
   fontSize: number;
   paddingTopBottom: number;
@@ -5,7 +8,12 @@ export interface LayoutSettings {
   sectionSpacing: number;
   lineHeight: number;
   template?: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive';
-  brandColor?: string; // Hex code or Tailwind color suffix
+  brandColor?: string;        // primary accent (headers, borders, bullets)
+  accentColor2?: string;      // secondary accent (badges, highlights)
+  fontFamily?: FontFamily;    // body font
+  headingFont?: FontFamily;   // heading / name font (can differ from body)
+  headerStyle?: HeaderStyle;  // layout variant for the name/contact block
+  showPhoto?: boolean;        // whether to display avatar in templates that support it
 }
 
 export interface HighlightItem {
@@ -95,4 +103,24 @@ export interface DocumentMetadata {
   type: 'resume' | 'coverletter';
   title: string;
   updatedAt: number;
+}
+
+export type TemplateId = 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive';
+
+export type DocType = 'resume' | 'coverletter';
+
+// Auth user — either a Firebase User or a local guest
+export type LocalUser = { email: string; isLocal: true };
+export type AuthUser = { email: string | null; uid?: string } | LocalUser;
+export const isLocalUser = (u: AuthUser): u is LocalUser => 'isLocal' in u && u.isLocal === true;
+export const userEmail = (u: AuthUser): string => u.email ?? '';
+
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
+export interface Toast {
+  id: string;
+  type: ToastType;
+  message: string;
+  duration?: number;
 }

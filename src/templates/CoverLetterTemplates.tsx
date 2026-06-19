@@ -1,6 +1,8 @@
 import React from 'react';
 import type { CoverLetterState, HighlightItem } from '../types';
 import { Mail, Phone, MapPin } from 'lucide-react';
+import { FONT_CSS } from '../config/fonts';
+import { TemplateHeader } from './TemplateHeader';
 
 interface CoverLetterTemplateProps {
   state: CoverLetterState;
@@ -85,14 +87,41 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
     sectionSpacing,
     lineHeight,
     template = 'navy',
-    brandColor = '#314855'
+    brandColor = '#314855',
+    accentColor2,
+    fontFamily = 'inter',
+    headingFont,
+    headerStyle = 'centered',
+    showPhoto = true,
   } = layoutSettings;
+
+  const bodyFontCss    = FONT_CSS[fontFamily] ?? FONT_CSS.inter;
+  const headingFontCss = headingFont ? FONT_CSS[headingFont] : bodyFontCss;
+  const showAvatar     = showPhoto && !!avatar;
+  const editableClass  = isEditable ? "outline-none hover:bg-slate-100/80 focus:bg-slate-100 rounded px-1 -mx-1 transition" : "";
+
+  // Shared TemplateHeader props for CL
+  const headerProps = {
+    name:    { value: name,     onSave: (v: string) => onFieldChange?.('name', v) },
+    subtitle:{ value: subtitle, onSave: (v: string) => onFieldChange?.('subtitle', v) },
+    phone:   { value: phone,    onSave: (v: string) => onFieldChange?.('phone', v) },
+    email:   { value: email,    onSave: (v: string) => onFieldChange?.('email', v) },
+    location:{ value: location, onSave: (v: string) => onFieldChange?.('location', v) },
+    linkedin:{ value: linkedin, onSave: (v: string) => onFieldChange?.('linkedin', v) },
+    avatar, showAvatar, brandColor, headingFontCss,
+    headerStyle: headerStyle as import('../types').HeaderStyle,
+    isEditable, ec: editableClass, sectionSpacing,
+  };
+
+  // accentColor2 is available for future highlight/badge styling in CL templates
+  void accentColor2;
 
   const sheetStyle: React.CSSProperties = {
     fontSize: `${fontSize}pt`,
     padding: `${paddingTopBottom}mm ${paddingLeftRight}mm`,
     lineHeight: lineHeight,
-    color: '#334155'
+    color: '#334155',
+    fontFamily: bodyFontCss,
   };
 
   const spacingStyle: React.CSSProperties = {
@@ -106,8 +135,6 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
       .replace(/{{role}}/g, jobTitle || '[Role]');
   };
 
-  const editableClass = isEditable ? "outline-none hover:bg-slate-100/80 focus:bg-slate-100 rounded px-1 -mx-1 transition" : "";
-
   const sharedParagraphProps = { isEditable, editableClass, onFieldChange, formatMarkdownBold };
 
   // -------------------------------------------------------------
@@ -115,80 +142,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
   // -------------------------------------------------------------
   if (template === 'navy') {
     return (
-      <div className="pdf-sheet font-sans" style={sheetStyle} id="resume-sheet">
-        <header className="text-center border-b-2 pb-4 mb-6" style={{ borderColor: brandColor }}>
-          <h1
-            className={`text-3xl font-bold tracking-tight text-slate-800 ${editableClass}`}
-            style={{ color: brandColor }}
-            contentEditable={isEditable}
-            suppressContentEditableWarning={true}
-            onBlur={(e) => onFieldChange?.('name', e.currentTarget.textContent || '')}
-          >
-            {name}
-          </h1>
-          <p
-            className={`text-sm font-medium text-slate-500 uppercase mt-1 tracking-wide ${editableClass}`}
-            contentEditable={isEditable}
-            suppressContentEditableWarning={true}
-            onBlur={(e) => onFieldChange?.('subtitle', e.currentTarget.textContent || '')}
-          >
-            {subtitle}
-          </p>
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-slate-600 mt-3">
-            { (phone || isEditable) && (
-              <span className="flex items-center gap-1">
-                <Phone className="w-3 h-3" />
-                <span
-                  className={editableClass}
-                  contentEditable={isEditable}
-                  suppressContentEditableWarning={true}
-                  onBlur={(e) => onFieldChange?.('phone', e.currentTarget.textContent || '')}
-                >
-                  {phone || 'Phone'}
-                </span>
-              </span>
-            )}
-            { (email || isEditable) && (
-              <span className="flex items-center gap-1">
-                <Mail className="w-3 h-3" />
-                <span
-                  className={editableClass}
-                  contentEditable={isEditable}
-                  suppressContentEditableWarning={true}
-                  onBlur={(e) => onFieldChange?.('email', e.currentTarget.textContent || '')}
-                >
-                  {email || 'Email'}
-                </span>
-              </span>
-            )}
-            { (location || isEditable) && (
-              <span className="flex items-center gap-1">
-                <MapPin className="w-3 h-3" />
-                <span
-                  className={editableClass}
-                  contentEditable={isEditable}
-                  suppressContentEditableWarning={true}
-                  onBlur={(e) => onFieldChange?.('location', e.currentTarget.textContent || '')}
-                >
-                  {location || 'Location'}
-                </span>
-              </span>
-            )}
-            { (linkedin || isEditable) && (
-              <span className="flex items-center gap-1">
-                <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                <span
-                  className={editableClass}
-                  contentEditable={isEditable}
-                  suppressContentEditableWarning={true}
-                  onBlur={(e) => onFieldChange?.('linkedin', e.currentTarget.textContent || '')}
-                >
-                  {linkedin || 'LinkedIn'}
-                </span>
-              </span>
-            )}
-          </div>
-        </header>
+      <div className="pdf-sheet" style={sheetStyle} id="resume-sheet">
+        <TemplateHeader {...headerProps} />
 
         <main className="text-xs text-slate-800 space-y-4">
           <div
@@ -256,79 +211,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
   // -------------------------------------------------------------
   if (template === 'serif') {
     return (
-      <div className="pdf-sheet font-serif text-justify" style={sheetStyle} id="resume-sheet">
-        <header className="text-center mb-6">
-          <h1
-            className={`text-3xl font-normal tracking-wide text-slate-900 ${editableClass}`}
-            style={{ color: brandColor }}
-            contentEditable={isEditable}
-            suppressContentEditableWarning={true}
-            onBlur={(e) => onFieldChange?.('name', e.currentTarget.textContent || '')}
-          >
-            {name}
-          </h1>
-          <p
-            className={`text-xs italic text-slate-500 mt-1 ${editableClass}`}
-            contentEditable={isEditable}
-            suppressContentEditableWarning={true}
-            onBlur={(e) => onFieldChange?.('subtitle', e.currentTarget.textContent || '')}
-          >
-            {subtitle}
-          </p>
-          <div className="flex justify-center gap-x-3 text-xs text-slate-600 mt-2 font-sans flex-wrap">
-            { (phone || isEditable) && (
-              <>
-                <span
-                  className={editableClass}
-                  contentEditable={isEditable}
-                  suppressContentEditableWarning={true}
-                  onBlur={(e) => onFieldChange?.('phone', e.currentTarget.textContent || '')}
-                >
-                  {phone || 'Phone'}
-                </span>
-                <span>&bull;</span>
-              </>
-            )}
-            { (email || isEditable) && (
-              <>
-                <span
-                  className={editableClass}
-                  contentEditable={isEditable}
-                  suppressContentEditableWarning={true}
-                  onBlur={(e) => onFieldChange?.('email', e.currentTarget.textContent || '')}
-                >
-                  {email || 'Email'}
-                </span>
-                <span>&bull;</span>
-              </>
-            )}
-            { (location || isEditable) && (
-              <>
-                <span
-                  className={editableClass}
-                  contentEditable={isEditable}
-                  suppressContentEditableWarning={true}
-                  onBlur={(e) => onFieldChange?.('location', e.currentTarget.textContent || '')}
-                >
-                  {location || 'Location'}
-                </span>
-              </>
-            )}
-            { (linkedin || isEditable) && (
-              <>
-                <span>&bull;</span>
-                <span
-                  className={editableClass}
-                  contentEditable={isEditable}
-                  suppressContentEditableWarning={true}
-                  onBlur={(e) => onFieldChange?.('linkedin', e.currentTarget.textContent || '')}
-                >
-                  {linkedin || 'LinkedIn'}
-                </span>
-              </>
-            )}
-          </div>
-        </header>
+      <div className="pdf-sheet text-justify" style={sheetStyle} id="resume-sheet">
+        <TemplateHeader {...headerProps} />
 
         <main className="text-xs space-y-4 text-slate-800 leading-relaxed">
           <div
@@ -396,10 +280,10 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
   // -------------------------------------------------------------
   if (template === 'sidebar') {
     return (
-      <div className="pdf-sheet p-0 font-sans text-slate-800 flex flex-row" style={{ fontSize: `${fontSize}pt` }} id="cover-letter-sheet">
+      <div className="pdf-sheet p-0 text-slate-800 flex flex-row" style={{ ...sheetStyle, padding: 0 }} id="cover-letter-sheet">
         {/* Left Column - Contact & Highlights */}
         <aside className="w-[230px] bg-slate-50 border-r border-slate-200/60 p-6 flex flex-col gap-6 flex-shrink-0 text-slate-700">
-          {avatar && (
+          {showAvatar && (
             <div className="w-24 h-24 rounded-full overflow-hidden mx-auto border-2 border-slate-300">
               <img src={avatar} alt={name} className="w-full h-full object-cover" />
             </div>
@@ -497,7 +381,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
           <header className="mb-6">
             <h1
               className={`text-3xl font-extrabold tracking-tight ${editableClass}`}
-              style={{ color: brandColor }}
+              style={{ color: brandColor, fontFamily: headingFontCss }}
               contentEditable={isEditable}
               suppressContentEditableWarning={true}
               onBlur={(e) => onFieldChange?.('name', e.currentTarget.textContent || '')}
@@ -549,80 +433,9 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
   // -------------------------------------------------------------
   // 4. TECH TEMPLATE (Modern Monospace Developer)
   // -------------------------------------------------------------
-  return (
-    <div className="pdf-sheet font-sans" style={sheetStyle} id="resume-sheet">
-      <header className="border-l-4 pl-4 py-1 mb-6" style={{ borderColor: brandColor }}>
-        <h1
-          className={`text-3xl font-extrabold tracking-tight text-slate-900 ${editableClass}`}
-          contentEditable={isEditable}
-          suppressContentEditableWarning={true}
-          onBlur={(e) => onFieldChange?.('name', e.currentTarget.textContent || '')}
-        >
-          {name}
-        </h1>
-        <p
-          className={`text-xs font-mono text-slate-500 mt-1 uppercase tracking-wider ${editableClass}`}
-          contentEditable={isEditable}
-          suppressContentEditableWarning={true}
-          onBlur={(e) => onFieldChange?.('subtitle', e.currentTarget.textContent || '')}
-        >
-          &gt; {subtitle}
-        </p>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-mono text-slate-600 mt-3">
-          { (phone || isEditable) && (
-            <span>
-              [phone]{' '}
-              <span
-                className={editableClass}
-                contentEditable={isEditable}
-                suppressContentEditableWarning={true}
-                onBlur={(e) => onFieldChange?.('phone', e.currentTarget.textContent || '')}
-              >
-                {phone || 'Phone'}
-              </span>
-            </span>
-          )}
-          { (email || isEditable) && (
-            <span>
-              [email]{' '}
-              <span
-                className={editableClass}
-                contentEditable={isEditable}
-                suppressContentEditableWarning={true}
-                onBlur={(e) => onFieldChange?.('email', e.currentTarget.textContent || '')}
-              >
-                {email || 'Email'}
-              </span>
-            </span>
-          )}
-          { (location || isEditable) && (
-            <span>
-              [loc]{' '}
-              <span
-                className={editableClass}
-                contentEditable={isEditable}
-                suppressContentEditableWarning={true}
-                onBlur={(e) => onFieldChange?.('location', e.currentTarget.textContent || '')}
-              >
-                {location || 'Location'}
-              </span>
-            </span>
-          )}
-          { (linkedin || isEditable) && (
-            <span>
-              [li]{' '}
-              <span
-                className={editableClass}
-                contentEditable={isEditable}
-                suppressContentEditableWarning={true}
-                onBlur={(e) => onFieldChange?.('linkedin', e.currentTarget.textContent || '')}
-              >
-                {linkedin || 'LinkedIn'}
-              </span>
-            </span>
-          )}
-        </div>
-      </header>
+  if (template === 'tech') return (
+    <div className="pdf-sheet" style={sheetStyle} id="resume-sheet">
+      <TemplateHeader {...headerProps} />
 
       <main className="text-xs space-y-4 text-slate-800 font-sans leading-relaxed">
         <div
@@ -692,10 +505,10 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
   if (template === 'ats') {
     const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     return (
-      <div className="pdf-sheet font-sans text-slate-900" style={sheetStyle} id="cover-letter-sheet">
+      <div className="pdf-sheet text-slate-900" style={sheetStyle} id="cover-letter-sheet">
         {/* Header */}
         <header className="mb-6">
-          <CE tag="h1" value={name} isEditable={isEditable} editableClass={editableClass} className="text-xl font-bold text-slate-900" onSave={v => onFieldChange?.('name', v)} />
+          <CE tag="h1" value={name} isEditable={isEditable} editableClass={editableClass} className="text-xl font-bold text-slate-900" style={{ fontFamily: headingFontCss }} onSave={v => onFieldChange?.('name', v)} />
           <CE tag="p" value={subtitle} isEditable={isEditable} editableClass={editableClass} className="text-sm text-slate-600 mt-0.5" onSave={v => onFieldChange?.('subtitle', v)} />
           <div className="flex flex-wrap gap-x-3 text-xs text-slate-600 mt-1.5">
             {phone && <span>{phone}</span>}
@@ -757,32 +570,9 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
   // 6. EXECUTIVE — premium branded header, structured highlights table
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <div className="pdf-sheet font-sans" style={{ ...sheetStyle, color: '#1e293b' }} id="cover-letter-sheet">
+    <div className="pdf-sheet" style={{ ...sheetStyle, color: '#1e293b' }} id="cover-letter-sheet">
       {/* Branded header */}
-      <header className="text-white px-6 py-5 mb-6 rounded-none"
-        style={{ background: `linear-gradient(135deg, ${brandColor} 0%, ${brandColor}cc 100%)`, margin: `-${paddingTopBottom}mm -${paddingLeftRight}mm 0`, padding: '18px 28px 16px' }}>
-        <div className="flex justify-between items-center gap-4">
-          <div>
-            <CE tag="h1" value={name} isEditable={isEditable}
-              editableClass="outline-none hover:bg-white/10 focus:bg-white/10 rounded px-1 -mx-1 transition"
-              className="text-2xl font-bold text-white tracking-tight" onSave={v => onFieldChange?.('name', v)} />
-            <CE tag="p" value={subtitle} isEditable={isEditable}
-              editableClass="outline-none hover:bg-white/10 focus:bg-white/10 rounded px-1 -mx-1 transition"
-              className="text-xs text-white/80 mt-0.5 uppercase tracking-wider" onSave={v => onFieldChange?.('subtitle', v)} />
-          </div>
-          {avatar && (
-            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/40 flex-shrink-0">
-              <img src={avatar} alt={name} className="w-full h-full object-cover" />
-            </div>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-x-5 gap-y-0.5 text-[11px] text-white/80 mt-2">
-          {phone && <span>{phone}</span>}
-          {email && <span>• {email}</span>}
-          {location && <span>• {location}</span>}
-          {linkedin && <span>• {linkedin}</span>}
-        </div>
-      </header>
+      <TemplateHeader {...headerProps} />
 
       {/* Addressee */}
       <div className="mb-4 text-xs text-slate-700">

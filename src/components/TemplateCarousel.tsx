@@ -1,118 +1,109 @@
-import React, { useRef } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { ResumeTemplateRenderer } from '../templates/ResumeTemplates';
-import { CoverLetterTemplateRenderer } from '../templates/CoverLetterTemplates';
-import type { ResumeState, CoverLetterState } from '../types';
+import React, { useRef, useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, LayoutTemplate } from 'lucide-react';
+import { TemplatePicker } from './TemplatePicker';
+
+type TemplateId = 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive';
 
 interface TemplateCarouselProps {
   docType: 'resume' | 'coverletter';
-  state: ResumeState | CoverLetterState;
+  state: object;
   activeTemplate: string;
-  onSelect: (templateId: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive') => void;
+  onSelect: (templateId: TemplateId) => void;
 }
 
+const TEMPLATES: { id: TemplateId; name: string; color: string }[] = [
+  { id: 'navy',      name: 'Navy',      color: '#314855' },
+  { id: 'serif',     name: 'Serif',     color: '#1e293b' },
+  { id: 'sidebar',   name: 'Sidebar',   color: '#0284c7' },
+  { id: 'tech',      name: 'Tech',      color: '#10b981' },
+  { id: 'ats',       name: 'ATS',       color: '#6366f1' },
+  { id: 'executive', name: 'Executive', color: '#b45309' },
+];
+
 export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
-  docType,
-  state,
-  activeTemplate,
-  onSelect
+  docType, activeTemplate, onSelect,
 }) => {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLButtonElement>(null);
+  const [pickerOpen, setPickerOpen]       = useState(false);
+  const [pickerStartIndex, setPickerStartIndex] = useState<number | undefined>(undefined);
 
-  const templates = [
-    { id: 'navy' as const, name: 'Navy Elegant', desc: 'Modern & Clean' },
-    { id: 'serif' as const, name: 'Harvard Serif', desc: 'Classic & Formal' },
-    { id: 'sidebar' as const, name: 'Creative Sidebar', desc: 'Two-Column' },
-    { id: 'tech' as const, name: 'Tech Monospace', desc: 'Developer Style' },
-    { id: 'ats' as const, name: 'Clean ATS', desc: 'Max ATS Score' },
-    { id: 'executive' as const, name: 'Executive', desc: 'Premium Header' },
-  ];
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [activeTemplate]);
 
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = direction === 'left' ? -160 : 160;
-      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
+  const openPickerAt = (index?: number) => {
+    setPickerStartIndex(index);
+    setPickerOpen(true);
   };
 
   return (
-    <div className="space-y-3 pb-4 border-b border-border-color/40 relative">
-      <div className="flex items-center justify-between">
-        <label className="text-[11px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1">
-          <Sparkles className="w-3.5 h-3.5 text-brand-accent animate-pulse" />
-          Choose Layout Template
-        </label>
-        
-        {/* Navigation arrows */}
-        <div className="flex items-center gap-1">
+    <>
+      <div className="pb-3 border-b border-border-color/40">
+        {/* Row: label + Browse button */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-brand-accent" />
+            <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Template</span>
+          </div>
           <button
-            onClick={() => scroll('left')}
-            className="p-1 hover:bg-card border border-border-color/60 rounded-md transition cursor-pointer text-text-muted hover:text-text-main"
+            onClick={() => openPickerAt(undefined)}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold text-brand-accent hover:bg-brand-accent/10 border border-brand-accent/20 hover:border-brand-accent/40 transition cursor-pointer"
           >
-            <ChevronLeft className="w-3.5 h-3.5" />
+            <LayoutTemplate className="w-3 h-3" />
+            Browse
           </button>
-          <button
-            onClick={() => scroll('right')}
-            className="p-1 hover:bg-card border border-border-color/60 rounded-md transition cursor-pointer text-text-muted hover:text-text-main"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+        </div>
+
+        {/* Chip strip — clicking opens the fullscreen picker at that template's position */}
+        <div className="flex gap-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {TEMPLATES.map((t, i) => {
+            const isActive = activeTemplate === t.id;
+            return (
+              <motion.button
+                key={t.id}
+                ref={isActive ? activeRef : null}
+                onClick={() => openPickerAt(i)}
+                whileTap={{ scale: 0.94 }}
+                className={`relative flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition-all border ${
+                  isActive
+                    ? 'text-white border-transparent shadow-sm'
+                    : 'text-text-muted border-border-color/60 hover:border-brand-accent/40 hover:text-text-main bg-card/30'
+                }`}
+                style={isActive ? { background: t.color, borderColor: t.color } : {}}
+                title={`Preview ${t.name} template`}
+              >
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ background: isActive ? 'rgba(255,255,255,0.6)' : t.color }}
+                />
+                {t.name}
+                {isActive && (
+                  <motion.span
+                    layoutId={`carousel-active-${docType}`}
+                    className="absolute inset-0 rounded-full"
+                    style={{ boxShadow: `0 0 0 2px ${t.color}55` }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Horizontal Carousel Track */}
-      <div
-        ref={scrollContainerRef}
-        className="flex gap-3 overflow-x-auto scrollbar-none pb-2 snap-x snap-mandatory"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {templates.map((t) => {
-          const isActive = activeTemplate === t.id;
-          
-          // Override template to render current selection inside card
-          const localState = {
-            ...state,
-            layoutSettings: {
-              ...state.layoutSettings,
-              template: t.id
-            }
-          };
-
-          return (
-            <motion.button
-              key={t.id}
-              onClick={() => onSelect(t.id)}
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className={`flex-shrink-0 w-[115px] snap-start bg-card/30 border rounded-xl p-2.5 transition text-left cursor-pointer flex flex-col justify-between group relative select-none ${
-                isActive
-                  ? 'border-brand-accent bg-brand-accent/5 ring-2 ring-brand-accent/40'
-                  : 'border-border-color hover:border-brand-accent/55 hover:bg-card/75'
-              }`}
-            >
-              {/* Miniature render area */}
-              <div className="w-full h-[120px] relative overflow-hidden bg-white shadow-sm border border-border-color/40 rounded-lg pointer-events-none select-none mb-2 flex justify-center items-start">
-                <div className="origin-top-left scale-[0.11] w-[794px] h-[1123px]">
-                  {docType === 'resume' ? (
-                    <ResumeTemplateRenderer state={localState as ResumeState} />
-                  ) : (
-                    <CoverLetterTemplateRenderer state={localState as CoverLetterState} />
-                  )}
-                </div>
-              </div>
-
-              {/* Title & Desc */}
-              <div className="space-y-0.5">
-                <span className={`text-[10px] font-bold block truncate leading-tight ${isActive ? 'text-brand-accent' : 'text-text-main'}`}>
-                  {t.name}
-                </span>
-                <span className="text-[8px] text-text-muted block truncate">{t.desc}</span>
-              </div>
-            </motion.button>
-          );
-        })}
-      </div>
-    </div>
+      {/* Full-screen picker portal */}
+      <AnimatePresence>
+        {pickerOpen && (
+          <TemplatePicker
+            isOpen={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            onSelect={(id) => { onSelect(id); setPickerOpen(false); }}
+            docType={docType}
+            startIndex={pickerStartIndex}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 };

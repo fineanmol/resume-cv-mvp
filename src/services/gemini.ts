@@ -122,60 +122,6 @@ ${jobDesc}`;
     return this.request<Partial<CoverLetterState>>(apiKey, payload);
   }
 
-  // Cover Letter PDF Parsing
-  public static async parseCoverLetterPdf(apiKey: string, base64Data: string): Promise<Partial<CoverLetterState>> {
-    const prompt = "Extract and parse the candidate's personal details, cover letter structure, and keywords from this resume/cover letter PDF. Map it into the requested JSON schema. Make sure to populate the paragraphs (p1, p2, p3, p4) and the highlights array (category, text).";
-    
-    const payload = {
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: "application/pdf", data: base64Data } }
-          ]
-        }
-      ],
-      generationConfig: {
-        responseMimeType: "application/json",
-        maxOutputTokens: 4096,
-        thinkingConfig: { thinkingBudget: 0 },
-        responseSchema: {
-          type: "OBJECT",
-          properties: {
-            name: { type: "STRING", description: "Candidate's full name" },
-            subtitle: { type: "STRING", description: "Professional subtitle" },
-            phone: { type: "STRING" },
-            email: { type: "STRING" },
-            linkedin: { type: "STRING" },
-            location: { type: "STRING" },
-            companyName: { type: "STRING" },
-            jobTitle: { type: "STRING" },
-            salutation: { type: "STRING" },
-            p1: { type: "STRING" },
-            p2: { type: "STRING" },
-            p3: { type: "STRING" },
-            p4: { type: "STRING" },
-            highlights: {
-              type: "ARRAY",
-              items: {
-                type: "OBJECT",
-                properties: {
-                  category: { type: "STRING" },
-                  text: { type: "STRING" }
-                },
-                required: ["category", "text"]
-              }
-            }
-          },
-          required: ["name", "subtitle", "phone", "email", "linkedin", "location", "salutation", "p1", "p2", "p3", "p4", "highlights"]
-        }
-      }
-    };
-
-    return this.request<Partial<CoverLetterState>>(apiKey, payload);
-  }
-
   // Resume Tailoring
   public static async tailorResume(
     apiKey: string,

@@ -1,6 +1,8 @@
 import React from 'react';
 import type { ResumeState, ExperienceItem, EducationItem, CertItem, AchievementItem, LanguageItem } from '../types';
-import { Mail, Phone, MapPin, Star, Award, Globe } from 'lucide-react';
+import { Star, Award, Phone, Mail, MapPin } from 'lucide-react';
+import { FONT_CSS } from '../config/fonts';
+import { TemplateHeader } from './TemplateHeader';
 
 interface ResumeTemplateProps {
   state: ResumeState;
@@ -77,6 +79,87 @@ function BulletList({
   );
 }
 
+// ─── LinkedIn icon — module-level so it's not recreated each render ──────────
+const LI: React.FC = () => (
+  <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" />
+  </svg>
+);
+
+// ─── Bottom sections: Certs / Achievements / Languages ───────────────────────
+interface BottomSectionsProps {
+  resumeCerts: ResumeState['resumeCerts'];
+  resumeAchievements: ResumeState['resumeAchievements'];
+  resumeLanguages: ResumeState['resumeLanguages'];
+  sec: React.CSSProperties;
+  isEditable: boolean;
+  ec: string;
+  accentColor: string;
+  headingClass: string;
+  onCertChange?: ResumeTemplateProps['onCertChange'];
+  onAchievementChange?: ResumeTemplateProps['onAchievementChange'];
+  onLanguageChange?: ResumeTemplateProps['onLanguageChange'];
+}
+
+const BottomSections: React.FC<BottomSectionsProps> = ({
+  resumeCerts, resumeAchievements, resumeLanguages,
+  sec, isEditable, ec, accentColor, headingClass,
+  onCertChange, onAchievementChange, onLanguageChange,
+}) => (
+  <>
+    {resumeCerts && resumeCerts.length > 0 && (
+      <section style={sec}>
+        <h3 className={headingClass} style={{ color: accentColor, borderColor: `${accentColor}40` }}>Certifications</h3>
+        <ul className="space-y-1.5 text-xs">
+          {resumeCerts.map((cert, idx) => (
+            <li key={idx}>
+              <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 block"
+                onSave={v => onCertChange?.(idx, 'title', v)} />
+              <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[11px] mt-0.5"
+                onSave={v => onCertChange?.(idx, 'desc', v)} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+    {resumeAchievements && resumeAchievements.length > 0 && (
+      <section style={sec}>
+        <h3 className={headingClass} style={{ color: accentColor, borderColor: `${accentColor}40` }}>Achievements</h3>
+        <ul className="space-y-2 text-xs">
+          {resumeAchievements.map((ach, idx) => (
+            <li key={idx} className="flex gap-2">
+              <Star className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 block"
+                  onSave={v => onAchievementChange?.(idx, 'title', v)} />
+                <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[11px]"
+                  onSave={v => onAchievementChange?.(idx, 'desc', v)} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+    {resumeLanguages && resumeLanguages.length > 0 && (
+      <section style={sec}>
+        <h3 className={headingClass} style={{ color: accentColor, borderColor: `${accentColor}40` }}>Languages</h3>
+        <div className="flex flex-wrap gap-2 text-xs">
+          {resumeLanguages.map((lang, idx) => (
+            <span key={idx} className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+              <E value={lang.name} isEditable={isEditable} editableClass={ec} className="font-semibold text-slate-800"
+                onSave={v => onLanguageChange?.(idx, 'name', v)} />
+              <span className="text-slate-400">/</span>
+              <E value={lang.level} isEditable={isEditable} editableClass={ec} className="text-slate-500"
+                onSave={v => onLanguageChange?.(idx, 'level', v)} />
+            </span>
+          ))}
+        </div>
+      </section>
+    )}
+  </>
+);
+
 export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   state, isEditable = false,
   onFieldChange, onExperienceChange, onEducationChange,
@@ -90,82 +173,50 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
 
   const {
     fontSize, paddingTopBottom, paddingLeftRight, sectionSpacing,
-    lineHeight, template = 'navy', brandColor = '#314855'
+    lineHeight, template = 'navy', brandColor = '#314855',
+    accentColor2,
+    fontFamily = 'inter',
+    headingFont,
+    headerStyle = 'centered',
+    showPhoto = true,
   } = layoutSettings;
+
+  const bodyFontCss    = FONT_CSS[fontFamily] ?? FONT_CSS.inter;
+  const headingFontCss = headingFont ? FONT_CSS[headingFont] : bodyFontCss;
 
   const sheetStyle: React.CSSProperties = {
     fontSize: `${fontSize}pt`,
     padding: `${paddingTopBottom}mm ${paddingLeftRight}mm`,
     lineHeight,
-    color: '#334155'
+    color: '#334155',
+    fontFamily: bodyFontCss,
   };
   const sec: React.CSSProperties = { marginBottom: `${sectionSpacing}px` };
   const skillsList = resumeSkills ? resumeSkills.split(',').map(s => s.trim()).filter(Boolean) : [];
   const ec = isEditable ? 'outline-none hover:bg-slate-100/80 focus:bg-slate-100 rounded px-1 -mx-1 transition' : '';
   const ef = (field: keyof ResumeState) => (v: string) => onFieldChange?.(field, v);
+  const showAvatar = showPhoto && !!avatar;
 
-  // ─── LinkedIn SVG ───────────────────────────────────────────────────────────
-  const LI = () => (
-    <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-      <rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" />
-    </svg>
-  );
+  // Shared TemplateHeader props factory
+  const headerProps = {
+    name:    { value: name,     onSave: ef('name') },
+    subtitle:{ value: subtitle, onSave: ef('subtitle') },
+    phone:   { value: phone,    onSave: ef('phone') },
+    email:   { value: email,    onSave: ef('email') },
+    location:{ value: location, onSave: ef('location') },
+    linkedin:{ value: linkedin, onSave: ef('linkedin') },
+    avatar, showAvatar, brandColor, headingFontCss,
+    headerStyle: headerStyle as import('../types').HeaderStyle,
+    isEditable, ec, sectionSpacing,
+  };
 
-  // ─── Shared bottom sections (Certs / Achievements / Languages) ──────────────
-  const BottomSections = ({ accentColor, headingClass, itemClass }: { accentColor: string; headingClass: string; itemClass?: string }) => (
-    <>
-      {resumeCerts && resumeCerts.length > 0 && (
-        <section style={sec}>
-          <h3 className={headingClass} style={{ color: accentColor, borderColor: `${accentColor}40` }}>Certifications</h3>
-          <ul className="space-y-1.5 text-xs">
-            {resumeCerts.map((cert, idx) => (
-              <li key={idx} className={itemClass}>
-                <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 block"
-                  onSave={v => { const u = [...resumeCerts]; u[idx] = { ...u[idx], title: v }; onCertChange?.(idx, 'title', v); }} />
-                <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[11px] mt-0.5"
-                  onSave={v => onCertChange?.(idx, 'desc', v)} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-      {resumeAchievements && resumeAchievements.length > 0 && (
-        <section style={sec}>
-          <h3 className={headingClass} style={{ color: accentColor, borderColor: `${accentColor}40` }}>Achievements</h3>
-          <ul className="space-y-2 text-xs">
-            {resumeAchievements.map((ach, idx) => (
-              <li key={idx} className="flex gap-2">
-                <Star className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className="text-slate-800 block"
-                    onSave={v => onAchievementChange?.(idx, 'title', v)} />
-                  <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[11px]"
-                    onSave={v => onAchievementChange?.(idx, 'desc', v)} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-      {resumeLanguages && resumeLanguages.length > 0 && (
-        <section style={sec}>
-          <h3 className={headingClass} style={{ color: accentColor, borderColor: `${accentColor}40` }}>Languages</h3>
-          <div className="flex flex-wrap gap-2 text-xs">
-            {resumeLanguages.map((lang, idx) => (
-              <span key={idx} className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                <E value={lang.name} isEditable={isEditable} editableClass={ec} className="font-semibold text-slate-800"
-                  onSave={v => onLanguageChange?.(idx, 'name', v)} />
-                <span className="text-slate-400">/</span>
-                <E value={lang.level} isEditable={isEditable} editableClass={ec} className="text-slate-500"
-                  onSave={v => onLanguageChange?.(idx, 'level', v)} />
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
-    </>
-  );
+  // accentColor2 badge style — falls back to brandColor if not set
+  const badgeStyle = (i: number): React.CSSProperties => accentColor2
+    ? { background: `${i % 2 === 0 ? accentColor2 : brandColor}22`, color: i % 2 === 0 ? accentColor2 : brandColor, borderColor: `${i % 2 === 0 ? accentColor2 : brandColor}44` }
+    : { background: undefined };
+
+  // Shared props for BottomSections — avoids repeating at every call site
+  const bottomProps = { resumeCerts, resumeAchievements, resumeLanguages, sec, isEditable, ec, onCertChange, onAchievementChange, onLanguageChange };
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 1. NAVY ELEGANT
@@ -173,21 +224,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   if (template === 'navy') {
     const H = 'text-sm font-bold uppercase tracking-wider border-b pb-1 mb-2';
     return (
-      <div className="pdf-sheet font-sans" style={sheetStyle} id="resume-sheet">
-        <header className="text-center border-b-2 pb-4 mb-4" style={{ borderColor: brandColor }}>
-          <E tag="h1" value={name} isEditable={isEditable} editableClass={ec}
-            className="text-3xl font-bold tracking-tight" style={{ color: brandColor }}
-            onSave={ef('name')} />
-          <E tag="p" value={subtitle} isEditable={isEditable} editableClass={ec}
-            className="text-sm font-medium text-slate-500 uppercase mt-1 tracking-wide"
-            onSave={ef('subtitle')} />
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-slate-600 mt-3">
-            {(phone || isEditable) && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /><E value={phone || 'Phone'} isEditable={isEditable} editableClass={ec} onSave={ef('phone')} /></span>}
-            {(email || isEditable) && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /><E value={email || 'Email'} isEditable={isEditable} editableClass={ec} onSave={ef('email')} /></span>}
-            {(location || isEditable) && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /><E value={location || 'Location'} isEditable={isEditable} editableClass={ec} onSave={ef('location')} /></span>}
-            {(linkedin || isEditable) && <span className="flex items-center gap-1"><LI /><E value={linkedin || 'LinkedIn'} isEditable={isEditable} editableClass={ec} onSave={ef('linkedin')} /></span>}
-          </div>
-        </header>
+      <div className="pdf-sheet" style={sheetStyle} id="resume-sheet">
+        <TemplateHeader {...headerProps} />
 
         {(resumeSummary || isEditable) && (
           <section style={sec}>
@@ -205,7 +243,12 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
                   className="text-xs p-2 bg-slate-50 border border-dashed border-slate-200 text-slate-800"
                   onSave={ef('resumeSkills')} />
               : <div className="flex flex-wrap gap-x-2 gap-y-1.5 text-xs">
-                  {skillsList.map((s, i) => <span key={i} className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded font-medium border border-slate-200">{s}</span>)}
+                  {skillsList.map((s, i) => (
+                    <span key={i} className="px-2 py-0.5 rounded font-medium border"
+                      style={accentColor2 ? badgeStyle(i) : { background: '#f1f5f9', color: '#1e293b', borderColor: '#e2e8f0' }}>
+                      {s}
+                    </span>
+                  ))}
                 </div>
             }
           </section>
@@ -254,7 +297,7 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
           </section>
         )}
 
-        <BottomSections accentColor={brandColor} headingClass={H} />
+        <BottomSections {...bottomProps} accentColor={brandColor} headingClass={H} />
       </div>
     );
   }
@@ -265,19 +308,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   if (template === 'serif') {
     const H = 'text-[13px] font-bold text-center border-b pb-0.5 mb-3 uppercase tracking-widest text-slate-800';
     return (
-      <div className="pdf-sheet font-serif text-justify" style={sheetStyle} id="resume-sheet">
-        <header className="text-center mb-5">
-          <E tag="h1" value={name} isEditable={isEditable} editableClass={ec}
-            className="text-3xl font-normal tracking-wide text-slate-900" style={{ color: brandColor }} onSave={ef('name')} />
-          <E tag="p" value={subtitle} isEditable={isEditable} editableClass={ec}
-            className="text-xs italic text-slate-500 mt-1" onSave={ef('subtitle')} />
-          <div className="flex justify-center gap-x-3 text-xs text-slate-600 mt-2 font-sans flex-wrap">
-            {(phone || isEditable) && <><E value={phone || 'Phone'} isEditable={isEditable} editableClass={ec} onSave={ef('phone')} /><span>&bull;</span></>}
-            {(email || isEditable) && <><E value={email || 'Email'} isEditable={isEditable} editableClass={ec} onSave={ef('email')} /><span>&bull;</span></>}
-            {(location || isEditable) && <E value={location || 'Location'} isEditable={isEditable} editableClass={ec} onSave={ef('location')} />}
-            {(linkedin || isEditable) && <><span>&bull;</span><E value={linkedin || 'LinkedIn'} isEditable={isEditable} editableClass={ec} onSave={ef('linkedin')} /></>}
-          </div>
-        </header>
+      <div className="pdf-sheet text-justify" style={sheetStyle} id="resume-sheet">
+        <TemplateHeader {...headerProps} />
 
         {(resumeSummary || isEditable) && (
           <section style={sec}>
@@ -294,7 +326,13 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               ? <E tag="div" value={resumeSkills} isEditable={isEditable} editableClass={ec}
                   className="text-xs p-2 bg-slate-50 border border-dashed border-slate-200 font-sans text-center"
                   onSave={ef('resumeSkills')} />
-              : <p className="text-slate-700 leading-relaxed text-center font-sans">{skillsList.join('  •  ')}</p>
+              : accentColor2
+                ? <div className="flex flex-wrap justify-center gap-x-2 gap-y-1.5 text-xs font-sans">
+                    {skillsList.map((s, i) => (
+                      <span key={i} className="px-2 py-0.5 rounded font-medium border" style={badgeStyle(i)}>{s}</span>
+                    ))}
+                  </div>
+                : <p className="text-slate-700 leading-relaxed text-center font-sans">{skillsList.join('  •  ')}</p>
             }
           </section>
         )}
@@ -348,7 +386,7 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
           </section>
         )}
 
-        <BottomSections accentColor={brandColor}
+        <BottomSections {...bottomProps} accentColor={brandColor}
           headingClass="text-[13px] font-bold text-center border-b pb-0.5 mb-2 uppercase tracking-widest text-slate-800" />
       </div>
     );
@@ -360,10 +398,10 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   if (template === 'sidebar') {
     const SH = 'text-xs font-bold uppercase tracking-wider text-slate-900 border-b pb-1 mb-2';
     return (
-      <div className="pdf-sheet p-0 font-sans text-slate-800 flex flex-row" style={{ fontSize: `${fontSize}pt` }} id="resume-sheet">
+      <div className="pdf-sheet p-0 text-slate-800 flex flex-row" style={{ ...sheetStyle, padding: 0 }} id="resume-sheet">
         {/* Left column */}
         <aside className="w-[220px] flex-shrink-0 flex flex-col gap-5 p-5" style={{ background: brandColor + '15', borderRight: `3px solid ${brandColor}` }}>
-          {avatar && (
+          {showAvatar && (
             <div className="w-20 h-20 rounded-full overflow-hidden mx-auto border-2" style={{ borderColor: brandColor }}>
               <img src={avatar} alt={name} className="w-full h-full object-cover" />
             </div>
@@ -385,7 +423,12 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
                 ? <E tag="div" value={resumeSkills} isEditable={isEditable} editableClass={ec}
                     className="text-[10px] p-1 bg-white/50 border border-dashed border-slate-300" onSave={ef('resumeSkills')} />
                 : <div className="flex flex-wrap gap-1 text-[10px]">
-                    {skillsList.map((s, i) => <span key={i} className="px-1.5 py-0.5 rounded-full font-medium text-white" style={{ background: brandColor + 'cc' }}>{s}</span>)}
+                    {skillsList.map((s, i) => (
+                      <span key={i} className="px-1.5 py-0.5 rounded-full font-medium"
+                        style={accentColor2 ? badgeStyle(i) : { background: brandColor + 'cc', color: '#fff' }}>
+                        {s}
+                      </span>
+                    ))}
                   </div>
               }
             </div>
@@ -435,10 +478,10 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
         </aside>
 
         {/* Right column */}
-        <main className="flex-1 p-6" style={{ lineHeight }}>
+        <main className="flex-1 p-6" style={{ lineHeight, fontFamily: bodyFontCss }}>
           <header className="mb-4 pb-3 border-b-2" style={{ borderColor: brandColor }}>
             <E tag="h1" value={name} isEditable={isEditable} editableClass={ec}
-              className="text-3xl font-extrabold tracking-tight" style={{ color: brandColor }} onSave={ef('name')} />
+              className="text-3xl font-extrabold tracking-tight" style={{ color: brandColor, fontFamily: headingFontCss }} onSave={ef('name')} />
             <E tag="p" value={subtitle} isEditable={isEditable} editableClass={ec}
               className="text-sm font-medium text-slate-500 uppercase mt-1 tracking-wide" onSave={ef('subtitle')} />
           </header>
@@ -504,19 +547,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   if (template === 'tech') {
     const MH = 'font-mono text-xs font-bold text-slate-950 uppercase tracking-widest border-b pb-1 mb-2.5';
     return (
-      <div className="pdf-sheet font-sans" style={sheetStyle} id="resume-sheet">
-        <header className="border-l-4 pl-4 py-1 mb-5" style={{ borderColor: brandColor }}>
-          <E tag="h1" value={name} isEditable={isEditable} editableClass={ec}
-            className="text-3xl font-extrabold tracking-tight text-slate-900" onSave={ef('name')} />
-          <E tag="p" value={`> ${subtitle}`} isEditable={isEditable} editableClass={ec}
-            className="text-xs font-mono text-slate-500 mt-1 uppercase tracking-wider" onSave={v => ef('subtitle')(v.replace(/^>\s*/, ''))} />
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-mono text-slate-600 mt-3">
-            {(phone || isEditable) && <span>[phone] <E value={phone || 'Phone'} isEditable={isEditable} editableClass={ec} onSave={ef('phone')} /></span>}
-            {(email || isEditable) && <span>[email] <E value={email || 'Email'} isEditable={isEditable} editableClass={ec} onSave={ef('email')} /></span>}
-            {(location || isEditable) && <span>[loc] <E value={location || 'Location'} isEditable={isEditable} editableClass={ec} onSave={ef('location')} /></span>}
-            {(linkedin || isEditable) && <span>[li] <E value={linkedin || 'LinkedIn'} isEditable={isEditable} editableClass={ec} onSave={ef('linkedin')} /></span>}
-          </div>
-        </header>
+      <div className="pdf-sheet" style={sheetStyle} id="resume-sheet">
+        <TemplateHeader {...headerProps} />
 
         {(resumeSummary || isEditable) && (
           <section style={sec}>
@@ -533,7 +565,12 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               ? <E tag="div" value={resumeSkills} isEditable={isEditable} editableClass={ec}
                   className="text-[10px] font-mono p-2 bg-slate-50 border border-dashed border-slate-200" onSave={ef('resumeSkills')} />
               : <div className="flex flex-wrap gap-1.5 text-[10px] font-mono">
-                  {skillsList.map((s, i) => <span key={i} className="border border-slate-300 rounded px-2 py-0.5 text-slate-700 bg-slate-50">{s}</span>)}
+                  {skillsList.map((s, i) => (
+                    <span key={i} className="border rounded px-2 py-0.5"
+                      style={accentColor2 ? badgeStyle(i) : { borderColor: '#cbd5e1', color: '#334155', background: '#f8fafc' }}>
+                      {s}
+                    </span>
+                  ))}
                 </div>
             }
           </section>
@@ -631,19 +668,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   if (template === 'ats') {
     const H = 'text-xs font-bold uppercase tracking-widest border-b-2 pb-0.5 mb-2 text-slate-900';
     return (
-      <div className="pdf-sheet font-sans text-slate-900" style={{ ...sheetStyle, color: '#1a1a1a' }} id="resume-sheet">
-        <header className="mb-4">
-          <E tag="h1" value={name} isEditable={isEditable} editableClass={ec}
-            className="text-2xl font-bold text-slate-900" onSave={ef('name')} />
-          <E tag="p" value={subtitle} isEditable={isEditable} editableClass={ec}
-            className="text-sm text-slate-700 mt-0.5" onSave={ef('subtitle')} />
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-700 mt-1.5">
-            {(phone || isEditable) && <span><E value={phone || 'Phone'} isEditable={isEditable} editableClass={ec} onSave={ef('phone')} /></span>}
-            {(email || isEditable) && <span>| <E value={email || 'Email'} isEditable={isEditable} editableClass={ec} onSave={ef('email')} /></span>}
-            {(location || isEditable) && <span>| <E value={location || 'Location'} isEditable={isEditable} editableClass={ec} onSave={ef('location')} /></span>}
-            {(linkedin || isEditable) && <span>| <E value={linkedin || 'LinkedIn'} isEditable={isEditable} editableClass={ec} onSave={ef('linkedin')} /></span>}
-          </div>
-        </header>
+      <div className="pdf-sheet text-slate-900" style={{ ...sheetStyle, color: '#1a1a1a' }} id="resume-sheet">
+        <TemplateHeader {...headerProps} />
 
         {(resumeSummary || isEditable) && (
           <section style={sec}>
@@ -659,7 +685,13 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
             {isEditable
               ? <E tag="div" value={resumeSkills} isEditable={isEditable} editableClass={ec}
                   className="text-xs p-1 bg-slate-50 border border-dashed border-slate-200" onSave={ef('resumeSkills')} />
-              : <p className="text-xs text-slate-800 leading-relaxed">{skillsList.join(' • ')}</p>
+              : accentColor2
+                ? <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs">
+                    {skillsList.map((s, i) => (
+                      <span key={i} className="px-1.5 py-0.5 rounded border" style={badgeStyle(i)}>{s}</span>
+                    ))}
+                  </div>
+                : <p className="text-xs text-slate-800 leading-relaxed">{skillsList.join(' • ')}</p>
             }
           </section>
         )}
@@ -764,30 +796,9 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
   // ═══════════════════════════════════════════════════════════════════════════
   const H6 = 'text-xs font-bold uppercase tracking-widest pb-1 mb-2 border-b';
   return (
-    <div className="pdf-sheet font-sans" style={{ ...sheetStyle, color: '#1e293b' }} id="resume-sheet">
-      {/* Full-width branded header band */}
-      <header className="text-white px-6 py-5 -mx-[var(--pad)] -mt-[var(--pad)] mb-5 rounded-none"
-        style={{ background: `linear-gradient(135deg, ${brandColor} 0%, ${brandColor}cc 100%)`, margin: `-${paddingTopBottom}mm -${paddingLeftRight}mm 0`, padding: '20px 30px 18px' }}>
-        <div className="flex justify-between items-start gap-4">
-          <div>
-            <E tag="h1" value={name} isEditable={isEditable} editableClass="outline-none hover:bg-white/10 focus:bg-white/10 rounded px-1 -mx-1 transition"
-              className="text-3xl font-bold tracking-tight text-white" onSave={ef('name')} />
-            <E tag="p" value={subtitle} isEditable={isEditable} editableClass="outline-none hover:bg-white/10 focus:bg-white/10 rounded px-1 -mx-1 transition"
-              className="text-sm text-white/80 mt-1 uppercase tracking-wider" onSave={ef('subtitle')} />
-          </div>
-          {avatar && (
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/40 flex-shrink-0">
-              <img src={avatar} alt={name} className="w-full h-full object-cover" />
-            </div>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-x-5 gap-y-0.5 text-xs text-white/80 mt-3">
-          {(phone || isEditable) && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /><E value={phone || 'Phone'} isEditable={isEditable} editableClass="outline-none" className="text-white/90" onSave={ef('phone')} /></span>}
-          {(email || isEditable) && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /><E value={email || 'Email'} isEditable={isEditable} editableClass="outline-none" className="text-white/90" onSave={ef('email')} /></span>}
-          {(location || isEditable) && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /><E value={location || 'Location'} isEditable={isEditable} editableClass="outline-none" className="text-white/90" onSave={ef('location')} /></span>}
-          {(linkedin || isEditable) && <span className="flex items-center gap-1"><Globe className="w-3 h-3" /><E value={linkedin || 'LinkedIn'} isEditable={isEditable} editableClass="outline-none" className="text-white/90" onSave={ef('linkedin')} /></span>}
-        </div>
-      </header>
+    <div className="pdf-sheet" style={{ ...sheetStyle, color: '#1e293b' }} id="resume-sheet">
+      {/* Full-width branded header band — now uses shared TemplateHeader */}
+    <TemplateHeader {...headerProps} />
 
       {(resumeSummary || isEditable) && (
         <section style={sec}>
@@ -804,7 +815,12 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
             ? <E tag="div" value={resumeSkills} isEditable={isEditable} editableClass={ec}
                 className="text-xs p-2 bg-slate-50 border border-dashed border-slate-200" onSave={ef('resumeSkills')} />
             : <div className="flex flex-wrap gap-x-2 gap-y-1.5 text-xs">
-                {skillsList.map((s, i) => <span key={i} className="px-2.5 py-0.5 rounded-full text-white text-[11px] font-medium" style={{ background: brandColor }}>{s}</span>)}
+                {skillsList.map((s, i) => (
+                  <span key={i} className="px-2.5 py-0.5 rounded-full text-[11px] font-medium"
+                    style={accentColor2 ? { ...badgeStyle(i), borderRadius: '9999px' } : { background: brandColor, color: '#fff' }}>
+                    {s}
+                  </span>
+                ))}
               </div>
           }
         </section>
@@ -853,8 +869,8 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
         </section>
       )}
 
-      <BottomSections accentColor={brandColor}
-        headingClass={`${H6} text-[brandColor]`} />
+      <BottomSections {...bottomProps} accentColor={brandColor}
+        headingClass={H6} />
     </div>
   );
 };

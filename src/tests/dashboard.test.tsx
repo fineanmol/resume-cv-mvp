@@ -66,12 +66,12 @@ describe('Dashboard Workspace and Draft actions', () => {
     const newResumeBtn = screen.getByRole('button', { name: /New Resume/i });
     fireEvent.click(newResumeBtn);
 
-    // Template picker should be visible
-    expect(screen.getByText(/Select Resume Layout/i)).toBeInTheDocument();
-    
-    // Choose Navy Elegant
-    const navyOption = screen.getByText('Navy Elegant');
-    fireEvent.click(navyOption);
+    // Template picker should be visible (new carousel picker)
+    expect(screen.getByText(/Choose Resume Layout/i)).toBeInTheDocument();
+
+    // First template shown is Navy — click Apply Layout to confirm
+    const applyBtn = screen.getByRole('button', { name: /Apply Layout/i });
+    fireEvent.click(applyBtn);
 
     expect(mockCreate).toHaveBeenCalledWith('resume', 'navy');
   });

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import type { ResumeState } from '../types';
-import { TemplateCarousel } from './TemplateCarousel';
+import { SectionHeader } from './SectionHeader';
 import { PdfService } from '../services/pdf';
 import { GeminiService } from '../services/gemini';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Plus, Trash2, Sparkles, ChevronDown, ChevronUp,
+  Plus, Trash2, Sparkles,
   Upload, User, Briefcase, GraduationCap, Award,
   Loader, Star, Globe, FileText, AlignLeft
 } from 'lucide-react';
@@ -53,7 +53,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
       const ab = await file.arrayBuffer();
       const b64 = btoa(new Uint8Array(ab).reduce((d, b) => d + String.fromCharCode(b), ''));
       let avatar = '';
-      try { const p = await PdfService.extractFirstPhoto(file); if (p) avatar = p; } catch {}
+      try { const p = await PdfService.extractFirstPhoto(file); if (p) avatar = p; } catch { /* photo extraction optional */ }
       const parsed = await GeminiService.parseResumePdf(geminiKey, b64);
       onChange(prev => ({ ...prev, avatar: avatar || prev.avatar || '', ...parsed }) as ResumeState);
       alert('PDF Resume imported successfully!');
@@ -76,30 +76,8 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
   const updLang = (idx: number, k: string, v: string) =>
     onChange(prev => { const u = [...prev.resumeLanguages]; u[idx] = { ...u[idx], [k]: clean(v) }; return { ...prev, resumeLanguages: u }; });
 
-  const SectionHeader = ({ id, icon: Icon, label, badge }: { id: string; icon: React.ElementType; label: string; badge?: number }) => (
-    <button
-      onClick={() => toggle(id)}
-      className="w-full flex items-center justify-between p-4 font-bold text-xs text-text-main hover:bg-card/20 transition uppercase tracking-wider cursor-pointer"
-    >
-      <span className="flex items-center gap-2">
-        <Icon className="w-4 h-4 text-brand-accent" />
-        {label}
-        {badge !== undefined && <span className="ml-1 text-text-muted font-normal normal-case">({badge})</span>}
-      </span>
-      {openSection === id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-    </button>
-  );
-
   return (
     <aside className="w-[380px] border-r border-border-color/60 bg-sidebar flex flex-col flex-shrink-0 overflow-y-auto p-5 space-y-5">
-
-      {/* Template Carousel */}
-      <TemplateCarousel
-        docType="resume"
-        state={state}
-        activeTemplate={state.layoutSettings.template || 'navy'}
-        onSelect={t => onChange(prev => ({ ...prev, layoutSettings: { ...prev.layoutSettings, template: t } }))}
-      />
 
       {/* PDF Import */}
       <div className="bg-card/20 border border-border-color/60 rounded-xl p-4 space-y-2.5">
@@ -123,7 +101,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
 
         {/* ── SECTION: Contact ─────────────────────────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
-          <SectionHeader id="personal" icon={User} label="Contact Details" />
+          <SectionHeader id="personal" icon={User} label="Contact Details" openSection={openSection} onToggle={toggle} />
           <AnimatePresence initial={false}>
             {openSection === 'personal' && (
               <motion.div key="personal" {...SECTION_ANIM} style={{ overflow: "hidden" }}>
@@ -152,7 +130,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
 
         {/* ── SECTION: Summary ─────────────────────────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
-          <SectionHeader id="summary" icon={AlignLeft} label="Profile Summary" />
+          <SectionHeader id="summary" icon={AlignLeft} label="Profile Summary" openSection={openSection} onToggle={toggle} />
           <AnimatePresence initial={false}>
             {openSection === 'summary' && (
               <motion.div key="summary" {...SECTION_ANIM} style={{ overflow: "hidden" }}>
@@ -172,7 +150,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
 
         {/* ── SECTION: Skills ──────────────────────────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
-          <SectionHeader id="skills" icon={FileText} label="Skills" />
+          <SectionHeader id="skills" icon={FileText} label="Skills" openSection={openSection} onToggle={toggle} />
           <AnimatePresence initial={false}>
             {openSection === 'skills' && (
               <motion.div key="skills" {...SECTION_ANIM} style={{ overflow: "hidden" }}>
@@ -193,7 +171,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
 
         {/* ── SECTION: Experience ──────────────────────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
-          <SectionHeader id="experience" icon={Briefcase} label="Work History" badge={state.resumeExperience.length} />
+          <SectionHeader id="experience" icon={Briefcase} label="Work History" badge={state.resumeExperience.length} openSection={openSection} onToggle={toggle} />
           <AnimatePresence initial={false}>
             {openSection === 'experience' && (
               <motion.div key="experience" {...SECTION_ANIM} style={{ overflow: "hidden" }}>
@@ -240,7 +218,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
 
         {/* ── SECTION: Education ───────────────────────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
-          <SectionHeader id="education" icon={GraduationCap} label="Education" badge={state.resumeEducation.length} />
+          <SectionHeader id="education" icon={GraduationCap} label="Education" badge={state.resumeEducation.length} openSection={openSection} onToggle={toggle} />
           <AnimatePresence initial={false}>
             {openSection === 'education' && (
               <motion.div key="education" {...SECTION_ANIM} style={{ overflow: "hidden" }}>
@@ -280,7 +258,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
 
         {/* ── SECTION: Certifications ──────────────────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
-          <SectionHeader id="certs" icon={Award} label="Certifications" badge={state.resumeCerts.length} />
+          <SectionHeader id="certs" icon={Award} label="Certifications" badge={state.resumeCerts.length} openSection={openSection} onToggle={toggle} />
           <AnimatePresence initial={false}>
             {openSection === 'certs' && (
               <motion.div key="certs" {...SECTION_ANIM} style={{ overflow: "hidden" }}>
@@ -315,7 +293,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
 
         {/* ── SECTION: Achievements ────────────────────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
-          <SectionHeader id="achievements" icon={Star} label="Achievements" badge={state.resumeAchievements.length} />
+          <SectionHeader id="achievements" icon={Star} label="Achievements" badge={state.resumeAchievements.length} openSection={openSection} onToggle={toggle} />
           <AnimatePresence initial={false}>
             {openSection === 'achievements' && (
               <motion.div key="achievements" {...SECTION_ANIM} style={{ overflow: "hidden" }}>
@@ -350,7 +328,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
 
         {/* ── SECTION: Languages ───────────────────────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
-          <SectionHeader id="languages" icon={Globe} label="Languages" badge={state.resumeLanguages.length} />
+          <SectionHeader id="languages" icon={Globe} label="Languages" badge={state.resumeLanguages.length} openSection={openSection} onToggle={toggle} />
           <AnimatePresence initial={false}>
             {openSection === 'languages' && (
               <motion.div key="languages" {...SECTION_ANIM} style={{ overflow: "hidden" }}>
@@ -375,64 +353,6 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
                       </motion.div>
                     ))}
                   </AnimatePresence>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* ── SECTION: Layout & Spacing ────────────────────────── */}
-        <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
-          <SectionHeader id="layout" icon={Award} label="Layout & Spacing" />
-          <AnimatePresence initial={false}>
-            {openSection === 'layout' && (
-              <motion.div key="layout" {...SECTION_ANIM} style={{ overflow: "hidden" }}>
-                <div className="p-4 border-t border-border-color/40 space-y-4">
-                  <div>
-                    <label className="block text-[10px] text-text-muted uppercase font-bold tracking-wider mb-2">Template</label>
-                    <select
-                      value={state.layoutSettings.template || 'navy'}
-                      onChange={e => onChange(p => ({ ...p, layoutSettings: { ...p.layoutSettings, template: e.target.value as 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' } }))}
-                      className="w-full bg-input-bg border border-border-color rounded-lg px-3 py-2 text-xs text-text-main focus:outline-none focus:border-brand-accent"
-                    >
-                      <option value="navy">Navy Elegant</option>
-                      <option value="serif">Harvard Serif</option>
-                      <option value="sidebar">Creative Sidebar</option>
-                      <option value="tech">Tech Monospace</option>
-                      <option value="ats">Clean ATS</option>
-                      <option value="executive">Executive</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] text-text-muted uppercase font-bold tracking-wider mb-2">Brand Colour</label>
-                    <div className="flex items-center gap-3">
-                      <input type="color" value={state.layoutSettings.brandColor || '#314855'}
-                        onChange={e => onChange(p => ({ ...p, layoutSettings: { ...p.layoutSettings, brandColor: e.target.value } }))}
-                        className="w-8 h-8 rounded border border-border-color cursor-pointer bg-transparent" />
-                      <span className="text-xs text-text-muted font-mono">{state.layoutSettings.brandColor || '#314855'}</span>
-                    </div>
-                  </div>
-
-                  {([
-                    { label: 'Font Size', key: 'fontSize', unit: 'pt', min: 8, max: 14, step: 0.5, parse: parseFloat },
-                    { label: 'Padding Top/Bottom', key: 'paddingTopBottom', unit: 'mm', min: 6, max: 25, step: 1, parse: parseInt },
-                    { label: 'Padding Left/Right', key: 'paddingLeftRight', unit: 'mm', min: 6, max: 25, step: 1, parse: parseInt },
-                    { label: 'Section Spacing', key: 'sectionSpacing', unit: 'px', min: 4, max: 25, step: 1, parse: parseInt },
-                    { label: 'Line Height', key: 'lineHeight', unit: '', min: 1.1, max: 1.8, step: 0.05, parse: parseFloat },
-                    { label: 'Column Gap', key: 'columnGap', unit: 'px', min: 8, max: 30, step: 1, parse: parseInt },
-                  ] as const).map(({ label, key, unit, min, max, step, parse }) => (
-                    <div key={key}>
-                      <div className="flex justify-between text-[10px] text-text-muted mb-1 font-bold">
-                        <span>{label}</span>
-                        <span>{(state.layoutSettings as unknown as Record<string, number>)[key]}{unit}</span>
-                      </div>
-                      <input type="range" min={min} max={max} step={step}
-                        value={(state.layoutSettings as unknown as Record<string, number>)[key]}
-                        onChange={e => onChange(p => ({ ...p, layoutSettings: { ...p.layoutSettings, [key]: parse(e.target.value) } }))}
-                        className="w-full accent-brand-accent" />
-                    </div>
-                  ))}
                 </div>
               </motion.div>
             )}

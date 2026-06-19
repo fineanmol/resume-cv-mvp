@@ -76,6 +76,12 @@ export const DEFAULT_RESUME_STATE: ResumeState = {
     sectionSpacing: 10,
     lineHeight: 1.4,
     columnGap: 16,
-    template: 'navy'
+    template: 'navy',
+    brandColor: '#314855',
+    accentColor2: '#0284c7',
+    fontFamily: 'inter',
+    headingFont: 'inter',
+    headerStyle: 'centered',
+    showPhoto: true,
   }
 };

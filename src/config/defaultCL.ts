@@ -46,6 +46,12 @@ export const DEFAULT_CL_STATE: CoverLetterState = {
     paddingLeftRight: 15,
     sectionSpacing: 18,
     lineHeight: 1.55,
-    template: 'navy'
+    template: 'navy',
+    brandColor: '#314855',
+    accentColor2: '#0284c7',
+    fontFamily: 'inter',
+    headingFont: 'inter',
+    headerStyle: 'centered',
+    showPhoto: true,
   }
 };
