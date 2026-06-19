@@ -4,6 +4,7 @@ import {
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
 } from 'lucide-react';
 import { ActiveSectionContext } from './ActiveSectionContext';
+import type { LayoutSettings } from '../../types';
 
 export interface SectionWrapperProps {
   id: string;
@@ -24,8 +25,8 @@ export interface SectionWrapperProps {
   onSkillsStyleChange?: (style: 'chips' | 'normal') => void;
   skillsValue?: string;
   onSkillsValueChange?: (val: string) => void;
-  layoutSettings?: any;
-  onLayoutSettingsChange?: (patch: Partial<any>) => void;
+  layoutSettings?: LayoutSettings;
+  onLayoutSettingsChange?: (patch: Partial<LayoutSettings>) => void;
 }
 
 export const SectionWrapper: React.FC<SectionWrapperProps> = ({

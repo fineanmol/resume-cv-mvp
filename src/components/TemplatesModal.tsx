@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2 } from 'lucide-react';
 import { ResumeTemplateRenderer } from '../templates/ResumeTemplates';
 import { CoverLetterTemplateRenderer } from '../templates/CoverLetterTemplates';
-import type { TemplateId } from '../types';
+import type { TemplateId, ResumeState, CoverLetterState } from '../types';
 import { TEMPLATE_CATALOG } from '../config/templates';
 import { Modal } from './ui/Modal';
 
@@ -12,7 +12,7 @@ interface TemplatesModalProps {
   currentTemplate: TemplateId;
   onSelectTemplate: (templateId: TemplateId) => void;
   docType: 'resume' | 'coverletter';
-  documentState: any; // ResumeState or CoverLetterState
+  documentState: ResumeState | CoverLetterState;
 }
 
 export const TemplatesModal: React.FC<TemplatesModalProps> = ({

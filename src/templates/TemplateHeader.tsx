@@ -1,22 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mail, Phone, MapPin, Settings, Camera, Trash2 } from 'lucide-react';
-import type { HeaderStyle } from '../types';
+import type { HeaderStyle, LayoutSettings } from '../types';
 import { EditableText } from './shared/EditableText';
-
-export function formatLinkedinUrl(url: string): string {
-  if (!url) return '';
-  const trimmed = url.trim();
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return trimmed;
-  }
-  if (trimmed.startsWith('linkedin.com') || trimmed.startsWith('www.linkedin.com')) {
-    return `https://${trimmed}`;
-  }
-  if (trimmed.startsWith('in/')) {
-    return `https://linkedin.com/${trimmed}`;
-  }
-  return `https://linkedin.com/in/${trimmed}`;
-}
+import { formatLinkedinUrl } from '../utils/linkedin';
 
 const LI: React.FC = () => (
   <svg className="w-3 h-3 flex-shrink-0 mt-[1px]" viewBox="0 0 24 24" fill="none"
@@ -46,8 +32,8 @@ export interface TemplateHeaderProps {
   isEditable: boolean;
   ec: string; // editableClass
   sectionSpacing: number;
-  layoutSettings?: any;
-  onLayoutSettingsChange?: (settings: Partial<any>) => void;
+  layoutSettings?: LayoutSettings;
+  onLayoutSettingsChange?: (settings: Partial<LayoutSettings>) => void;
   onAvatarChange?: (url: string) => void;
   isActive?: boolean;
   onSelect?: () => void;
@@ -60,8 +46,8 @@ export const AvatarCircleEditable: React.FC<{
   border?: string;
   isEditable: boolean;
   onAvatarChange?: (url: string) => void;
-  layoutSettings?: any;
-  onLayoutSettingsChange?: (settings: Partial<any>) => void;
+  layoutSettings?: LayoutSettings;
+  onLayoutSettingsChange?: (settings: Partial<LayoutSettings>) => void;
 }> = ({ src, name, size = 'w-16 h-16', border, isEditable, onAvatarChange, layoutSettings, onLayoutSettingsChange }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -259,7 +245,7 @@ export const AvatarCircleEditable: React.FC<{
 const ContactRow: React.FC<{
   phone: EditField; email: EditField; location: EditField; linkedin: EditField;
   isEditable: boolean; ec: string; cls?: string; itemCls?: string;
-  layoutSettings?: any;
+  layoutSettings?: LayoutSettings;
 }> = ({ phone, email, location, linkedin, isEditable, ec, cls, itemCls, layoutSettings }) => {
   const settings = layoutSettings || {};
   const hasPhone = (settings.showPhone ?? true) && !!(phone?.value && phone.value.trim());
@@ -319,7 +305,7 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
   const lightEc = 'outline-none hover:bg-white/10 focus:bg-white/10 rounded px-1 -mx-1 transition';
   const nameStyle: React.CSSProperties = { fontFamily: p.headingFontCss };
 
-  const handleSettingsChange = (patch: any) => {
+  const handleSettingsChange = (patch: Partial<LayoutSettings>) => {
     if (p.onLayoutSettingsChange) {
       p.onLayoutSettingsChange(patch);
     }

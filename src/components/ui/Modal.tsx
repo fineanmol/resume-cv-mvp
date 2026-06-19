@@ -15,7 +15,6 @@ interface ModalProps {
 
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
-  onClose: _onClose,
   children,
   maxWidth = 'max-w-md',
   panelClassName = '',

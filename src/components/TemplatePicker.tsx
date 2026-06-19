@@ -27,14 +27,6 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
   const [idx, setIdx]       = useState(startIndex ?? 0);
   const [dir, setDir]       = useState(0);
 
-  // Jump to startIndex whenever the picker is (re-)opened at a new chip
-  useEffect(() => {
-    if (isOpen && startIndex !== undefined) {
-      setIdx(startIndex);
-      setDir(0);
-    }
-  }, [isOpen, startIndex]);
-
   const go = useCallback((step: number) => {
     setDir(step);
     setIdx(i => (i + step + TEMPLATE_CATALOG.length) % TEMPLATE_CATALOG.length);

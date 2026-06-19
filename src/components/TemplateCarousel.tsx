@@ -87,6 +87,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
       <AnimatePresence>
         {pickerOpen && (
           <TemplatePicker
+            key={`${pickerOpen}-${pickerStartIndex ?? 0}`}
             isOpen={pickerOpen}
             onClose={() => setPickerOpen(false)}
             onSelect={(id) => { onSelect(id); setPickerOpen(false); }}

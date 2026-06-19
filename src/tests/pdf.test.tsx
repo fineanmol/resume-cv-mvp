@@ -1,12 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PdfService } from '../services/pdf';
 
+type MockPdfChain = {
+  then: (cb: () => void) => MockPdfChain;
+  catch: () => MockPdfChain;
+};
+
 const mockFrom = vi.fn().mockReturnThis();
 const mockSet = vi.fn().mockReturnThis();
-const mockSave = vi.fn().mockImplementation(function(this: any) {
+const mockSave = vi.fn().mockImplementation(function (this: MockPdfChain) {
   return this;
 });
-const mockThen = vi.fn().mockImplementation(function(this: any, cb) {
+const mockThen = vi.fn().mockImplementation(function (this: MockPdfChain, cb: () => void) {
   cb();
   return this;
 });

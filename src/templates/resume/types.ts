@@ -1,5 +1,6 @@
 import type {
   ResumeState,
+  ResumeLayoutSettings,
   ExperienceItem,
   EducationItem,
   CertItem,
@@ -10,7 +11,7 @@ import type {
 export interface ResumeTemplateProps {
   state: ResumeState;
   isEditable?: boolean;
-  onFieldChange?: (field: keyof ResumeState, value: any) => void;
+  onFieldChange?: <K extends keyof ResumeState>(field: K, value: ResumeState[K]) => void;
   onExperienceChange?: (index: number, field: keyof ExperienceItem, value: string) => void;
   onEducationChange?: (index: number, field: keyof EducationItem, value: string) => void;
   onCertChange?: (index: number, field: keyof CertItem, value: string) => void;
@@ -26,5 +27,5 @@ export interface ResumeTemplateProps {
   onDeleteAchievement?: (index: number) => void;
   onAddLanguage?: () => void;
   onDeleteLanguage?: (index: number) => void;
-  onLayoutSettingsChange?: (patch: Partial<any>) => void;
+  onLayoutSettingsChange?: (patch: Partial<ResumeLayoutSettings>) => void;
 }

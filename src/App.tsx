@@ -34,7 +34,11 @@ import { isLocalUser, userEmail } from './types';
 import { PAGE_ANIM } from './constants/animations';
 
 export default function App() {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    if (isConfigured && auth) return null;
+    const localUser = localStorage.getItem('LOCAL_USER');
+    return localUser ? ({ email: localUser, isLocal: true } as AuthUser) : null;
+  });
 
   const [activeDocId,   setActiveDocId]   = useState<string | null>(() => localStorage.getItem('ACTIVE_DOC_ID'));
   const [activeDocType, setActiveDocType] = useState<DocType | null>(() => localStorage.getItem('ACTIVE_DOC_TYPE') as DocType | null);
@@ -56,16 +60,10 @@ export default function App() {
   const toast = useToast();
 
   useEffect(() => {
-    if (isConfigured && auth) {
-      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        setUser(firebaseUser ?? null);
-      });
-      return unsubscribe;
-    }
-    const localUser = localStorage.getItem('LOCAL_USER');
-    if (localUser) {
-      setUser({ email: localUser, isLocal: true } as AuthUser);
-    }
+    if (!isConfigured || !auth) return;
+    return onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser ?? null);
+    });
   }, []);
 
   useEffect(() => {
@@ -86,6 +84,8 @@ export default function App() {
 
   const resume = useUndoRedo<ResumeState>(DEFAULT_RESUME_STATE);
   const cl     = useUndoRedo<CoverLetterState>(DEFAULT_CL_STATE);
+  const { reset: resetResume } = resume;
+  const { reset: resetCl } = cl;
   const resumeMutations = useResumeMutations(resume.set);
   const clMutations = useCoverLetterMutations(cl.set);
 
@@ -96,15 +96,15 @@ export default function App() {
       const uid = userEmail(user);
       if (activeDocType === 'resume') {
         const data = await dbService.getResume(uid, activeDocId);
-        if (data && isMounted) resume.reset(data);
+        if (data && isMounted) resetResume(data);
       } else {
         const data = await dbService.getCoverLetter(uid, activeDocId);
-        if (data && isMounted) cl.reset(data);
+        if (data && isMounted) resetCl(data);
       }
     };
     loadRestoredDoc();
     return () => { isMounted = false; };
-  }, [user, activeDocId, activeDocType]);
+  }, [user, activeDocId, activeDocType, resetResume, resetCl]);
 
   const isOnline = useOnlineStatus();
   const sheetRef = useRef<HTMLDivElement>(null);

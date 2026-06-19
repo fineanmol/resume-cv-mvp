@@ -8,7 +8,7 @@ export const parseEducationGrade = (bullets: string) => {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    const gpaMatch = trimmed.match(/^(GPA|Grade|Medalist)\s*[:\-]?\s*(.*)$/i);
+    const gpaMatch = trimmed.match(/^(GPA|Grade|Medalist)\s*[:-]?\s*(.*)$/i);
     if (gpaMatch) {
       gradeType = gpaMatch[1].toLowerCase() as 'gpa' | 'medalist' | 'grade';
       const val = gpaMatch[2].trim();

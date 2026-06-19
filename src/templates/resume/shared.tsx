@@ -10,5 +10,4 @@ export type { BottomSectionsProps } from '../shared/BottomSections';
 export { DraggableSection } from '../shared/DraggableSection';
 export type { DraggableSectionProps } from '../shared/DraggableSection';
 export { ProfilePhotoWithWaves } from '../shared/ProfilePhotoWithWaves';
-export { parseEducationGrade } from '../shared/parseEducationGrade';
-export { LanguageBubbles, getLanguageBubbleCount } from '../shared/LanguageBubbles';
+export { LanguageBubbles } from '../shared/LanguageBubbles';

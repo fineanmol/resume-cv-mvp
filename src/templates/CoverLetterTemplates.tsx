@@ -1,8 +1,9 @@
 import React from 'react';
-import type { CoverLetterState, HighlightItem } from '../types';
+import type { CoverLetterState, HighlightItem, LayoutSettings } from '../types';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { FONT_CSS } from '../config/fonts';
-import { TemplateHeader, formatLinkedinUrl } from './TemplateHeader';
+import { TemplateHeader } from './TemplateHeader';
+import { formatLinkedinUrl } from '../utils/linkedin';
 import { formatMarkdownBold } from '../utils/markdown';
 import { EditableText } from './shared/EditableText';
 
@@ -70,7 +71,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
     headerStyle: headerStyle as import('../types').HeaderStyle,
     isEditable, ec: editableClass, sectionSpacing,
     layoutSettings,
-    onLayoutSettingsChange: (patch: any) => onFieldChange?.('layoutSettings', { ...layoutSettings, ...patch }),
+    onLayoutSettingsChange: (patch: Partial<LayoutSettings>) => onFieldChange?.('layoutSettings', { ...layoutSettings, ...patch }),
     onAvatarChange: (url: string) => onFieldChange?.('avatar', url)
   };
 

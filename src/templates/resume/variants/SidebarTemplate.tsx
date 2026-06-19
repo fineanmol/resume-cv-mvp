@@ -3,7 +3,7 @@ import { Phone, Mail, MapPin, Building2, GraduationCap } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
 import { SkillsEditor } from '../../shared/SkillsEditor';
-import { formatLinkedinUrl } from '../../TemplateHeader';
+import { formatLinkedinUrl } from '../../../utils/linkedin';
 import { useTemplateRenderContext } from '../useTemplateSetup';
 import {
   ItemLogo,

@@ -6,7 +6,9 @@ import {
 import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
 import { SkillsEditor } from '../../shared/SkillsEditor';
-import { formatLinkedinUrl } from '../../TemplateHeader';
+import { formatLinkedinUrl } from '../../../utils/linkedin';
+import { parseEducationGrade } from '../../shared/parseEducationGrade';
+import { getLanguageBubbleCount } from '../../../utils/languageLevel';
 import { useTemplateRenderContext } from '../useTemplateSetup';
 import {
   DraggableSection,
@@ -14,11 +16,9 @@ import {
   ItemWrapper,
   LI,
   LanguageBubbles,
-  parseEducationGrade,
   ProfilePhotoWithWaves,
   SectionWrapper,
   WorkLink,
-  getLanguageBubbleCount,
 } from '../shared';
 
 const getAchievementIcon = (idx: number, title: string) => {

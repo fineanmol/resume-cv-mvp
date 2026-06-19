@@ -18,8 +18,9 @@ export const SkillsEditor: React.FC<{
 
   useEffect(() => {
     if (!isEditable) return;
-    const idx = skillsList.length - 1;
-    if (idx >= 0 && skillsList[idx] === 'New Skill') {
+    const list = value ? value.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const idx = list.length - 1;
+    if (idx >= 0 && list[idx] === 'New Skill') {
       const el = document.querySelector(`[data-skill-index="${idx}"]`) as HTMLElement | null;
       if (el) {
         el.focus();
@@ -34,7 +35,7 @@ export const SkillsEditor: React.FC<{
         }
       }
     }
-  }, [skillsList.length, isEditable]);
+  }, [value, isEditable]);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     e.dataTransfer.setData('text/plain', index.toString());
@@ -144,7 +145,9 @@ export const SkillsEditor: React.FC<{
                           range.selectNodeContents(nextEl);
                           sel?.removeAllRanges();
                           sel?.addRange(range);
-                        } catch {}
+                        } catch (err) {
+                          console.warn('Failed to set selection range:', err);
+                        }
                       }
                     }, 50);
                   } else if (e.key === 'Backspace') {

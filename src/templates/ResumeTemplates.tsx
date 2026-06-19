@@ -1,11 +1,3 @@
-export {
-  renderAchievementIcon,
-  getDynamicAchievementIcon,
-  AchievementIconPicker,
-  renderProjectIcon,
-  getDynamicProjectIcon,
-} from './shared/templateIcons';
-
-export { ActiveSectionContext } from './shared/ActiveSectionContext';
+/** Backward-compatible entry — lazy-loaded by EditorLayout and static imports in modals. */
 export { ResumeTemplateRenderer } from './resume/ResumeTemplateRenderer';
 export type { ResumeTemplateProps } from './resume/types';
