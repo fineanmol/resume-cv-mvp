@@ -72,23 +72,26 @@ export function BulletList({
 
   if (!lines.length) return null;
 
+  const markerColor = brandColor ?? 'currentColor';
+
   const getMarker = (index: number) => {
+    const markerClass = 'select-none leading-snug';
     switch (bulletStyle) {
       case 'none':
         return null;
       case 'dash':
-        return <span style={{ color: brandColor }} className="select-none font-semibold">—</span>;
+        return <span style={{ color: markerColor }} className={`${markerClass} font-semibold`}>—</span>;
       case 'arrow':
-        return <span style={{ color: brandColor }} className="select-none text-[8px]">➤</span>;
+        return <span style={{ color: markerColor }} className={markerClass}>➤</span>;
       case 'number':
-        return <span style={{ color: brandColor }} className="select-none font-semibold text-[10px]">{index + 1}.</span>;
+        return <span style={{ color: markerColor }} className={`${markerClass} font-semibold tabular-nums`}>{index + 1}.</span>;
       case 'circle':
-        return <span style={{ color: brandColor }} className="select-none text-[8px]">○</span>;
+        return <span style={{ color: markerColor }} className={markerClass}>○</span>;
       case 'square':
-        return <span style={{ color: brandColor }} className="select-none text-[7px]">■</span>;
+        return <span style={{ color: markerColor }} className={markerClass}>■</span>;
       case 'disc':
       default:
-        return <span style={{ color: brandColor }} className="select-none text-[8px]">●</span>;
+        return <span style={{ color: markerColor }} className={markerClass}>●</span>;
     }
   };
 
@@ -110,25 +113,27 @@ export function BulletList({
         return (
           <li
             key={`${prefixId}-${bIdx}`}
-            className={hasCustomMarker ? 'grid grid-cols-[1rem_1fr] gap-x-1.5 items-baseline' : ''}
+            className={hasCustomMarker ? 'flex gap-x-1.5 items-baseline' : ''}
             style={isHiddenRow ? { height: 0, overflow: 'hidden', margin: 0 } : undefined}
           >
             {hasCustomMarker && showMarker && (
-              <span contentEditable={false} className="select-none flex items-center justify-center leading-snug text-[10px]">
+              <span
+                contentEditable={false}
+                className="select-none shrink-0 w-4 text-center leading-snug self-baseline"
+              >
                 {getMarker(bIdx)}
               </span>
             )}
-            {/* When editable and empty and not focused, still render the span (invisible placeholder)
-                so the user can click into it and start typing. */}
+            {/* Reserve marker column width when editable and empty and not focused */}
             {hasCustomMarker && !showMarker && isEditable && isEmpty && (
-              <span contentEditable={false} />
+              <span contentEditable={false} className="shrink-0 w-4" />
             )}
             {isEditable ? (
               <span
                 data-bullet-id={`${prefixId}-${bIdx}`}
                 data-placeholder={resolvedPlaceholder}
                 data-empty={isEmpty ? 'true' : undefined}
-                className={`min-w-0 text-${align} ${hasCustomMarker ? 'col-start-2' : ''} ${editableClass}`}
+                className={`min-w-0 flex-1 text-${align} ${editableClass}`}
                 contentEditable={true}
                 suppressContentEditableWarning={true}
                 onFocus={(e) => {
@@ -172,7 +177,7 @@ export function BulletList({
               </span>
             ) : (
               <span
-                className={`min-w-0 text-${align} ${hasCustomMarker ? 'col-start-2' : ''}`}
+                className={`min-w-0 flex-1 text-${align}`}
                 dangerouslySetInnerHTML={{ __html: formatMarkdownBold(bullet) }}
               />
             )}

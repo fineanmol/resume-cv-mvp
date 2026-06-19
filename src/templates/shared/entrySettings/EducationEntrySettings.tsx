@@ -10,6 +10,8 @@ interface EducationEntrySettingsProps {
   onClose: () => void;
   logo?: string;
   onLogoChange?: (logo: string) => void;
+  placeholderIconName?: string;
+  /** @deprecated Prefer placeholderIconName */
   placeholderIcon?: React.ReactNode;
   brandColor?: string;
 }
@@ -20,6 +22,7 @@ export const EducationEntrySettings: React.FC<EducationEntrySettingsProps> = ({
   onClose,
   logo,
   onLogoChange,
+  placeholderIconName,
   placeholderIcon,
   brandColor = '#314855',
 }) => {
@@ -52,6 +55,7 @@ export const EducationEntrySettings: React.FC<EducationEntrySettingsProps> = ({
             brandColor={brandColor}
             isEditable
             onLogoChange={onLogoChange}
+            placeholderIconName={placeholderIconName}
             placeholderIcon={placeholderIcon}
           />
         </div>

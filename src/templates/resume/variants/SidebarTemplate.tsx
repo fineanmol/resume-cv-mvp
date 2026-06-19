@@ -2,6 +2,7 @@ import React from 'react';
 import { Phone, Mail, MapPin, Building2, GraduationCap } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
+import { SummaryContent } from '../../shared/SummaryContent';
 import { SkillsEditor } from '../../shared/SkillsEditor';
 import { EducationDescription } from '../../shared/EducationDescription';
 import { HeaderWrapper } from '../../shared/HeaderWrapper';
@@ -49,6 +50,8 @@ export const SidebarTemplate: React.FC = () => {
 
   const showEdu = (edu: (typeof resumeEducation)[number], field: keyof NonNullable<(typeof resumeEducation)[number]['visibility']>) =>
     isEntryFieldVisible(edu.visibility, field);
+
+  const showSummaryBullets = layoutSettings?.showSummaryBullets ?? true;
 
   const handleAddSkill = () => {
     const list = resumeSkills ? resumeSkills.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -212,11 +215,20 @@ export const SidebarTemplate: React.FC = () => {
           <SectionWrapper
             id="summary" title="Profile" isEditable={isEditable}
             align={summaryAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ summaryAlign: a })}
+            layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
           >
             <div style={sec}>
               <h3 className={SH} style={{ borderColor: `${brandColor}40`, color: brandColor }}>Profile</h3>
-              <E tag="p" value={resumeSummary || 'Summary...'} isEditable={isEditable} editableClass={ec}
-                className={`text-xs text-${summaryAlign} text-slate-700 leading-relaxed`} onSave={ef('resumeSummary')} />
+              <SummaryContent
+                value={resumeSummary || ''}
+                isEditable={isEditable}
+                editableClass={ec}
+                onSave={ef('resumeSummary')}
+                className={`text-xs text-${summaryAlign} text-slate-700 leading-relaxed`}
+                bulletStyle={bulletStyle}
+                align={summaryAlign}
+                showBullets={showSummaryBullets}
+              />
             </div>
           </SectionWrapper>
         )}
@@ -252,7 +264,7 @@ export const SidebarTemplate: React.FC = () => {
                           onClose={onClose}
                           logo={exp.logo}
                           onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
-                          placeholderIcon={<Building2 className="w-3.5 h-3.5" />}
+                          placeholderIconName="building-2"
                           brandColor={brandColor}
                           onUrlChange={(url) => onExperienceChange?.(idx, 'url', url)}
                         />
@@ -262,7 +274,7 @@ export const SidebarTemplate: React.FC = () => {
                         <div className="flex justify-between font-bold text-slate-900">
                           <span className="flex items-center gap-1.5">
                             {showLogo && (
-                              <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
+                              <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIconName="building-2" />
                             )}
                             <E field="experience.title" value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
                           </span>
@@ -327,7 +339,7 @@ export const SidebarTemplate: React.FC = () => {
                           onClose={onClose}
                           logo={edu.logo}
                           onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
-                          placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />}
+                          placeholderIconName="graduation-cap"
                           brandColor={brandColor}
                         />
                       )}
@@ -336,7 +348,7 @@ export const SidebarTemplate: React.FC = () => {
                         <div className="flex justify-between font-bold text-slate-900">
                           <span className="flex items-center gap-1.5">
                             {showLogo && (
-                              <ItemLogo logo={edu.logo} brandColor={brandColor} placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} />
+                              <ItemLogo logo={edu.logo} brandColor={brandColor} placeholderIconName="graduation-cap" />
                             )}
                             <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
                           </span>

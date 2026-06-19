@@ -2,6 +2,7 @@ import React from 'react';
 import { Building2, GraduationCap } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
+import { SummaryContent } from '../../shared/SummaryContent';
 import { SkillsEditor } from '../../shared/SkillsEditor';
 import { EducationDescription } from '../../shared/EducationDescription';
 import { parseEducationGrade } from '../../shared/parseEducationGrade';
@@ -34,6 +35,8 @@ export const SerifTemplate: React.FC = () => {
   const showEduLocation = layoutSettings?.showEducationLocation ?? true;
   const showEduGpa = layoutSettings?.showEducationGpa ?? true;
 
+  const showSummaryBullets = layoutSettings?.showSummaryBullets ?? true;
+
   const handleAddSkill = () => {
     const list = resumeSkills ? resumeSkills.split(',').map(s => s.trim()).filter(Boolean) : [];
     onFieldChange?.('resumeSkills', [...list, 'New Skill'].join(', '));
@@ -48,11 +51,20 @@ export const SerifTemplate: React.FC = () => {
         <SectionWrapper
           id="summary" title="Profile" isEditable={isEditable}
           align={summaryAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ summaryAlign: a })}
+          layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
         >
           <section style={sec}>
             <h3 className={H}>Profile</h3>
-            <E tag="p" value={resumeSummary || 'Summary...'} isEditable={isEditable} editableClass={ec}
-              className={`text-slate-800 leading-relaxed text-[13px] text-${summaryAlign}`} onSave={ef('resumeSummary')} />
+            <SummaryContent
+              value={resumeSummary || ''}
+              isEditable={isEditable}
+              editableClass={ec}
+              onSave={ef('resumeSummary')}
+              className={`text-slate-800 leading-relaxed text-[13px] text-${summaryAlign}`}
+              bulletStyle={bulletStyle}
+              align={summaryAlign}
+              showBullets={showSummaryBullets}
+            />
           </section>
         </SectionWrapper>
       )}
@@ -97,13 +109,13 @@ export const SerifTemplate: React.FC = () => {
                   isEditable={isEditable} onDelete={() => onDeleteExperience?.(idx)}
                   logo={exp.logo} onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
                   showLogo={layoutSettings?.showExperienceLogo ?? true}
-                  placeholderIcon={<Building2 className="w-3.5 h-3.5" />} brandColor={brandColor}
+                  placeholderIconName="building-2" brandColor={brandColor}
                 >
                   <div className="text-xs">
                     <div className="flex justify-between font-bold text-slate-950">
                       <span className="flex items-center gap-1.5 flex-wrap">
                         {(layoutSettings?.showExperienceLogo ?? true) && (
-                          <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
+                          <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIconName="building-2" />
                         )}
                         <E field="experience.title" value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
                         {showExpCompany && (
@@ -152,14 +164,14 @@ export const SerifTemplate: React.FC = () => {
                     isEditable={isEditable} onDelete={() => onDeleteEducation?.(idx)}
                     logo={edu.logo} onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
                     showLogo={layoutSettings?.showEducationLogo ?? true}
-                    placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} brandColor={brandColor}
+                    placeholderIconName="graduation-cap" brandColor={brandColor}
                   >
                     <div className="text-xs flex gap-3 justify-between items-start">
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between font-bold text-slate-950 font-serif">
                           <span className="flex items-center gap-1.5 flex-wrap">
                             {(layoutSettings?.showEducationLogo ?? true) && (
-                              <ItemLogo logo={edu.logo} brandColor={brandColor} placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} />
+                              <ItemLogo logo={edu.logo} brandColor={brandColor} placeholderIconName="graduation-cap" />
                             )}
                             <E value={edu.degree} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'degree', v)} />
                             <span> — </span>

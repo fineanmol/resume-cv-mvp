@@ -403,6 +403,14 @@ body {
 }
 
 /* Entry settings popover open — lift above sibling entries and sections */
+.pdf-sheet .group\/item.z-\[140\] {
+  z-index: 140 !important;
+}
+
+.pdf-sheet .group\/section.\!z-\[150\] {
+  z-index: 150 !important;
+}
+
 .pdf-sheet .group\/item.z-\[100\] {
   z-index: 100 !important;
 }

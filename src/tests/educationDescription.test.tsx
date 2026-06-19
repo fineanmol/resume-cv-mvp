@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { EducationDescription } from '../templates/shared/EducationDescription';
-import { mergeEducationBullets } from '../templates/shared/parseEducationGrade';
+import { mergeEducationBullets, mergeProjectDescription, parseEducationGrade } from '../templates/shared/parseEducationGrade';
 import { renderResumeTemplate } from './helpers/renderResumeTemplate';
 import { DEFAULT_RESUME_STATE } from '../config/defaultResume';
 
@@ -11,6 +11,20 @@ describe('mergeEducationBullets', () => {
     expect(mergeEducationBullets(original, 'Honors program\nDean\'s list')).toBe(
       'GPA: 3.8\nHonors program\nDean\'s list',
     );
+  });
+});
+
+describe('parseEducationGrade', () => {
+  it('preserves trailing empty lines for new bullet rows', () => {
+    const { remaining } = parseEducationGrade('Coursework A\n');
+    expect(remaining).toBe('Coursework A\n');
+  });
+});
+
+describe('mergeProjectDescription', () => {
+  it('reattaches tech stack line without trimming body', () => {
+    expect(mergeProjectDescription('Built app\n', 'Tech: React')).toBe('Built app\n\nTech: React');
+    expect(mergeProjectDescription('', 'Tech: React')).toBe('Tech: React');
   });
 });
 

@@ -12,6 +12,8 @@ interface ExperienceEntrySettingsProps {
   onUrlChange?: (url: string) => void;
   logo?: string;
   onLogoChange?: (logo: string) => void;
+  placeholderIconName?: string;
+  /** @deprecated Prefer placeholderIconName */
   placeholderIcon?: React.ReactNode;
   brandColor?: string;
 }
@@ -23,6 +25,7 @@ export const ExperienceEntrySettings: React.FC<ExperienceEntrySettingsProps> = (
   onUrlChange,
   logo,
   onLogoChange,
+  placeholderIconName,
   placeholderIcon,
   brandColor = '#314855',
 }) => {
@@ -64,6 +67,7 @@ export const ExperienceEntrySettings: React.FC<ExperienceEntrySettingsProps> = (
             brandColor={brandColor}
             isEditable
             onLogoChange={onLogoChange}
+            placeholderIconName={placeholderIconName ?? 'building-2'}
             placeholderIcon={placeholderIcon}
           />
         </div>

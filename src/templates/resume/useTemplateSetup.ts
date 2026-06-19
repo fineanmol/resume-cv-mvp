@@ -83,6 +83,7 @@ export function useTemplateSetup({
   const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
   const handleMoveItemUpDown = useCallback((sectionId: string, index: number, dir: 'up' | 'down') => {
     const newIdx = dir === 'up' ? index - 1 : index + 1;
@@ -121,6 +122,7 @@ export function useTemplateSetup({
   const clearActive = useCallback(() => {
     setActiveSectionId(null);
     setActiveItemId(null);
+    setOpenPopoverId(null);
   }, []);
 
   useEffect(() => {
@@ -242,9 +244,11 @@ export function useTemplateSetup({
     setActiveSectionId,
     activeItemId,
     setActiveItemId,
+    openPopoverId,
+    setOpenPopoverId,
     handleMoveSectionUpDown,
     handleMoveItemUpDown,
-  }), [activeSectionId, activeItemId, handleMoveSectionUpDown, handleMoveItemUpDown]);
+  }), [activeSectionId, activeItemId, openPopoverId, handleMoveSectionUpDown, handleMoveItemUpDown]);
 
   const dragProps = useMemo(() => ({
     showLayoutBounds: showLayoutBounds ?? false,

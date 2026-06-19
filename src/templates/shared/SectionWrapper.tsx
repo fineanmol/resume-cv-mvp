@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useEffect, useRef, useContext } from 'react';
 import {
   Plus, Settings, Trash2, ArrowLeft, ArrowRight,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
@@ -38,30 +38,36 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
 }) {
   const context = useContext(ActiveSectionContext);
   const isActive = propIsActive ?? (context?.activeSectionId === id);
-  const onSelect = propOnSelect ?? (() => context?.setActiveSectionId(id));
+  const onSelect = propOnSelect ?? (() => {
+    context?.setActiveSectionId(id);
+    context?.setActiveItemId(null);
+  });
   const onMoveUp = propOnMoveUp ?? (context?.handleMoveSectionUpDown ? () => context.handleMoveSectionUpDown(id, 'up') : undefined);
   const onMoveDown = propOnMoveDown ?? (context?.handleMoveSectionUpDown ? () => context.handleMoveSectionUpDown(id, 'down') : undefined);
 
-  const [showSettings, setShowSettings] = useState(false);
+  const popoverId = `section:${id}`;
+  const showSettings = context?.openPopoverId === popoverId;
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!showSettings) return;
     const handleOutsideClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setShowSettings(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        context?.setOpenPopoverId(null);
+      }
     };
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [showSettings]);
+  }, [showSettings, context]);
 
   if (!isEditable) return <>{children}</>;
 
   const isSkills = id === 'skills';
   const hasSettings = !!onAlignChange ||
     (isSkills && !!onSkillsStyleChange && !!onSkillsValueChange) ||
-    (!!layoutSettings && !!onLayoutSettingsChange && ['achievements', 'certs', 'experience', 'education', 'languages'].includes(id));
+    (!!layoutSettings && !!onLayoutSettingsChange && ['achievements', 'certs', 'experience', 'education', 'languages', 'summary'].includes(id));
 
-  const popoverClass = 'absolute right-0 top-full mt-1 z-[110] bg-white border border-slate-200 shadow-lg rounded-md p-2 flex flex-col gap-1.5 edit-only w-[172px]';
+  const popoverClass = 'absolute right-0 top-full mt-1 z-[210] bg-white border border-slate-200 shadow-lg rounded-md p-2 flex flex-col gap-1.5 edit-only w-[172px]';
   const sectionLabelClass = 'text-[9px] font-semibold text-slate-400 uppercase tracking-wide select-none leading-none';
 
   const visibilityToggles = (
@@ -89,15 +95,15 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
         isActive
           ? 'z-[30] section-active'
           : 'hover:border-gray-200 hover:bg-slate-50/30'
-      } ${showSettings ? '!z-[100]' : ''}`}
+      } ${showSettings ? '!z-[150]' : ''}`}
     >
       {children}
 
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`absolute -top-2 right-0 flex flex-nowrap items-center gap-0.5 whitespace-nowrap bg-white border border-slate-200 shadow-lg rounded-lg px-2 py-1 z-40 edit-only ${
+        className={`absolute -top-2 right-0 flex flex-nowrap items-center gap-0.5 whitespace-nowrap bg-white border border-slate-200 shadow-lg rounded-lg px-2 py-1 edit-only ${
           isActive ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/section:opacity-100 group-hover/section:visible'
-        }`}
+        } ${showSettings ? 'z-[200]' : 'z-40'}`}
       >
         {onAddEntry && (
           <button
@@ -153,7 +159,10 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
         {hasSettings && (
           <div className="relative" ref={ref}>
             <button
-              onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                context?.setOpenPopoverId(showSettings ? null : popoverId);
+              }}
               className={`p-1 hover:bg-slate-100 rounded cursor-pointer transition flex items-center justify-center ${showSettings ? 'bg-slate-100 text-teal-600' : 'text-slate-500 hover:text-slate-800'}`}
               type="button" title="Section Settings"
             >
@@ -168,7 +177,7 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
                     <div className="flex gap-0.5">
                       {(['left', 'center', 'right', 'justify'] as const).map(alignVal => (
                         <button key={alignVal} type="button"
-                          onClick={(e) => { e.stopPropagation(); onAlignChange(alignVal); setShowSettings(false); }}
+                          onClick={(e) => { e.stopPropagation(); onAlignChange(alignVal); context?.setOpenPopoverId(null); }}
                           className={`p-1 hover:bg-slate-100 rounded cursor-pointer transition flex items-center justify-center ${align === alignVal ? 'bg-slate-100 text-teal-500' : 'text-slate-500'}`}
                         >
                           {alignVal === 'left' && <AlignLeft className="w-3 h-3" />}
@@ -219,6 +228,16 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
                       { key: 'showEducationLocation', label: 'Location' },
                       { key: 'showEducationGpa', label: 'GPA' },
                       { key: 'showEducationLogo', label: 'Logo' },
+                    ])}
+                  </>
+                )}
+
+                {layoutSettings && onLayoutSettingsChange && id === 'summary' && (
+                  <>
+                    {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
+                    <span className={sectionLabelClass}>Visibility</span>
+                    {visibilityToggles([
+                      { key: 'showSummaryBullets', label: 'Show Bullets' },
                     ])}
                   </>
                 )}

@@ -9,6 +9,11 @@ import {
 } from '../../utils/photoShape';
 
 const HEADER_STYLES: HeaderStyle[] = ['centered', 'left', 'banner', 'minimal', 'enhancv'];
+const DESIGNER_HEADER_STYLES: { id: HeaderStyle; label: string }[] = [
+  { id: 'left',     label: 'Photo Right' },
+  { id: 'centered', label: 'Centered' },
+  { id: 'minimal',  label: 'Minimal' },
+];
 
 const sectionLabelClass =
   'text-[9px] font-semibold text-slate-400 uppercase tracking-wide select-none leading-none';
@@ -77,8 +82,31 @@ export const HeaderSettingsPanel: React.FC<HeaderSettingsPanelProps> = ({
         )}
       </div>
 
-      {/* Header Style picker — hidden for the Designer template which has a fixed layout */}
-      {(ls.template ?? 'navy') !== 'designer' && (
+      {/* Header Style picker */}
+      {(ls.template ?? 'navy') === 'designer' ? (
+        <div className="flex flex-col gap-1.5">
+          <span className={sectionLabelClass}>Header Style</span>
+          <div className="grid grid-cols-3 gap-1">
+            {DESIGNER_HEADER_STYLES.map((style) => (
+              <button
+                key={style.id}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange({ headerStyle: style.id });
+                }}
+                className={`py-1 px-1 text-[9px] rounded border cursor-pointer capitalize transition leading-tight ${
+                  (ls.headerStyle ?? 'left') === style.id
+                    ? 'bg-teal-50 border-teal-500 text-teal-700 font-bold'
+                    : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                {style.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
         <div className="flex flex-col gap-1.5">
           <span className={sectionLabelClass}>Header Style</span>
           <div className="grid grid-cols-3 gap-1">

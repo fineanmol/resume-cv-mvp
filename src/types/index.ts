@@ -48,6 +48,7 @@ export interface LayoutSettings {
   showProjectIcons?: boolean;
   showProjectDesc?: boolean;
   showProjectBullets?: boolean;
+  showSummaryBullets?: boolean;
   showExperienceDates?: boolean;
   showExperienceLocation?: boolean;
   showExperienceCompany?: boolean;

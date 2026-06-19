@@ -1,16 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Briefcase, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
+import { renderEntryIcon } from './templateIconHelpers';
 
 export interface ItemLogoProps {
   logo?: string;
   brandColor: string;
   isEditable?: boolean;
   onLogoChange?: (logo: string) => void;
+  /** Icon map key for placeholder, e.g. graduation-cap, building-2 */
+  placeholderIconName?: string;
+  /** @deprecated Prefer placeholderIconName — raw nodes may not render in the canvas */
   placeholderIcon?: React.ReactNode;
 }
 
 export const ItemLogo: React.FC<ItemLogoProps> = ({
-  logo, brandColor, isEditable, onLogoChange, placeholderIcon,
+  logo, brandColor, isEditable, onLogoChange, placeholderIconName, placeholderIcon,
 }) => {
   const [showInput, setShowInput] = useState(false);
   const [url, setUrl] = useState('');
@@ -25,11 +29,15 @@ export const ItemLogo: React.FC<ItemLogoProps> = ({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [showInput]);
 
+  const placeholderContent = placeholderIconName
+    ? renderEntryIcon(placeholderIconName, brandColor, 'w-3.5 h-3.5 !mt-0')
+    : (placeholderIcon ?? renderEntryIcon('briefcase', brandColor, 'w-3.5 h-3.5 !mt-0'));
+
   const logoEl = logo ? (
     <img src={logo} alt="logo" className="w-6 h-6 rounded object-contain bg-white border border-slate-100 flex-shrink-0" />
   ) : (
     <span className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0" style={{ background: `${brandColor}18`, color: brandColor }}>
-      {placeholderIcon || <Briefcase className="w-3.5 h-3.5" />}
+      {placeholderContent}
     </span>
   );
 

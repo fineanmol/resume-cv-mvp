@@ -25,7 +25,7 @@ export const DESIGNER_STYLE_DEFAULTS: Partial<LayoutSettings> = {
   columnGap:        16,
   entrySpacing:     12,
   bulletStyle:      'disc',
-  skillsStyle:      'grid',
+  skillsStyle:      'chips',
   summaryAlign:     'justify',
   experienceAlign:  'left',
   educationAlign:   'left',
@@ -33,4 +33,5 @@ export const DESIGNER_STYLE_DEFAULTS: Partial<LayoutSettings> = {
   achievementsAlign:'left',
   bodyTextColor:    '#3E3E3E',
   titleColor:       '#343334',
+  headerStyle:      'left',
 };

@@ -1,17 +1,19 @@
 import React from 'react';
 import {
-  Phone, Mail, MapPin, Calendar,
+  Phone, Mail, MapPin,
   Building2, GraduationCap,
 } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
+import { SummaryContent } from '../../shared/SummaryContent';
 import { SkillsEditor } from '../../shared/SkillsEditor';
 import { EntryIconPicker } from '../../shared/EntryIconPicker';
+import { DateRangePicker } from '../../shared/DateRangePicker';
 import { getDynamicAchievementIcon, getDynamicProjectIcon } from '../../shared/templateIconHelpers';
 import { formatLinkedinUrl } from '../../../utils/linkedin';
 import { EducationDescription } from '../../shared/EducationDescription';
 import { HeaderWrapper } from '../../shared/HeaderWrapper';
-import { parseEducationGrade } from '../../shared/parseEducationGrade';
+import { parseEducationGrade, mergeProjectDescription } from '../../shared/parseEducationGrade';
 import { getLanguageBubbleCount, getLanguageLevelFromBubbleCount } from '../../../utils/languageLevel';
 import { useTemplateRenderContext } from '../useTemplateSetup';
 import {
@@ -61,7 +63,7 @@ export const DesignerTemplate: React.FC = () => {
     subtitle:   { fontFamily: _ACCENT, fontSize: `${(10.78 * scale).toFixed(2)}pt`, fontWeight: 700, lineHeight: lh } as React.CSSProperties,
     section:    { fontFamily: _HEAD,   fontSize: `${(11.4  * scale).toFixed(2)}pt`, fontWeight: 700, lineHeight: lh } as React.CSSProperties,
     entry:      { fontFamily: _TITLE,  fontSize: `${(9.5   * scale).toFixed(2)}pt`, fontWeight: 400, lineHeight: lh } as React.CSSProperties,
-    entryTitle: { fontFamily: _TITLE,  fontSize: `${(9.5   * scale).toFixed(2)}pt`, fontWeight: 700, lineHeight: lh } as React.CSSProperties,
+    entryTitle: { fontFamily: _TITLE,  fontSize: `${(9.5   * scale).toFixed(2)}pt`, fontWeight: 400, lineHeight: lh } as React.CSSProperties,
     company:    { fontFamily: _ACCENT, fontSize: `${(8.88  * scale).toFixed(2)}pt`, fontWeight: 700, lineHeight: lh } as React.CSSProperties,
     body:       { fontFamily: _OS,     fontSize: `${(7.61  * scale).toFixed(2)}pt`, fontWeight: 400, color: C_BODY, lineHeight: lh } as React.CSSProperties,
     contact:    { fontFamily: _OS,     fontSize: `${(7.6   * scale).toFixed(2)}pt`, fontWeight: 700, color: C_BODY, lineHeight: lh } as React.CSSProperties,
@@ -98,6 +100,7 @@ export const DesignerTemplate: React.FC = () => {
   const showAchievementIcons = layoutSettings?.showAchievementIcons ?? true;
   const showAchievementDesc = layoutSettings?.showAchievementDesc ?? true;
   const showAchievementBullets = layoutSettings?.showAchievementBullets ?? true;
+  const showSummaryBullets = layoutSettings?.showSummaryBullets ?? true;
 
   const handleAddSkill = () => {
     const list = resumeSkills ? resumeSkills.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -113,11 +116,22 @@ export const DesignerTemplate: React.FC = () => {
             <SectionWrapper
               id="summary" title="Summary" isEditable={isEditable}
               align={summaryAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ summaryAlign: a })}
+              layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
             >
               <section style={dsec}>
                 <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Summary</h3>
-                <E tag="p" field="summary" value={resumeSummary} isEditable={isEditable} editableClass={ec}
-                  className={`leading-relaxed text-${summaryAlign}`} style={FG.body} onSave={ef('resumeSummary')} />
+                <div style={FG.body}>
+                  <SummaryContent
+                    value={resumeSummary || ''}
+                    isEditable={isEditable}
+                    editableClass={ec}
+                    onSave={ef('resumeSummary')}
+                    className={`leading-relaxed text-${summaryAlign}`}
+                    bulletStyle={bulletStyle}
+                    align={summaryAlign}
+                    showBullets={showSummaryBullets}
+                  />
+                </div>
               </section>
             </SectionWrapper>
           </DraggableSection>
@@ -185,7 +199,7 @@ export const DesignerTemplate: React.FC = () => {
                             onClose={onClose}
                             logo={exp.logo}
                             onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
-                            placeholderIcon={<Building2 className="w-3.5 h-3.5" />}
+                            placeholderIconName="building-2"
                             brandColor={brandColor}
                             onUrlChange={(url) => onExperienceChange?.(idx, 'url', url)}
                           />
@@ -195,15 +209,24 @@ export const DesignerTemplate: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <span className="flex items-center gap-1.5 flex-1 min-w-0">
                               {showLogo && (
-                                <ItemLogo logo={exp.logo} brandColor={C_COMPANY} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
+                                <ItemLogo
+                                  logo={exp.logo}
+                                  brandColor={C_COMPANY}
+                                  placeholderIconName="building-2"
+                                  isEditable={isEditable}
+                                  onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
+                                />
                               )}
                               <E field="experience.title" value={exp.title} isEditable={isEditable} editableClass={ec} className="min-w-0 break-words leading-snug" style={{ ...FG.entry, color: C_TITLE }} onSave={v => onExperienceChange?.(idx, 'title', v)} />
                             </span>
                             {showDates && (
-                              <span className="inline-flex items-center gap-1 shrink-0">
-                                <Calendar className="w-3 h-3 text-slate-400 shrink-0" strokeWidth={1.5} aria-hidden />
-                                <E field="experience.dates" value={exp.dates} isEditable={isEditable} editableClass={ec} className="text-right whitespace-nowrap" style={FG.meta} onSave={v => onExperienceChange?.(idx, 'dates', v)} />
-                              </span>
+                              <DateRangePicker
+                                value={exp.dates}
+                                isEditable={isEditable}
+                                onSave={v => onExperienceChange?.(idx, 'dates', v)}
+                                style={FG.meta}
+                                className="text-right"
+                              />
                             )}
                           </div>
                           {(showCompany || showLocation || (showLink && exp.url)) && (
@@ -222,8 +245,8 @@ export const DesignerTemplate: React.FC = () => {
                           {showBullets && (
                             <BulletList field="experience.bullets" bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
                               onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)}
-                              className={`leading-snug${showLogo ? ' [&_li]:grid-cols-[30px_1fr]' : ''}`}
-                              bulletStyle={bulletStyle} brandColor={C_HEAD} align={experienceAlign} prefixId={`exp-${idx}`} />
+                              className={`leading-snug${showLogo ? ' [&_li>span:first-child]:!w-3' : ''}`}
+                              bulletStyle={bulletStyle} align={experienceAlign} prefixId={`exp-${idx}`} />
                           )}
                         </div>
                       </ItemWrapper>
@@ -268,7 +291,7 @@ export const DesignerTemplate: React.FC = () => {
                             onClose={onClose}
                             logo={edu.logo}
                             onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
-                            placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />}
+                            placeholderIconName="graduation-cap"
                             brandColor={brandColor}
                           />
                         )}
@@ -277,7 +300,13 @@ export const DesignerTemplate: React.FC = () => {
                           <div className="flex-1 space-y-0.5">
                             <div className="flex items-center gap-1.5 leading-snug">
                               {showLogo && (
-                                <ItemLogo logo={edu.logo} brandColor={C_COMPANY} placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} />
+                                <ItemLogo
+                                  logo={edu.logo}
+                                  brandColor={C_COMPANY}
+                                  placeholderIconName="graduation-cap"
+                                  isEditable={isEditable}
+                                  onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
+                                />
                               )}
                               <E field="education.degree" value={edu.degree} isEditable={isEditable} editableClass={ec} className="break-words" style={{ ...FG.entry, color: C_TITLE }} onSave={v => onEducationChange?.(idx, 'degree', v)} />
                             </div>
@@ -289,7 +318,12 @@ export const DesignerTemplate: React.FC = () => {
                             {(showDates || showLocation) && (
                               <div className="flex justify-between leading-snug" style={FG.meta}>
                                 {showDates && (
-                                  <E field="education.dates" value={edu.dates} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'dates', v)} />
+                                  <DateRangePicker
+                                    value={edu.dates}
+                                    isEditable={isEditable}
+                                    onSave={v => onEducationChange?.(idx, 'dates', v)}
+                                    style={FG.meta}
+                                  />
                                 )}
                                 {showLocation && (
                                   <E field="education.location" value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
@@ -303,10 +337,9 @@ export const DesignerTemplate: React.FC = () => {
                               onBulletChange={(v) => onEducationChange?.(idx, 'bullets', v)}
                               className={`leading-snug text-${educationAlign}`}
                               bulletStyle={bulletStyle}
-                              brandColor={C_HEAD}
                               align={educationAlign}
                               prefixId={`edu-${idx}`}
-                              showBullets={showBullets}
+                              showBullets={showBullets || isEditable}
                               splitGpa
                             />
                           </div>
@@ -398,12 +431,10 @@ export const DesignerTemplate: React.FC = () => {
                                     isEditable={isEditable}
                                     editableClass={ec}
                                     onBulletChange={(v) => {
-                                      const body = v.trim();
-                                      onCertChange?.(idx, 'desc', techStack ? (body ? `${body}\n${techStack}` : techStack) : body);
+                                      onCertChange?.(idx, 'desc', mergeProjectDescription(v, techStack));
                                     }}
                                     className={`mt-0.5 leading-snug text-${certsAlign}`}
                                     bulletStyle={bulletStyle}
-                                    brandColor={C_HEAD}
                                     align={certsAlign}
                                     prefixId={`cert-${idx}`}
                                   />
@@ -496,7 +527,6 @@ export const DesignerTemplate: React.FC = () => {
                                   onBulletChange={(v) => onAchievementChange?.(idx, 'desc', v)}
                                   className={`mt-0.5 leading-snug text-${layoutSettings?.achievementsAlign ?? 'left'}`}
                                   bulletStyle={bulletStyle}
-                                  brandColor={C_HEAD}
                                   align={layoutSettings?.achievementsAlign ?? 'left'}
                                   prefixId={`ach-${idx}`}
                                 />
@@ -595,9 +625,35 @@ export const DesignerTemplate: React.FC = () => {
         layoutSettings={layoutSettings}
         showTitle={showTitle}
         onLayoutSettingsChange={onLayoutSettingsChange}
-        className="flex justify-between items-start pb-2 mb-2 overflow-visible"
+        className={`pb-2 mb-2 overflow-visible ${
+          (layoutSettings?.headerStyle ?? 'left') === 'centered'
+            ? 'flex flex-col items-center text-center'
+            : 'flex justify-between items-start'
+        }`}
       >
-        <div className="flex-1 relative z-[3] min-w-0 pr-4">
+        {/* Centered: photo above name */}
+        {(layoutSettings?.headerStyle ?? 'left') === 'centered' && showPhoto && (
+          <ProfilePhotoWithWaves
+            avatar={avatar}
+            name={name}
+            brandColor={brandColor}
+            accentColor2={accentColor2}
+            isEditable={isEditable}
+            onAvatarChange={(url) => onFieldChange?.('avatar', url)}
+            layoutSettings={layoutSettings}
+            onLayoutSettingsChange={onLayoutSettingsChange}
+            size="w-20 h-20"
+          />
+        )}
+
+        {/* Name / subtitle / contact — shared across all variants */}
+        <div className={`relative z-[3] min-w-0 ${
+          (layoutSettings?.headerStyle ?? 'left') === 'centered'
+            ? 'flex flex-col items-center mt-2'
+            : (layoutSettings?.headerStyle ?? 'left') === 'minimal'
+              ? 'flex-1 flex flex-col'
+              : 'flex-1 pr-4'
+        }`}>
           <E tag="h1" field="header.name" value={name} isEditable={isEditable} editableClass={ec}
             className={`tracking-tight leading-tight ${uppercaseName ? 'uppercase' : ''}`}
             style={{ ...FG.name, color: C_HEAD }} onSave={ef('name')} />
@@ -608,7 +664,9 @@ export const DesignerTemplate: React.FC = () => {
             </span>
           )}
 
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2" style={FG.contact}>
+          <div className={`flex flex-wrap gap-x-4 gap-y-1 mt-2 ${
+            (layoutSettings?.headerStyle ?? 'left') === 'centered' ? 'justify-center' : ''
+          }`} style={FG.contact}>
             {hasPhone && (
               <span className="inline-flex items-center gap-1.5 align-middle">
                 <Phone className="w-3 h-3 text-slate-400 flex-shrink-0 inline-block" aria-hidden />
@@ -635,7 +693,9 @@ export const DesignerTemplate: React.FC = () => {
             )}
           </div>
         </div>
-        {showPhoto && (
+
+        {/* Left (default): photo right */}
+        {(layoutSettings?.headerStyle ?? 'left') === 'left' && showPhoto && (
           <ProfilePhotoWithWaves
             avatar={avatar}
             name={name}
@@ -648,6 +708,7 @@ export const DesignerTemplate: React.FC = () => {
             size="w-28 h-28"
           />
         )}
+        {/* Minimal: no photo rendered */}
       </HeaderWrapper>
 
       <div

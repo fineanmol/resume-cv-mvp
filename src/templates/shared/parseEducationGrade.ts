@@ -1,7 +1,6 @@
-import { splitIntoBullets } from '../../utils/bullets';
-
 export const parseEducationGrade = (bullets: string) => {
-  const lines = splitIntoBullets(bullets);
+  // Preserve trailing empty lines so Enter can add new bullet rows while editing.
+  const lines = bullets ? bullets.split('\n') : [''];
   let gradeText = '';
   let gradeType: 'gpa' | 'medalist' | 'grade' | 'none' = 'none';
   const remainingBullets: string[] = [];
@@ -26,6 +25,12 @@ export const parseEducationGrade = (bullets: string) => {
 
   return { gradeText, gradeType, remaining: remainingBullets.join('\n') };
 };
+
+/** Reattach a projects description body with its trailing tech-stack line. */
+export function mergeProjectDescription(body: string, techStack: string): string {
+  if (!techStack) return body;
+  return body ? `${body}\n${techStack}` : techStack;
+}
 
 const GRADE_LINE_RE = /^(GPA|Grade|Medalist)\s*[:-]?/i;
 

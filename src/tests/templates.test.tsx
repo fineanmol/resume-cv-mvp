@@ -424,6 +424,9 @@ describe('ResumeTemplates — BottomSections entry visibility', () => {
 describe('ResumeTemplates — editable integration', () => {
   it('navy: entry settings panel renders when gear is clicked', async () => {
     const { container } = await renderResumeTemplate({ state: resumeWith({ template: 'navy' }), isEditable: true });
+    const firstItem = container.querySelector('.group\\/item');
+    expect(firstItem).toBeTruthy();
+    fireEvent.mouseDown(firstItem!);
     const gearButtons = container.querySelectorAll('button[title="Settings"]');
     expect(gearButtons.length).toBeGreaterThan(0);
     fireEvent.click(gearButtons[0]);
