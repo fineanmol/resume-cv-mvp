@@ -288,6 +288,19 @@ body {
   background-color: transparent !important;
 }
 
+@keyframes photo-ring-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.65; transform: scale(1.02); }
+}
+
+.animate-\[photo-ring-pulse_4s_ease-in-out_infinite\] {
+  animation: photo-ring-pulse 4s ease-in-out infinite;
+}
+
+.animate-\[photo-ring-pulse_5s_ease-in-out_infinite\] {
+  animation: photo-ring-pulse 5s ease-in-out infinite;
+}
+
 /* Ensure sidebar scrollbar is visible and clear */
 .bg-sidebar ::-webkit-scrollbar {
   width: 8px !important;

@@ -3,6 +3,13 @@ import { Mail, Phone, MapPin, Settings, Camera, Trash2 } from 'lucide-react';
 import type { HeaderStyle, LayoutSettings } from '../types';
 import { EditableText } from './shared/EditableText';
 import { formatLinkedinUrl } from '../utils/linkedin';
+import {
+  PHOTO_SHAPES,
+  getPhotoShapeClass,
+  photoShapePatch,
+  resolvePhotoShape,
+  type PhotoShape,
+} from '../utils/photoShape';
 
 const LI: React.FC = () => (
   <svg className="w-3 h-3 flex-shrink-0 mt-[1px]" viewBox="0 0 24 24" fill="none"
@@ -12,33 +19,27 @@ const LI: React.FC = () => (
   </svg>
 );
 
-/** Visual circle/square photo shape picker — matches EnhanceCV header settings UX */
+/** Visual photo shape picker — circle, rounded, square, squircle */
 const PhotoShapeSelector: React.FC<{
-  roundPhoto: boolean;
-  onChange: (round: boolean) => void;
+  shape: PhotoShape;
+  onChange: (shape: PhotoShape) => void;
   onClick?: (e: React.MouseEvent) => void;
-}> = ({ roundPhoto, onChange, onClick }) => (
-  <div className="flex items-center space-x-2">
-    <button
-      type="button"
-      aria-label="Circle photo"
-      onClick={(e) => { onClick?.(e); e.stopPropagation(); onChange(true); }}
-      className={`w-6 h-6 rounded-full border flex items-center justify-center cursor-pointer transition ${
-        roundPhoto ? 'border-teal-500 bg-teal-50' : 'border-slate-300 hover:border-slate-400'
-      }`}
-    >
-      {roundPhoto && <div className="w-4 h-4 bg-teal-500 rounded-full" />}
-    </button>
-    <button
-      type="button"
-      aria-label="Square photo"
-      onClick={(e) => { onClick?.(e); e.stopPropagation(); onChange(false); }}
-      className={`w-6 h-6 rounded-md border flex items-center justify-center cursor-pointer transition ${
-        !roundPhoto ? 'border-teal-500 bg-teal-50' : 'border-slate-300 hover:border-slate-400'
-      }`}
-    >
-      {!roundPhoto && <div className="w-4 h-4 bg-teal-500 rounded-sm" />}
-    </button>
+}> = ({ shape, onChange, onClick }) => (
+  <div className="flex items-center gap-1.5">
+    {PHOTO_SHAPES.map(({ id, label, previewClass }) => (
+      <button
+        key={id}
+        type="button"
+        aria-label={`${label} photo`}
+        title={label}
+        onClick={(e) => { onClick?.(e); e.stopPropagation(); onChange(id); }}
+        className={`w-6 h-6 border flex items-center justify-center cursor-pointer transition ${
+          shape === id ? 'border-teal-500 bg-teal-50' : 'border-slate-300 hover:border-slate-400'
+        }`}
+      >
+        <div className={`w-4 h-4 bg-teal-500 ${previewClass} ${shape === id ? 'opacity-100' : 'opacity-40'}`} />
+      </button>
+    ))}
   </div>
 );
 
@@ -96,11 +97,10 @@ export const AvatarCircleEditable: React.FC<{
   }, [showPopover]);
 
   const settings = layoutSettings || {};
-  const roundPhoto = settings.roundPhoto ?? true;
+  const photoShape = resolvePhotoShape(settings);
   const showPhoto = settings.showPhoto ?? true;
 
-  // Determine shape class
-  const shapeClass = roundPhoto ? 'rounded-full' : 'rounded-lg';
+  const shapeClass = getPhotoShapeClass(photoShape);
 
   if (!isEditable) {
     return (
@@ -117,9 +117,9 @@ export const AvatarCircleEditable: React.FC<{
     );
   }
 
-  const handleToggleRoundPhoto = (val: boolean) => {
+  const handlePhotoShapeChange = (shape: PhotoShape) => {
     if (onLayoutSettingsChange) {
-      onLayoutSettingsChange({ roundPhoto: val });
+      onLayoutSettingsChange(photoShapePatch(shape));
     }
   };
 
@@ -251,8 +251,8 @@ export const AvatarCircleEditable: React.FC<{
           <div className="flex items-center justify-between pt-0.5">
             <span className="text-slate-600 font-medium">Photo Style</span>
             <PhotoShapeSelector
-              roundPhoto={roundPhoto}
-              onChange={handleToggleRoundPhoto}
+              shape={photoShape}
+              onChange={handlePhotoShapeChange}
             />
           </div>
 
@@ -535,8 +535,8 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
             <div className="flex items-center justify-between">
               <span>Photo Style</span>
               <PhotoShapeSelector
-                roundPhoto={p.layoutSettings.roundPhoto ?? true}
-                onChange={(round) => handleSettingsChange({ roundPhoto: round })}
+                shape={resolvePhotoShape(p.layoutSettings)}
+                onChange={(shape) => handleSettingsChange(photoShapePatch(shape))}
               />
             </div>
           </div>

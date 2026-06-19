@@ -25,6 +25,8 @@ export interface LayoutSettings {
   designerLeftSections?: string[];
   designerRightSections?: string[];
   roundPhoto?: boolean;
+  /** Profile photo clip shape (designer + header). Falls back to roundPhoto when unset. */
+  photoShape?: 'circle' | 'rounded' | 'square' | 'squircle';
   showPhone?: boolean;
   showEmail?: boolean;
     showLocation?: boolean;
