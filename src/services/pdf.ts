@@ -129,6 +129,12 @@ function copyComputedStyles(original: HTMLElement, cloned: HTMLElement) {
   ];
 
   propertiesToCopy.forEach((prop) => {
+    // Skip width, height, margins, and paddings for non-SVG elements to prevent scale/squeezing layout distortion
+    const isLayoutProp = prop.includes('width') || prop.includes('height') || prop.includes('margin') || prop.includes('padding');
+    if (isLayoutProp && original.tagName.toLowerCase() !== 'svg') {
+      return;
+    }
+
     const val = computed.getPropertyValue(prop);
     if (val) {
       const resolved = (val.includes('oklch') || val.includes('oklab')) ? convertOklToRgb(val) : val;
