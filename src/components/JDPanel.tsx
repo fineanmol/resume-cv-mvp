@@ -126,7 +126,7 @@ export const JDPanel: React.FC<JDPanelProps> = ({
   };
 
   return (
-    <aside className="w-[360px] border-l border-border-color/60 bg-sidebar flex flex-col flex-shrink-0 overflow-y-auto p-6 space-y-6">
+    <div className="flex-1 overflow-y-auto p-5 space-y-5 flex flex-col w-full">
       
       {/* 1. JD Link Scraper Input */}
       <div className="space-y-2.5">
@@ -208,6 +208,6 @@ export const JDPanel: React.FC<JDPanelProps> = ({
         />
       </div>
 
-    </aside>
+    </div>
   );
 };

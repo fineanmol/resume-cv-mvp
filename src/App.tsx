@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, Sparkles } from 'lucide-react';
+import { AlertTriangle, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { LandingPage } from './components/LandingPage';
 import { Dashboard } from './components/Dashboard';
@@ -100,6 +100,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [zoomScale,    setZoomScale]    = useState(0.85);
   const [rightTab,     setRightTab]     = useState<'design' | 'ats'>('design');
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
 
   // Job Description
   const [jobDescription, setJobDescription] = useState(() => localStorage.getItem('LAST_JD') ?? '');
@@ -388,7 +389,11 @@ export default function App() {
             </section>
 
             {/* RIGHT — Design + ATS tabs */}
-            <aside className="w-[260px] flex-shrink-0 border-l border-border-color/60 bg-sidebar flex flex-col overflow-hidden">
+            <motion.aside
+              animate={{ width: rightPanelOpen ? 320 : 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className={`flex-shrink-0 bg-sidebar flex flex-col overflow-hidden relative ${rightPanelOpen ? 'border-l border-border-color/60' : 'border-transparent'}`}
+            >
               {/* Tab switcher */}
               <div className="flex border-b border-border-color/60 flex-shrink-0">
                 <button
@@ -435,7 +440,20 @@ export default function App() {
                   />
                 </div>
               )}
-            </aside>
+            </motion.aside>
+
+            {/* Floating toggle button for right side drawer */}
+            <button
+              onClick={() => setRightPanelOpen(p => !p)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-6 h-6 rounded-full border border-border-color/60 bg-sidebar text-text-muted hover:text-text-main flex items-center justify-center shadow-md cursor-pointer z-50 hover:bg-brand-accent hover:text-editor transition-all"
+              style={{
+                right: rightPanelOpen ? '320px' : '0px',
+                transition: 'right 0.2s ease-out',
+              }}
+              title={rightPanelOpen ? "Close panel" : "Open panel"}
+            >
+              {rightPanelOpen ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+            </button>
           </div>
         </motion.div>
       </AnimatePresence>

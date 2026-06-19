@@ -300,7 +300,12 @@ export class PdfService {
     // Positive z-index so html2canvas (which renders the clone specifically) does not skip it
     clone.style.zIndex = '9999';
     clone.style.width = '794px';
-    clone.style.height = 'auto';
+    const originalHeight = sheetElement.offsetHeight || 1123;
+    const pageCount = Math.max(1, Math.ceil(originalHeight / 1123));
+    const targetHeight = pageCount * 1122;
+    clone.style.height = `${targetHeight}px`;
+    clone.style.minHeight = `${targetHeight}px`;
+    clone.style.maxHeight = `${targetHeight}px`;
     if (clone.style.display === 'none') {
       clone.style.display = 'block';
     }

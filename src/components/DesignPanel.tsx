@@ -135,15 +135,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
   const accent2 = layout.accentColor2 ?? '#0284c7';
 
   return (
-    <aside className="w-[260px] flex-shrink-0 border-l border-border-color/60 bg-sidebar overflow-y-auto flex flex-col">
-      <div className="px-4 pt-4 pb-2 border-b border-border-color/60 flex-shrink-0">
-        <p className="text-[11px] font-bold text-text-main uppercase tracking-wider flex items-center gap-1.5">
-          <Palette className="w-3.5 h-3.5 text-brand-accent" />
-          Design
-        </p>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+    <div className="flex-1 overflow-y-auto p-3.5 space-y-3 w-full flex flex-col">
 
         {/* ── TEMPLATE ──────────────────────────────────────────── */}
         <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
@@ -295,7 +287,6 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
           </AnimatePresence>
         </div>
 
-      </div>
-    </aside>
+    </div>
   );
 };
