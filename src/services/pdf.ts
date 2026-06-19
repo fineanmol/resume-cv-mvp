@@ -182,6 +182,37 @@ export class PdfService {
     // Clone and strip all transforms/shadows so html2canvas sees a plain A4 element
     const clone = sheetElement.cloneNode(true) as HTMLElement;
     
+    // Resolve relative image src attributes to absolute URLs so they load correctly inside the about:blank iframe
+    clone.querySelectorAll('img').forEach((img) => {
+      const src = img.getAttribute('src');
+      if (src && !src.startsWith('data:') && !src.startsWith('http:') && !src.startsWith('https:')) {
+        (img as HTMLImageElement).src = new URL(src, window.location.href).href;
+      }
+    });
+
+    // Clean up edit-mode outline spacing, transition, and padding classes to prevent layout shift distortions in PDF
+    const editorClassesToRemove = [
+      'outline-none',
+      'hover:bg-slate-100/80',
+      'focus:bg-slate-100',
+      'hover:bg-white/10',
+      'focus:bg-white/10',
+      'rounded',
+      'px-1',
+      '-mx-1',
+      'transition'
+    ];
+
+    clone.querySelectorAll('*').forEach((el) => {
+      const htmlEl = el as HTMLElement;
+      if (htmlEl.hasAttribute('contenteditable')) {
+        htmlEl.removeAttribute('contenteditable');
+      }
+      editorClassesToRemove.forEach(cls => {
+        htmlEl.classList.remove(cls);
+      });
+    });
+
     // Override specific layout properties for PDF generation while keeping original inline styles (like fonts, padding)
     clone.style.transform = 'none';
     clone.style.transition = 'none';
@@ -250,6 +281,16 @@ export class PdfService {
               }
             } catch (err) {
               console.warn('Failed to copy document stylesheets:', err);
+            }
+
+            // Copy Google Fonts links to the cloned document's head to ensure fonts are fully resolved
+            try {
+              const fontLinks = document.querySelectorAll('link[href*="fonts.googleapis.com"], link[href*="fonts.gstatic.com"]');
+              fontLinks.forEach(link => {
+                clonedDoc.head.appendChild(link.cloneNode(true));
+              });
+            } catch (err) {
+              console.warn('Failed to copy font links to cloned document:', err);
             }
 
             // Append style override tag to cloned document to hide layout tools (pseudo-elements, focus outlines)
