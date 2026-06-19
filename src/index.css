@@ -127,6 +127,11 @@ body {
     display: none !important;
   }
 
+  /* Restore buttons that are resume content (not editor chrome) — e.g. LanguageBubbles, DateRangePicker icon */
+  .pdf-sheet button {
+    display: inline-flex !important;
+  }
+
   /* Reset body and html for seamless page-boundary printing */
   html, body, #root {
     background: #ffffff !important;

@@ -561,7 +561,7 @@ export const DesignerTemplate: React.FC = () => {
             >
               <section style={dsec}>
                 <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Languages</h3>
-                <div className="grid grid-cols-2 gap-x-3" style={{ rowGap: `${entrySpacing - 4}px` }}>
+                <div className="grid grid-cols-2 gap-x-3 items-start" style={{ rowGap: `${entrySpacing - 4}px` }}>
                   {(resumeLanguages ?? []).map((lang, idx) => {
                     const bubbles = getLanguageBubbleCount(lang.level);
                     const showLevel = (layoutSettings?.showLanguageLevel ?? true) && isEntryFieldVisible(lang.visibility, 'level');
@@ -578,7 +578,7 @@ export const DesignerTemplate: React.FC = () => {
                           />
                         )}
                       >
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-start gap-1">
                           <div>
                             <E tag="p" field="languages.name" value={lang.name} isEditable={isEditable} editableClass={ec}
                               style={{ ...FG.entry, color: C_TITLE }}
