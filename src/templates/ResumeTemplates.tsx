@@ -213,12 +213,15 @@ const SkillsEditor: React.FC<{
   if (!isEditable) {
     return (
       <div className={`flex flex-wrap gap-x-2 gap-y-1.5 text-xs ${className}`}>
-        {skillsList.map((s, i) => (
-          <span key={i} className="inline-flex items-center justify-center px-2.5 py-1 rounded font-medium border leading-none text-center"
-            style={accentColor2 ? badgeStyle(i) : fallbackDefaultStyle}>
-            {s}
-          </span>
-        ))}
+        {skillsList.map((s, i) => {
+          const baseStyle = accentColor2 ? badgeStyle(i) : fallbackDefaultStyle;
+          return (
+            <span key={i} className="inline-block align-middle text-center px-2.5 rounded font-medium border"
+              style={{ ...baseStyle, height: '1.8em', lineHeight: '1.8em', paddingTop: 0, paddingBottom: 0 }}>
+              {s}
+            </span>
+          );
+        })}
       </div>
     );
   }
@@ -247,12 +250,15 @@ const SkillsEditor: React.FC<{
           className={`flex flex-wrap gap-x-2 gap-y-1.5 text-xs cursor-pointer hover:bg-slate-100/50 p-1 -m-1 rounded transition w-full ${className}`}
         >
           {skillsList.length > 0 ? (
-            skillsList.map((s, i) => (
-              <span key={i} className="inline-flex items-center justify-center px-2.5 py-1 rounded font-medium border leading-none text-center select-none"
-                style={accentColor2 ? badgeStyle(i) : fallbackDefaultStyle}>
-                {s}
-              </span>
-            ))
+            skillsList.map((s, i) => {
+              const baseStyle = accentColor2 ? badgeStyle(i) : fallbackDefaultStyle;
+              return (
+                <span key={i} className="inline-block align-middle text-center px-2.5 rounded font-medium border select-none"
+                  style={{ ...baseStyle, height: '1.8em', lineHeight: '1.8em', paddingTop: 0, paddingBottom: 0 }}>
+                  {s}
+                </span>
+              );
+            })
           ) : (
             <span className="text-slate-400 italic select-none">Click to add skills...</span>
           )}
