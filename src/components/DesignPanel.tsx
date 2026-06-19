@@ -27,6 +27,7 @@ const BULLET_STYLES: { id: LayoutSettings['bulletStyle']; label: string; preview
 const COLOR_PRESETS = [
   '#314855','#1e293b','#0284c7','#10b981','#6366f1','#b45309',
   '#dc2626','#7c3aed','#0891b2','#059669','#d97706','#be185d',
+  '#3E3E3E','#4B5563','#6B7280','#374151',
 ];
 
 interface DesignPanelProps {
@@ -196,6 +197,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
 
   const brand   = layout.brandColor   ?? '#314855';
   const accent2 = layout.accentColor2 ?? '#0284c7';
+  const isDesigner = (layout.template ?? 'navy') === 'designer';
 
   return (
     <div
@@ -204,11 +206,11 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
     >
 
       {/* ── Reset to defaults ──────────────────────────────────────────────── */}
-      {onReset && (layout.template ?? 'navy') === 'designer' && (
+      {onReset && isDesigner && (
         <div className="flex items-center justify-between px-2.5 py-2 rounded-lg border border-border-color/40 bg-sidebar">
           <span className="text-[10px] text-text-muted leading-tight">
             Restore Figma design defaults<br />
-            <span className="opacity-60">Raleway · Open Sans · #343334 · #00B6CB</span>
+            <span className="opacity-60">Raleway · Open Sans · Heading #343334 · Accent #00B6CB</span>
           </span>
           {resetConfirm ? (
             <div className="flex items-center gap-1">
@@ -283,8 +285,30 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
         variant="design"
         bodyClassName="p-3 border-t border-border-color/40 space-y-4"
       >
-        <ColorPicker label="Primary Accent" value={brand} onChange={v => onChange({ brandColor: v })} />
-        <ColorPicker label="Secondary Accent" value={accent2} onChange={v => onChange({ accentColor2: v })} />
+        <ColorPicker
+          label={isDesigner ? 'Heading Color' : 'Primary Accent'}
+          value={brand}
+          onChange={v => onChange({ brandColor: v })}
+        />
+        {isDesigner && (
+          <ColorPicker
+            label="Title Color"
+            value={layout.titleColor ?? '#343334'}
+            onChange={v => onChange({ titleColor: v })}
+          />
+        )}
+        <ColorPicker
+          label={isDesigner ? 'Accent Color' : 'Secondary Accent'}
+          value={accent2}
+          onChange={v => onChange({ accentColor2: v })}
+        />
+        {isDesigner && (
+          <ColorPicker
+            label="Body Color"
+            value={layout.bodyTextColor ?? '#3E3E3E'}
+            onChange={v => onChange({ bodyTextColor: v })}
+          />
+        )}
       </AccordionSection>
 
       <AccordionSection
@@ -294,10 +318,20 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
         openSection={activeOpen}
         onToggle={toggle}
         variant="design"
-        bodyClassName="p-3 border-t border-border-color/40 grid grid-cols-2 gap-4"
+        bodyClassName={`p-3 border-t border-border-color/40 grid gap-4 ${isDesigner ? 'grid-cols-2' : 'grid-cols-2'}`}
       >
         <FontPicker label="Heading Font" value={layout.headingFont} onChange={v => onChange({ headingFont: v })} />
-        <FontPicker label="Body Font" value={layout.fontFamily} onChange={v => onChange({ fontFamily: v })} />
+        {isDesigner ? (
+          <FontPicker label="Title Font" value={layout.titleFont} onChange={v => onChange({ titleFont: v })} />
+        ) : (
+          <FontPicker label="Body Font" value={layout.fontFamily} onChange={v => onChange({ fontFamily: v })} />
+        )}
+        {isDesigner && (
+          <>
+            <FontPicker label="Accent Font" value={layout.accentFont} onChange={v => onChange({ accentFont: v })} />
+            <FontPicker label="Body Font" value={layout.fontFamily} onChange={v => onChange({ fontFamily: v })} />
+          </>
+        )}
       </AccordionSection>
 
       <AccordionSection
@@ -349,7 +383,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
         <Slider label="Pad Left/Right" value={layout.paddingLeftRight} unit="mm" min={6} max={25} step={1} onChange={v => onChange({ paddingLeftRight: v })} parse={parseInt} />
         <Slider label="Section Gap" value={layout.sectionSpacing} unit="px" min={4} max={28} step={1} onChange={v => onChange({ sectionSpacing: v })} parse={parseInt} />
         <Slider label="Entry Gap" value={layout.entrySpacing ?? 16} unit="px" min={4} max={32} step={1} onChange={v => onChange({ entrySpacing: v })} parse={parseInt} />
-        {docType === 'resume' && (layout.template ?? 'navy') === 'designer' && (
+        {docType === 'resume' && isDesigner && (
           <Slider
             label="Column Gap"
             value={layout.columnGap ?? 16}

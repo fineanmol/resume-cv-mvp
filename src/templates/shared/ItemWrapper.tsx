@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { ArrowUp, ArrowDown, Settings, Trash2, Copy, CopyPlus } from 'lucide-react';
 import { ActiveSectionContext } from './ActiveSectionContext';
+import { ActiveItemContext } from './ActiveItemContext';
 
 export interface ItemWrapperProps {
   sectionId: string;
@@ -71,7 +72,9 @@ export const ItemWrapper = React.memo<ItemWrapperProps>(function ItemWrapper({
       onMouseDown={handleItemActivate}
       onClick={(e) => e.stopPropagation()}
     >
-      {children}
+      <ActiveItemContext.Provider value={isItemActive}>
+        {children}
+      </ActiveItemContext.Provider>
 
       <div className="edit-only absolute -top-2 right-0 flex items-center gap-0.5 bg-white border border-slate-200 shadow-md rounded-md px-1 py-0.5 opacity-0 group-hover/item:opacity-100 transition-all duration-150 z-[90]">
         {index > 0 && handleMoveUp && (

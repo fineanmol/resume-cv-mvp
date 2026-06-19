@@ -13,6 +13,8 @@ export const EntryIconPicker: React.FC<{
   accentColor2?: string;
   index?: number;
   title?: string;
+  iconClassName?: string;
+  wrapperClassName?: string;
 }> = ({
   variant = 'achievement',
   currentIcon,
@@ -22,13 +24,15 @@ export const EntryIconPicker: React.FC<{
   accentColor2,
   index = 0,
   title = '',
+  iconClassName = 'w-3 h-3 flex-shrink-0 mt-0.5',
+  wrapperClassName = 'self-start',
 }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const icons = variant === 'project' ? PROJECT_ICON_NAMES : ACHIEVEMENT_ICON_NAMES;
   const defaultIcon = variant === 'project' ? 'briefcase' : 'star';
 
-  const renderIcon = (iconName: string, className = 'w-3 h-3 flex-shrink-0 mt-0.5') =>
+  const renderIcon = (iconName: string, className = iconClassName) =>
     variant === 'project'
       ? getDynamicProjectIcon(index, title, iconName, accentColor, className, accentColor2)
       : getDynamicAchievementIcon(index, title, iconName, accentColor, className, accentColor2);
@@ -47,8 +51,8 @@ export const EntryIconPicker: React.FC<{
   }
 
   return (
-    <div className="relative inline-flex flex-shrink-0 self-start pdf-keep" data-pdf-keep ref={ref}>
-      {renderIcon(currentIcon || defaultIcon, 'w-3 h-3 flex-shrink-0 mt-0.5')}
+    <div className={`relative inline-flex flex-shrink-0 pdf-keep ${wrapperClassName}`} data-pdf-keep ref={ref}>
+      {renderIcon(currentIcon || defaultIcon)}
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}

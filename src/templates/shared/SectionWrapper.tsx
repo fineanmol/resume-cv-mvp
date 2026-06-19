@@ -190,7 +190,7 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
                           onClick={(e) => { e.stopPropagation(); onSkillsStyleChange(style); }}
                           className={`flex-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border cursor-pointer transition ${skillsStyle === style ? 'bg-teal-500 text-white border-teal-500' : 'text-slate-500 border-slate-200 hover:border-slate-400'}`}
                         >
-                          {style === 'chips' ? 'Chips' : 'List'}
+                          {style === 'chips' ? 'Chips' : style === 'grid' ? 'Grid' : 'List'}
                         </button>
                       ))}
                     </div>
@@ -228,8 +228,9 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
                     {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
                     <span className={sectionLabelClass}>Visibility</span>
                     {visibilityToggles([
-                      { key: 'showProjectIcons', label: 'Icons' },
-                      { key: 'showProjectDesc', label: 'Description' },
+                      { key: 'showProjectIcons', label: 'Show Icons' },
+                      { key: 'showProjectDesc', label: 'Show Description' },
+                      { key: 'showProjectBullets', label: 'Show Bullets' },
                     ])}
                   </>
                 )}
@@ -239,8 +240,9 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
                     {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
                     <span className={sectionLabelClass}>Visibility</span>
                     {visibilityToggles([
-                      { key: 'showAchievementIcons', label: 'Icons' },
-                      { key: 'showAchievementDesc', label: 'Description' },
+                      { key: 'showAchievementIcons', label: 'Show Icons' },
+                      { key: 'showAchievementDesc', label: 'Show Description' },
+                      { key: 'showAchievementBullets', label: 'Show Bullets' },
                     ])}
                   </>
                 )}

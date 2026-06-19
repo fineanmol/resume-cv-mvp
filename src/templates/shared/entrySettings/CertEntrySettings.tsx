@@ -30,11 +30,7 @@ export const CertEntrySettings: React.FC<CertEntrySettingsProps> = ({
   return (
     <SettingsPanelShell
       onClose={onClose}
-      rows={[
-        row('desc', 'Show Description'),
-        row('link', 'Show Link'),
-        row('icon', 'Show Icon'),
-      ]}
+      rows={[row('link', 'Show Link')]}
     >
       {showLink && onUrlChange && (
         <EntryLinkField

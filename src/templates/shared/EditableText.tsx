@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import type { EditableFieldKey } from '../../config/fieldPlaceholders';
+import { getFieldPlaceholder } from '../../config/fieldPlaceholders';
+import { clearEditableIfEmpty, isEditableEmpty, normalizeEditableText } from '../../utils/editableText';
 
 export interface EditableTextProps {
   value: string;
@@ -10,22 +13,46 @@ export interface EditableTextProps {
   style?: React.CSSProperties;
   dangerousInnerHtml?: string;
   href?: string;
+  /** Section field key — resolves placeholder text automatically. */
+  field?: EditableFieldKey;
+  placeholder?: string;
 }
 
 export const EditableText = React.memo<EditableTextProps>(function EditableText({
-  value, className, onSave, isEditable, editableClass, tag = 'span', style, dangerousInnerHtml, href,
+  value, className, onSave, isEditable, editableClass, tag = 'span', style, dangerousInnerHtml, href, field, placeholder,
 }) {
+  const resolvedPlaceholder = placeholder ?? (field ? getFieldPlaceholder(field) : undefined);
+  const [isEmpty, setIsEmpty] = useState(() => isEditableEmpty(value));
+
+  useEffect(() => {
+    setIsEmpty(isEditableEmpty(value));
+  }, [value]);
+
   const Tag = tag;
   if (isEditable) {
     return (
       <Tag
         data-href={href}
+        data-placeholder={resolvedPlaceholder}
+        data-empty={isEmpty ? 'true' : undefined}
         className={`${className || ''} ${editableClass}`}
         style={style}
         contentEditable={true}
         suppressContentEditableWarning={true}
+        onFocus={(e) => {
+          const empty = clearEditableIfEmpty(e.currentTarget);
+          setIsEmpty(empty);
+        }}
+        onInput={(e) => {
+          setIsEmpty(isEditableEmpty(e.currentTarget.textContent ?? ''));
+        }}
         onBlur={(e) => {
-          const txt = (e.currentTarget as HTMLElement).textContent || '';
+          const txt = normalizeEditableText(e.currentTarget.textContent ?? '');
+          const empty = isEditableEmpty(txt);
+          if (empty) {
+            e.currentTarget.innerHTML = '';
+          }
+          setIsEmpty(empty);
           if (txt !== value) onSave(txt);
         }}
       >

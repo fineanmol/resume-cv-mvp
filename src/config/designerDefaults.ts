@@ -15,6 +15,8 @@ export const DESIGNER_STYLE_DEFAULTS: Partial<LayoutSettings> = {
   accentColor2:     '#00B6CB',
   fontFamily:       'open-sans',
   headingFont:      'raleway',
+  titleFont:        'raleway',
+  accentFont:       'open-sans',
   fontSize:         10,
   paddingTopBottom: 10,
   paddingLeftRight: 10,
@@ -29,4 +31,6 @@ export const DESIGNER_STYLE_DEFAULTS: Partial<LayoutSettings> = {
   educationAlign:   'left',
   certsAlign:       'left',
   achievementsAlign:'left',
+  bodyTextColor:    '#3E3E3E',
+  titleColor:       '#343334',
 };

@@ -128,25 +128,25 @@ export const TechTemplate: React.FC = () => {
                             <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
                           )}
                           <span className="flex items-center gap-1">
-                            <E value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
+                            <E field="experience.title" value={exp.title} isEditable={isEditable} editableClass={ec} onSave={v => onExperienceChange?.(idx, 'title', v)} />
                             {showCompany && (
                               <>
                                 <span> @ </span>
-                                <E value={exp.company} isEditable={isEditable} editableClass={ec} className="text-slate-600 font-normal" onSave={v => onExperienceChange?.(idx, 'company', v)} />
+                                <E field="experience.company" value={exp.company} isEditable={isEditable} editableClass={ec} className="text-slate-600 font-normal" onSave={v => onExperienceChange?.(idx, 'company', v)} />
                                 {showLink && <WorkLink url={exp.url} brandColor={brandColor} />}
                               </>
                             )}
                           </span>
                         </span>
                         {showDates && (
-                          <E value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-mono text-[10px] text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
+                          <E field="experience.dates" value={exp.dates} isEditable={isEditable} editableClass={ec} className="font-mono text-[10px] text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5" onSave={v => onExperienceChange?.(idx, 'dates', v)} />
                         )}
                       </div>
                       {showLocation && (
-                        <E value={exp.location} isEditable={isEditable} editableClass={ec} className="text-[11px] font-mono text-slate-500 italic mb-1.5 block" onSave={v => onExperienceChange?.(idx, 'location', v)} />
+                        <E field="experience.location" value={exp.location} isEditable={isEditable} editableClass={ec} className="text-[11px] font-mono text-slate-500 italic mb-1.5 block" onSave={v => onExperienceChange?.(idx, 'location', v)} />
                       )}
                       {showBullets && (
-                        <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
+                        <BulletList field="experience.bullets" bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
                           onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
                           bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} prefixId={`exp-${idx}`} />
                       )}

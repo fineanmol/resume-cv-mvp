@@ -20,7 +20,6 @@ import {
   LanguageEntrySettings,
 } from './entrySettings';
 import { isEntryFieldVisible } from '../../utils/entryVisibility';
-import { splitIntoBullets } from '../../utils/bullets';
 import { getLanguageBubbleCount, getLanguageLevelFromBubbleCount } from '../../utils/languageLevel';
 import { getDynamicAchievementIcon, getDynamicProjectIcon } from './templateIconHelpers';
 
@@ -57,15 +56,6 @@ export interface BottomSectionsProps {
   achievementsAlign?: 'left' | 'center' | 'right' | 'justify';
 }
 
-const BULLET_MARKER_REGEX = /[•●▪◦\u2022\u25cf\u25aa\u25e6\u2043\u25a0✦■⁃]|\s+[-*]\s+/;
-
-function descUsesBulletList(desc: string): boolean {
-  if (!desc) return false;
-  if (/\r?\n/.test(desc)) return true;
-  if (BULLET_MARKER_REGEX.test(desc)) return true;
-  return splitIntoBullets(desc).length > 1;
-}
-
 export const BottomSections: React.FC<BottomSectionsProps> = ({
   resumeCerts, resumeAchievements, resumeLanguages,
   sec, isEditable, ec, accentColor, accentColor2, headingClass,
@@ -79,8 +69,10 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
 }) => {
   const showProjectIcons = layoutSettings?.showProjectIcons ?? true;
   const showProjectDesc = layoutSettings?.showProjectDesc ?? true;
+  const showProjectBullets = layoutSettings?.showProjectBullets ?? true;
   const showAchievementIcons = layoutSettings?.showAchievementIcons ?? true;
   const showAchievementDesc = layoutSettings?.showAchievementDesc ?? true;
+  const showAchievementBullets = layoutSettings?.showAchievementBullets ?? true;
   const showLanguageLevel = layoutSettings?.showLanguageLevel ?? true;
 
   const certs = resumeCerts ?? [];
@@ -97,10 +89,11 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
     isEntryFieldVisible(lang.visibility, field);
 
   const certDescContent = (cert: CertItem, idx: number, showDesc: boolean) => {
-    if (!showDesc || !cert.desc) return null;
-    if (descUsesBulletList(cert.desc)) {
+    if (!showDesc || (!cert.desc && !isEditable)) return null;
+    if (showProjectBullets) {
       return (
         <BulletList
+          field="projects.description"
           bullets={cert.desc}
           isEditable={isEditable}
           editableClass={ec}
@@ -138,8 +131,8 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
             <h3 className={headingClass} style={{ color: accentColor, borderColor: `${accentColor}40` }}>Certifications</h3>
             <ul className="space-y-1.5 text-xs">
               {certs.map((cert, idx) => {
-                const showIcon = showProjectIcons && showCert(cert, 'icon');
-                const showDesc = showProjectDesc && showCert(cert, 'desc');
+                const showIcon = showProjectIcons;
+                const showDesc = showProjectDesc;
                 const showLink = showCert(cert, 'link');
 
                 return (
@@ -200,8 +193,8 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
             <h3 className={headingClass} style={{ color: accentColor, borderColor: `${accentColor}40` }}>Achievements</h3>
             <ul className="space-y-2 text-xs">
               {achievements.map((ach, idx) => {
-                const showIcon = showAchievementIcons && showAch(ach, 'icon');
-                const showDesc = showAchievementDesc && showAch(ach, 'desc');
+                const showIcon = showAchievementIcons;
+                const showDesc = showAchievementDesc;
                 const showLink = showAch(ach, 'link');
 
                 return (
@@ -243,8 +236,9 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
                           {showLink && <WorkLink url={ach.url} brandColor={accentColor} />}
                         </div>
                         {showDesc && (
-                          descUsesBulletList(ach.desc) ? (
+                          showAchievementBullets ? (
                             <BulletList
+                              field="achievements.description"
                               bullets={ach.desc}
                               isEditable={isEditable}
                               editableClass={ec}
@@ -256,7 +250,7 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
                               prefixId={`ach-${idx}`}
                             />
                           ) : (
-                            <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[11px]"
+                            <E tag="p" field="achievements.description" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[11px]"
                               onSave={(v) => onAchievementChange?.(idx, 'desc', v)} />
                           )
                         )}

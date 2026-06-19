@@ -239,6 +239,11 @@ body {
     background-color: transparent !important;
   }
 
+  [contenteditable="true"][data-placeholder][data-empty="true"]::before,
+  [contenteditable="true"][data-placeholder][data-empty="true"]:focus::before {
+    content: none !important;
+  }
+
   /* ── Page-break management ──────────────────────────────
    * Strategy (same as Resume.io / Zety):
    *   - Each individual entry (job, degree, project, etc.) is atomic: never split mid-entry
@@ -301,7 +306,7 @@ body {
   /* Restore spacing between sibling entries once gap is gone */
   .pdf-sheet section > div > .group\/item + .group\/item,
   .pdf-sheet section > ul > li + li {
-    margin-top: 8px;
+    margin-top: var(--entry-gap, 8px);
   }
 
   /* Force background graphics to print across all elements */
@@ -369,6 +374,27 @@ body {
 .pdf-sheet [contenteditable]:focus,
 .pdf-sheet [contenteditable]:focus-visible {
   outline: none !important;
+}
+
+/* Placeholder hints when a section/header/entry is active, or the field itself is focused */
+.pdf-sheet .section-active [contenteditable="true"][data-placeholder][data-empty="true"]::before,
+.pdf-sheet .header-active [contenteditable="true"][data-placeholder][data-empty="true"]::before,
+.pdf-sheet [contenteditable="true"][data-placeholder][data-empty="true"]:focus::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+/* Only the selected entry shows placeholders — not sibling entries in the same section */
+.pdf-sheet .section-active .group\/item:not(.item-active) [contenteditable="true"][data-placeholder][data-empty="true"]::before {
+  content: none !important;
+}
+
+.pdf-sheet .item-active [contenteditable="true"][data-empty="true"],
+.pdf-sheet .header-active [contenteditable="true"][data-empty="true"],
+.pdf-sheet .section-active > section [contenteditable="true"][data-empty="true"] {
+  min-width: 2ch;
+  min-height: 1em;
 }
 
 .group\/section,

@@ -398,15 +398,18 @@ describe('ResumeTemplates — BottomSections entry visibility', () => {
     expect(container.textContent).toContain('—');
   });
 
-  it('serif: hides achievement desc when entry visibility.desc=false', async () => {
+  it('serif: hides achievement desc when section showAchievementDesc=false', async () => {
     const state: ResumeState = {
       ...DEFAULT_RESUME_STATE,
-      layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template: 'serif' },
+      layoutSettings: {
+        ...DEFAULT_RESUME_STATE.layoutSettings,
+        template: 'serif',
+        showAchievementDesc: false,
+      },
       resumeAchievements: [{
         title: 'Visible Title Only',
         desc: 'Hidden achievement description',
         icon: 'star',
-        visibility: { desc: false },
       }],
     };
     const { getByText, queryByText } = await renderResumeTemplate({ state: state });

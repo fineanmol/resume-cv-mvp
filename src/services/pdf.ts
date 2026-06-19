@@ -799,7 +799,7 @@ export class PdfService {
     /* Restore entry gap (flex gap is gone after the display change) */
     section > div > .group\/item + .group\/item,
     section > ul > li + li {
-      margin-top: 8px;
+      margin-top: var(--entry-gap, 8px);
     }
   </style>
 </head>

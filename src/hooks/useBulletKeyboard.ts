@@ -141,8 +141,9 @@ export function handleBulletEnterKey(options: {
   cursorPos: number;
   onChange: (value: string) => void;
   prefixId: string;
+  onFocusNext?: (nextIdx: number) => void;
 }): void {
-  const { bullets, bIdx, text, cursorPos, onChange, prefixId } = options;
+  const { bullets, bIdx, text, cursorPos, onChange, prefixId, onFocusNext } = options;
   const normalizedText = normalizeBulletText(text);
   const safeCursor = Math.min(Math.max(0, cursorPos), normalizedText.length);
   const textBefore = normalizedText.substring(0, safeCursor);
@@ -153,7 +154,11 @@ export function handleBulletEnterKey(options: {
   updated[bIdx] = textBefore;
   updated.splice(bIdx + 1, 0, textAfter);
   onChange(updated.join('\n'));
-  focusBulletElement(prefixId, bIdx + 1, 'start');
+  if (onFocusNext) {
+    onFocusNext(bIdx + 1);
+  } else {
+    focusBulletElement(prefixId, bIdx + 1, 'start');
+  }
 }
 
 export function handleBulletBackspaceKey(options: {
@@ -237,8 +242,9 @@ export function createContentEditableBulletKeyDownHandler(options: {
   bIdx: number;
   prefixId: string;
   onChange: (value: string) => void;
+  onEnter?: (nextIdx: number) => void;
 }) {
-  const { bullets, bIdx, prefixId, onChange } = options;
+  const { bullets, bIdx, prefixId, onChange, onEnter } = options;
 
   return (e: KeyboardEvent<HTMLElement>) => {
     const el = e.currentTarget;
@@ -246,7 +252,12 @@ export function createContentEditableBulletKeyDownHandler(options: {
 
     if (e.key === 'Enter') {
       e.preventDefault();
-      const cursorPos = getContentEditableCursorOffset(el);
+      let cursorPos = getContentEditableCursorOffset(el);
+      const sel = window.getSelection();
+      // When selection API is unavailable (tests) or ambiguous, default Enter to end-of-line split.
+      if (text.length > 0 && cursorPos === 0 && (!sel || sel.rangeCount === 0)) {
+        cursorPos = text.length;
+      }
       handleBulletEnterKey({
         bullets,
         bIdx,
@@ -254,6 +265,7 @@ export function createContentEditableBulletKeyDownHandler(options: {
         cursorPos,
         onChange,
         prefixId,
+        onFocusNext: onEnter,
       });
       return;
     }

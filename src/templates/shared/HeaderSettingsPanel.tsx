@@ -77,28 +77,31 @@ export const HeaderSettingsPanel: React.FC<HeaderSettingsPanelProps> = ({
         )}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <span className={sectionLabelClass}>Header Style</span>
-        <div className="grid grid-cols-3 gap-1">
-          {HEADER_STYLES.map((style) => (
-            <button
-              key={style}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onChange({ headerStyle: style });
-              }}
-              className={`py-1 px-1 text-[9px] rounded border cursor-pointer capitalize transition leading-tight ${
-                (ls.headerStyle ?? 'centered') === style
-                  ? 'bg-teal-50 border-teal-500 text-teal-700 font-bold'
-                  : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-              }`}
-            >
-              {style === 'enhancv' ? 'Enhance' : style}
-            </button>
-          ))}
+      {/* Header Style picker — hidden for the Designer template which has a fixed layout */}
+      {(ls.template ?? 'navy') !== 'designer' && (
+        <div className="flex flex-col gap-1.5">
+          <span className={sectionLabelClass}>Header Style</span>
+          <div className="grid grid-cols-3 gap-1">
+            {HEADER_STYLES.map((style) => (
+              <button
+                key={style}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange({ headerStyle: style });
+                }}
+                className={`py-1 px-1 text-[9px] rounded border cursor-pointer capitalize transition leading-tight ${
+                  (ls.headerStyle ?? 'centered') === style
+                    ? 'bg-teal-50 border-teal-500 text-teal-700 font-bold'
+                    : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                {style === 'enhancv' ? 'Enhance' : style}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex flex-col gap-1.5 border-t border-slate-100 pt-2">
         <span className={sectionLabelClass}>Field Visibility</span>

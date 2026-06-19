@@ -62,6 +62,8 @@ export function useTemplateSetup({
     accentColor2,
     fontFamily = 'inter',
     headingFont,
+    titleFont,
+    accentFont,
     headerStyle = 'centered',
     showPhoto = true,
     bulletStyle = 'disc',
@@ -74,7 +76,7 @@ export function useTemplateSetup({
     showLayoutBounds = false,
     designerLeftSections = ['experience', 'education'],
     designerRightSections = ['summary', 'skills', 'achievements', 'certs', 'languages'],
-    entrySpacing = 16,
+    entrySpacing = 12,
   } = layoutSettings;
 
   const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
@@ -266,8 +268,10 @@ export function useTemplateSetup({
     handleDragLeave,
   ]);
 
-  const bodyFontCss = FONT_CSS[fontFamily] ?? FONT_CSS.inter;
+  const bodyFontCss    = FONT_CSS[fontFamily]    ?? FONT_CSS.inter;
   const headingFontCss = headingFont ? FONT_CSS[headingFont] : bodyFontCss;
+  const titleFontCss   = titleFont   ? FONT_CSS[titleFont]   : headingFontCss;
+  const accentFontCss  = accentFont  ? FONT_CSS[accentFont]  : bodyFontCss;
 
   const sheetStyle: React.CSSProperties = {
     fontSize: `${fontSize}pt`,
@@ -399,6 +403,8 @@ export function useTemplateSetup({
     dragProps,
     bodyFontCss,
     headingFontCss,
+    titleFontCss,
+    accentFontCss,
     sheetStyle,
     sec,
     ec,

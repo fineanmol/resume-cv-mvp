@@ -16,7 +16,8 @@ export interface EducationDescriptionProps {
   align?: 'left' | 'center' | 'right' | 'justify';
   showGpa?: boolean;
   showBullets?: boolean;
-  /** GPA is shown outside this block (Designer/Serif sidebar); only non-GPA lines are edited here. */
+  /** Section field key — resolves bullet placeholder text automatically. */
+  field?: import('../../config/fieldPlaceholders').EditableFieldKey;
   splitGpa?: boolean;
 }
 
@@ -32,6 +33,7 @@ export const EducationDescription: React.FC<EducationDescriptionProps> = ({
   align = 'left',
   showGpa = true,
   showBullets = true,
+  field = 'education.bullets',
   splitGpa = false,
 }) => {
   const { gradeText, remaining } = parseEducationGrade(bullets);
@@ -49,6 +51,7 @@ export const EducationDescription: React.FC<EducationDescriptionProps> = ({
         brandColor={brandColor}
         align={align}
         prefixId={prefixId}
+        field={field}
       />
     );
   }
@@ -70,6 +73,7 @@ export const EducationDescription: React.FC<EducationDescriptionProps> = ({
       brandColor={brandColor}
       align={align}
       prefixId={prefixId}
+      field={field}
     />
   );
 };

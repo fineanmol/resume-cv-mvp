@@ -11,7 +11,13 @@ export const SkillsEditor = React.memo<{
   defaultBadgeStyle?: React.CSSProperties;
   className?: string;
   skillsStyle?: 'chips' | 'normal' | 'grid';
-}>(function SkillsEditor({ value, isEditable, ec, onSave, badgeStyle, defaultBadgeStyle, className = '', skillsStyle = 'chips' }) {
+  /** Font scale factor (fontSize / 10). Used by grid mode to scale skill text size. */
+  fontScale?: number;
+  /** Font family for grid mode (defaults to Open Sans). Responds to Body Font picker. */
+  gridFontFamily?: string;
+  /** Text color for grid mode skill items (defaults to #3E3E3E). */
+  gridTextColor?: string;
+}>(function SkillsEditor({ value, isEditable, ec, onSave, badgeStyle, defaultBadgeStyle, className = '', skillsStyle = 'chips', fontScale = 1, gridFontFamily, gridTextColor = '#3E3E3E' }) {
   const [focusedSkillIdx, setFocusedSkillIdx] = useState<number | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
@@ -149,7 +155,7 @@ export const SkillsEditor = React.memo<{
             <span
               key={i}
               className="border-b border-slate-300 pb-1 pt-1 whitespace-nowrap"
-              style={{ fontFamily: "'Open Sans', sans-serif", fontSize: '8.25pt', fontWeight: 700, color: '#3E3E3E' }}
+              style={{ fontFamily: gridFontFamily ?? "'Open Sans', sans-serif", fontSize: `${(8.25 * fontScale).toFixed(2)}pt`, fontWeight: 700, color: gridTextColor }}
             >
               {s}
             </span>
@@ -168,7 +174,7 @@ export const SkillsEditor = React.memo<{
               suppressContentEditableWarning={true}
               data-skill-index={i}
               className={`min-w-0 outline-none border-b border-slate-300 pb-1 pt-1 whitespace-nowrap ${ec}`}
-              style={{ fontFamily: "'Open Sans', sans-serif", fontSize: '8.25pt', fontWeight: 700, color: '#3E3E3E' }}
+              style={{ fontFamily: gridFontFamily ?? "'Open Sans', sans-serif", fontSize: `${(8.25 * fontScale).toFixed(2)}pt`, fontWeight: 700, color: gridTextColor }}
               onFocus={() => setFocusedSkillIdx(i)}
               onBlur={(e) => {
                 setFocusedSkillIdx(null);

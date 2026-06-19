@@ -16,6 +16,10 @@ export interface LayoutSettings {
   accentColor2?: string;      // secondary accent (badges, highlights)
   fontFamily?: FontFamily;    // body font
   headingFont?: FontFamily;   // heading / name font (can differ from body)
+  /** Title font — entry titles like job role, degree, project title (Designer template) */
+  titleFont?: FontFamily;
+  /** Accent font — company/school names, subtitle (Designer template) */
+  accentFont?: FontFamily;
   headerStyle?: HeaderStyle;  // layout variant for the name/contact block
   showPhoto?: boolean;        // whether to display avatar in templates that support it
   bulletStyle?: 'disc' | 'circle' | 'square' | 'dash' | 'arrow' | 'number' | 'none';
@@ -40,8 +44,10 @@ export interface LayoutSettings {
   // Category-specific layout options
   showAchievementIcons?: boolean;
   showAchievementDesc?: boolean;
+  showAchievementBullets?: boolean;
   showProjectIcons?: boolean;
   showProjectDesc?: boolean;
+  showProjectBullets?: boolean;
   showExperienceDates?: boolean;
   showExperienceLocation?: boolean;
   showExperienceCompany?: boolean;
@@ -51,6 +57,10 @@ export interface LayoutSettings {
   showEducationGpa?: boolean;
   showEducationLogo?: boolean;
   showLanguageLevel?: boolean;
+  /** Entry title color – job role, degree, project/achievement title (Designer template) */
+  titleColor?: string;
+  /** Body / description text color (default #3E3E3E for Designer template) */
+  bodyTextColor?: string;
 }
 
 export interface HighlightItem {
@@ -102,12 +112,14 @@ export interface EducationEntryVisibility {
 
 export interface CertEntryVisibility {
   desc?: boolean;
+  bullets?: boolean;
   link?: boolean;
   icon?: boolean;
 }
 
 export interface AchievementEntryVisibility {
   desc?: boolean;
+  bullets?: boolean;
   icon?: boolean;
   link?: boolean;
 }
