@@ -116,16 +116,28 @@ const TemplatesModalBody: React.FC<Omit<TemplatesModalProps, 'isOpen'>> = ({
             Live Preview
           </div>
 
-          <div
-            className="bg-white shadow-2xl rounded-sm overflow-hidden select-none origin-center"
-            style={{ width: 437, height: 618 }}
-          >
-            <div className="origin-top-left scale-[0.55] w-[794px] h-[1123px]">
-              {docType === 'resume' ? (
-                <ResumeTemplateRenderer state={previewState} isEditable={false} />
-              ) : (
-                <CoverLetterTemplateRenderer state={previewState} isEditable={false} />
-              )}
+          <div className="flex flex-col items-center gap-3">
+            <div
+              className="bg-white shadow-2xl rounded-sm overflow-hidden select-none origin-center"
+              style={{ width: 437, height: 618 }}
+            >
+              <div className="origin-top-left scale-[0.55] w-[794px] h-[1123px]">
+                {docType === 'resume' ? (
+                  <ResumeTemplateRenderer state={previewState} isEditable={false} />
+                ) : (
+                  <CoverLetterTemplateRenderer state={previewState} isEditable={false} />
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-slate-200">
+              <span
+                className="w-3 h-3 rounded-full flex-shrink-0 ring-1 ring-black/10"
+                style={{ background: currentTemplateObj.accent }}
+                aria-hidden
+              />
+              <span className="text-xs font-bold text-slate-700">{currentTemplateObj.name}</span>
+              <span className="text-[10px] text-slate-400 font-mono">{currentTemplateObj.accent}</span>
             </div>
           </div>
         </div>

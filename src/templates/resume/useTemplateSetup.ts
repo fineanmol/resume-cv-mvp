@@ -127,6 +127,7 @@ export function useTemplateSetup({
 
   const handleSectionDragStart = (e: React.DragEvent, sectionId: string) => {
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', sectionId);
     setDraggedSectionId(sectionId);
   };
 
@@ -145,8 +146,12 @@ export function useTemplateSetup({
 
   const handleSectionDrop = (e: React.DragEvent, targetSectionId: string) => {
     e.preventDefault();
+    e.stopPropagation();
     setDragOverSectionId(null);
-    if (!draggedSectionId || draggedSectionId === targetSectionId) return;
+    if (!draggedSectionId || draggedSectionId === targetSectionId) {
+      setDraggedSectionId(null);
+      return;
+    }
 
     const leftCol = [...designerLeftSections];
     const rightCol = [...designerRightSections];
@@ -181,6 +186,7 @@ export function useTemplateSetup({
 
   const handleColumnDrop = (e: React.DragEvent, targetColumn: 'left' | 'right') => {
     e.preventDefault();
+    e.stopPropagation();
     setDragOverSectionId(null);
     if (!draggedSectionId) return;
 
@@ -215,6 +221,10 @@ export function useTemplateSetup({
     onDragStart: handleSectionDragStart,
     onDragOver: handleSectionDragOver,
     onDrop: handleSectionDrop,
+    onDragEnd: () => {
+      setDraggedSectionId(null);
+      setDragOverSectionId(null);
+    },
     dragOverId: dragOverSectionId,
     onDragEnter: handleDragEnter,
     onDragLeave: handleDragLeave,
@@ -272,6 +282,7 @@ export function useTemplateSetup({
     isEditable,
     ec,
     layoutSettings,
+    bulletStyle,
     onLayoutSettingsChange: (patch: Partial<typeof layoutSettings>) =>
       onLayoutSettingsChange?.({ ...layoutSettings, ...patch }),
     onCertChange,
@@ -279,10 +290,17 @@ export function useTemplateSetup({
     onLanguageChange,
     onAddCert,
     onDeleteCert,
+    onDuplicateCert,
+    onAddSimilarCert,
     onAddAchievement,
     onDeleteAchievement,
+    onDuplicateAchievement,
+    onAddSimilarAchievement,
     onAddLanguage,
     onDeleteLanguage,
+    onDuplicateLanguage,
+    onAddSimilarLanguage,
+    onEntryVisibilityChange,
     certsAlign,
     achievementsAlign,
   };

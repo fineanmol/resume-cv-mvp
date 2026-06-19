@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import { ResumeTemplateRenderer } from '../templates/ResumeTemplates';
 import { CoverLetterTemplateRenderer } from '../templates/CoverLetterTemplates';
 import { DEFAULT_RESUME_STATE } from '../config/defaultResume';
@@ -385,6 +385,140 @@ describe('ResumeTemplates — skillsStyle option', () => {
     expect(chip).toBeNull();
     // It should render the entire comma-separated value
     expect(container.textContent).toContain('React, TypeScript, Node.js');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESUME — BottomSections entry-level visibility (navy / serif via bottomProps)
+// ─────────────────────────────────────────────────────────────────────────────
+describe('ResumeTemplates — BottomSections entry visibility', () => {
+  it('navy: hides cert link when entry visibility.link=false', () => {
+    const state: ResumeState = {
+      ...DEFAULT_RESUME_STATE,
+      layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template: 'navy' },
+      resumeCerts: [{
+        title: 'Hidden Link Cert',
+        desc: 'Test description',
+        url: 'https://example.com/cert',
+        visibility: { link: false },
+      }],
+    };
+    const { container } = render(<ResumeTemplateRenderer state={state} />);
+    expect(container.querySelector('a[href="https://example.com/cert"]')).toBeNull();
+  });
+
+  it('navy: hides language level when entry visibility.level=false', () => {
+    const state: ResumeState = {
+      ...DEFAULT_RESUME_STATE,
+      layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template: 'navy' },
+      resumeLanguages: [{ name: 'French', level: 'Fluent', visibility: { level: false } }],
+    };
+    const { getByText, queryByText } = render(<ResumeTemplateRenderer state={state} />);
+    expect(getByText('French')).toBeTruthy();
+    expect(queryByText('Fluent')).toBeNull();
+  });
+
+  it('navy: cert multiline desc renders as bullet list', () => {
+    const state: ResumeState = {
+      ...DEFAULT_RESUME_STATE,
+      layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template: 'navy', bulletStyle: 'dash' },
+      resumeCerts: [{
+        title: 'Multi-line Cert',
+        desc: 'First point\nSecond point',
+      }],
+    };
+    const { container } = render(<ResumeTemplateRenderer state={state} />);
+    expect(container.textContent).toContain('First point');
+    expect(container.textContent).toContain('Second point');
+    expect(container.textContent).toContain('—');
+  });
+
+  it('serif: hides achievement desc when entry visibility.desc=false', () => {
+    const state: ResumeState = {
+      ...DEFAULT_RESUME_STATE,
+      layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template: 'serif' },
+      resumeAchievements: [{
+        title: 'Visible Title Only',
+        desc: 'Hidden achievement description',
+        icon: 'star',
+        visibility: { desc: false },
+      }],
+    };
+    const { getByText, queryByText } = render(<ResumeTemplateRenderer state={state} />);
+    expect(getByText('Visible Title Only')).toBeTruthy();
+    expect(queryByText('Hidden achievement description')).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESUME — editable integration (SectionWrapper, entry settings, designer drag)
+// ─────────────────────────────────────────────────────────────────────────────
+describe('ResumeTemplates — editable integration', () => {
+  it('navy: entry settings panel renders when gear is clicked', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'navy' })} isEditable />
+    );
+    const gearButtons = container.querySelectorAll('button[title="Settings"]');
+    expect(gearButtons.length).toBeGreaterThan(0);
+    fireEvent.click(gearButtons[0]);
+    expect(container.textContent).toMatch(/Show Period|Show Company/);
+  });
+
+  it('navy: BottomSections Add entry buttons exist when isEditable', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer
+        state={resumeWith({ template: 'navy' })}
+        isEditable
+        onAddExperience={() => {}}
+        onAddEducation={() => {}}
+        onAddCert={() => {}}
+        onAddAchievement={() => {}}
+        onAddLanguage={() => {}}
+      />
+    );
+    const addButtons = container.querySelectorAll(
+      'button[title^="Add entry"], button[title="Add Skill"]'
+    );
+    expect(addButtons.length).toBeGreaterThan(0);
+  });
+
+  it('serif: SectionWrapper edit toolbar present when isEditable', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'serif' })} isEditable />
+    );
+    expect(container.querySelectorAll('.edit-only').length).toBeGreaterThan(0);
+  });
+
+  it('designer: draggable sections render when showLayoutBounds is true', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer
+        state={resumeWith({ template: 'designer', showLayoutBounds: true })}
+        isEditable
+      />
+    );
+    expect(container.querySelectorAll('.designer-column').length).toBe(2);
+    expect(container.querySelector('[draggable="true"]')).toBeTruthy();
+  });
+
+  it('designer: custom column order renders sections in configured columns', () => {
+    const { getByText, queryByText } = render(
+      <ResumeTemplateRenderer
+        state={resumeWith({
+          template: 'designer',
+          designerLeftSections: ['skills'],
+          designerRightSections: ['experience'],
+        })}
+      />
+    );
+    const skillsHeading = getByText('Skills');
+    const experienceHeading = getByText('Experience');
+    const leftCol = skillsHeading.closest('.designer-column');
+    const rightCol = experienceHeading.closest('.designer-column');
+    expect(leftCol).toBeTruthy();
+    expect(rightCol).toBeTruthy();
+    expect(leftCol?.contains(skillsHeading)).toBe(true);
+    expect(rightCol?.contains(experienceHeading)).toBe(true);
+    expect(queryByText('Summary')).toBeNull();
   });
 });
 

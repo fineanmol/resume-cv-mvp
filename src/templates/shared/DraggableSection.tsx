@@ -13,6 +13,7 @@ export interface DraggableSectionProps {
   dragOverId?: string | null;
   onDragEnter?: (e: React.DragEvent, id: string) => void;
   onDragLeave?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
 }
 
 export const DraggableSection: React.FC<DraggableSectionProps> = ({
@@ -28,6 +29,7 @@ export const DraggableSection: React.FC<DraggableSectionProps> = ({
   dragOverId,
   onDragEnter,
   onDragLeave,
+  onDragEnd,
 }) => {
   const isDraggable = isEditable && showLayoutBounds;
   const isOver = dragOverId === id;
@@ -39,7 +41,12 @@ export const DraggableSection: React.FC<DraggableSectionProps> = ({
       onDragOver={(e) => isDraggable && onDragOver(e)}
       onDragEnter={(e) => isDraggable && onDragEnter?.(e, id)}
       onDragLeave={(e) => isDraggable && onDragLeave?.(e)}
-      onDrop={(e) => isDraggable && onDrop(e, id)}
+      onDragEnd={(e) => isDraggable && onDragEnd?.(e)}
+      onDrop={(e) => {
+        if (!isDraggable) return;
+        e.stopPropagation();
+        onDrop(e, id);
+      }}
       style={style}
       className={`relative group/draggable ${className} ${
         isDraggable

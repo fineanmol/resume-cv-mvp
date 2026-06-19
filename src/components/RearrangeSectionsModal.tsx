@@ -26,11 +26,36 @@ export const RearrangeSectionsModal: React.FC<RearrangeSectionsModalProps> = ({
   leftSections,
   rightSections,
   onSave,
+}) => (
+  <Modal
+    isOpen={isOpen}
+    onClose={onClose}
+    maxWidth="max-w-2xl"
+    noPadding
+    panelClassName="overflow-hidden my-8"
+    overlayClassName="bg-editor/85 overflow-y-auto"
+  >
+    {isOpen && (
+      <RearrangeSectionsModalBody
+        key={`${leftSections.join('|')}-${rightSections.join('|')}`}
+        onClose={onClose}
+        leftSections={leftSections}
+        rightSections={rightSections}
+        onSave={onSave}
+      />
+    )}
+  </Modal>
+);
+
+/** Inner body unmounts when modal closes — local drag state resets on each open (Cancel-safe). */
+const RearrangeSectionsModalBody: React.FC<Omit<RearrangeSectionsModalProps, 'isOpen'>> = ({
+  onClose,
+  leftSections,
+  rightSections,
+  onSave,
 }) => {
   const [localLeft, setLocalLeft] = useState<string[]>(leftSections);
   const [localRight, setLocalRight] = useState<string[]>(rightSections);
-
-  // Drag State
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [draggedFrom, setDraggedFrom] = useState<'left' | 'right' | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -59,7 +84,15 @@ export const RearrangeSectionsModal: React.FC<RearrangeSectionsModalProps> = ({
 
   const handleDrop = (e: React.DragEvent, targetColumn: 'left' | 'right', targetId?: string) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!draggedId || !draggedFrom) return;
+    if (targetId && draggedId === targetId) {
+      setDraggedId(null);
+      setDraggedFrom(null);
+      setDragOverId(null);
+      setDragOverColumn(null);
+      return;
+    }
 
     let newLeft = [...localLeft];
     let newRight = [...localRight];
@@ -104,14 +137,7 @@ export const RearrangeSectionsModal: React.FC<RearrangeSectionsModalProps> = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      maxWidth="max-w-2xl"
-      noPadding
-      panelClassName="overflow-hidden my-8"
-      overlayClassName="bg-editor/85 overflow-y-auto"
-    >
+    <>
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-border-color/60 flex-shrink-0">
         <div>
@@ -233,6 +259,6 @@ export const RearrangeSectionsModal: React.FC<RearrangeSectionsModalProps> = ({
           Apply Changes
         </button>
       </div>
-    </Modal>
+    </>
   );
 };

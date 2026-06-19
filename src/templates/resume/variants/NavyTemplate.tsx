@@ -19,7 +19,7 @@ import { parseEducationGrade } from '../../shared/parseEducationGrade';
 export const NavyTemplate: React.FC = () => {
   const {
     sheetActiveClass, sheetStyle, isEditable, clearActive, headerProps,
-    resumeSummary, sec, brandColor, summaryAlign, ec, ef,
+    resumeSummary, sec, brandColor, summaryAlign, ec, ef, onFieldChange,
     resumeSkills, skillsStyle, badgeStyle, accentColor2,
     resumeExperience, experienceAlign, onLayoutSettingsChange, onAddExperience,
     layoutSettings, onExperienceChange, onDeleteExperience, bulletStyle,
@@ -37,34 +37,52 @@ export const NavyTemplate: React.FC = () => {
   const showEdu = (edu: (typeof resumeEducation)[number], field: keyof NonNullable<(typeof resumeEducation)[number]['visibility']>) =>
     isEntryFieldVisible(edu.visibility, field);
 
+  const handleAddSkill = () => {
+    const list = resumeSkills ? resumeSkills.split(',').map(s => s.trim()).filter(Boolean) : [];
+    onFieldChange?.('resumeSkills', [...list, 'New Skill'].join(', '));
+  };
+
   return (
     <div className={`pdf-sheet ${sheetActiveClass}`} style={sheetStyle} id="resume-sheet"
         onClick={(e) => { if (e.target === e.currentTarget && isEditable) clearActive(); }}>
         <TemplateHeader {...headerProps} />
 
         {(resumeSummary || isEditable) && (
-          <section style={sec}>
-            <h3 className={H} style={{ color: brandColor, borderColor: `${brandColor}40` }}>Profile Summary</h3>
-            <E tag="p" value={resumeSummary || 'Professional summary...'} isEditable={isEditable} editableClass={ec}
-              className={`text-xs text-${summaryAlign} text-slate-700 leading-relaxed`} onSave={ef('resumeSummary')} />
-          </section>
+          <SectionWrapper
+            id="summary" title="Profile Summary" isEditable={isEditable}
+            align={summaryAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ summaryAlign: a })}
+          >
+            <section style={sec}>
+              <h3 className={H} style={{ color: brandColor, borderColor: `${brandColor}40` }}>Profile Summary</h3>
+              <E tag="p" value={resumeSummary || 'Professional summary...'} isEditable={isEditable} editableClass={ec}
+                className={`text-xs text-${summaryAlign} text-slate-700 leading-relaxed`} onSave={ef('resumeSummary')} />
+            </section>
+          </SectionWrapper>
         )}
 
         {(resumeSkills || isEditable) && (
-          <section style={sec}>
-            <h3 className={H} style={{ color: brandColor, borderColor: `${brandColor}40` }}>Skills</h3>
-            <SkillsEditor
-              value={resumeSkills}
-              isEditable={isEditable}
-              ec={ec}
-              onSave={ef('resumeSkills')}
-              accentColor2={accentColor2}
-              brandColor={brandColor}
-              badgeStyle={badgeStyle}
-              defaultBadgeStyle={{ background: '#f1f5f9', color: '#1e293b', borderColor: '#e2e8f0' }}
-              skillsStyle={skillsStyle}
-            />
-          </section>
+          <SectionWrapper
+            id="skills" title="Skills" isEditable={isEditable}
+            skillsStyle={skillsStyle}
+            onSkillsStyleChange={(s) => onLayoutSettingsChange?.({ skillsStyle: s })}
+            onSkillsValueChange={ef('resumeSkills')}
+            onAddEntry={handleAddSkill}
+          >
+            <section style={sec}>
+              <h3 className={H} style={{ color: brandColor, borderColor: `${brandColor}40` }}>Skills</h3>
+              <SkillsEditor
+                value={resumeSkills}
+                isEditable={isEditable}
+                ec={ec}
+                onSave={ef('resumeSkills')}
+                accentColor2={accentColor2}
+                brandColor={brandColor}
+                badgeStyle={badgeStyle}
+                defaultBadgeStyle={{ background: '#f1f5f9', color: '#1e293b', borderColor: '#e2e8f0' }}
+                skillsStyle={skillsStyle}
+              />
+            </section>
+          </SectionWrapper>
         )}
 
         {(resumeExperience && resumeExperience.length > 0 || isEditable) && (
@@ -131,7 +149,7 @@ export const NavyTemplate: React.FC = () => {
                       {showBullets && (
                         <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
                           onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
-                          bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
+                          bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} prefixId={`exp-${idx}`} />
                       )}
                     </div>
                   </ItemWrapper>
@@ -202,7 +220,9 @@ export const NavyTemplate: React.FC = () => {
                         </div>
                       )}
                       {bulletsDisplay && (
-                        <E tag="p" value={bulletsDisplay} isEditable={isEditable} editableClass={ec} className={`text-slate-700 text-${educationAlign}`} onSave={v => onEducationChange?.(idx, 'bullets', v)} />
+                        <BulletList bullets={bulletsDisplay} isEditable={isEditable} editableClass={ec}
+                          onBulletChange={v => onEducationChange?.(idx, 'bullets', v)} className={`text-slate-700 text-${educationAlign}`}
+                          bulletStyle={bulletStyle} brandColor={brandColor} align={educationAlign} prefixId={`edu-${idx}`} />
                       )}
                     </div>
                   </ItemWrapper>
