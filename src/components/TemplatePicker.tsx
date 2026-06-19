@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { ResumeTemplateRenderer } from '../templates/ResumeTemplates';
 import { CoverLetterTemplateRenderer } from '../templates/CoverLetterTemplates';
+import type { TemplateId } from '../types';
+import { TEMPLATE_CATALOG } from '../config/templates';
 import { DEFAULT_RESUME_STATE } from '../config/defaultResume';
 import { DEFAULT_CL_STATE } from '../config/defaultCL';
-
-type TemplateId = 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive';
 
 interface TemplatePickerProps {
   isOpen: boolean;
@@ -16,39 +16,6 @@ interface TemplatePickerProps {
   /** Index to jump to when the picker opens (used by chip strip) */
   startIndex?: number;
 }
-
-const TEMPLATES: { id: TemplateId; name: string; tagline: string; desc: string; badge?: string; accent: string }[] = [
-  {
-    id: 'navy', name: 'Navy Elegant', accent: '#314855',
-    tagline: 'Modern & Professional',
-    desc: 'Clean centered header with an accent border. The classic choice for most industries.',
-  },
-  {
-    id: 'serif', name: 'Harvard Serif', accent: '#1e293b',
-    tagline: 'Academic & Executive',
-    desc: 'Timeless serif typography. Ideal for academic, legal, and senior executive roles.',
-  },
-  {
-    id: 'sidebar', name: 'Creative Sidebar', accent: '#0284c7',
-    tagline: 'Two-Column Impact',
-    desc: 'Branded sidebar for skills and contact info. Great for creative and technical roles.',
-  },
-  {
-    id: 'tech', name: 'Tech Monospace', accent: '#10b981',
-    tagline: 'Developer-First',
-    desc: 'Code-inspired monospace accents. Perfect for engineers and developers.',
-  },
-  {
-    id: 'ats', name: 'Clean ATS', accent: '#6366f1',
-    tagline: 'Maximum ATS Score', badge: 'Best for ATS',
-    desc: 'Plain single-column with no graphics. Guaranteed to parse through any ATS system.',
-  },
-  {
-    id: 'executive', name: 'Executive', accent: '#b45309',
-    tagline: 'Premium Presence', badge: 'Premium',
-    desc: 'Full-width gradient header with branded colour palette. Makes a lasting first impression.',
-  },
-];
 
 const SLIDE = {
   enter: (dir: number) => ({ x: dir > 0 ? 60 : -60, opacity: 0, scale: 0.97 }),
@@ -70,7 +37,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
 
   const go = useCallback((step: number) => {
     setDir(step);
-    setIdx(i => (i + step + TEMPLATES.length) % TEMPLATES.length);
+    setIdx(i => (i + step + TEMPLATE_CATALOG.length) % TEMPLATE_CATALOG.length);
   }, []);
 
   // Keyboard navigation
@@ -80,7 +47,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
       if (e.key === 'ArrowLeft')  go(-1);
       if (e.key === 'ArrowRight') go(1);
       if (e.key === 'Escape')     onClose();
-      if (e.key === 'Enter')      { onSelect(TEMPLATES[idx].id); onClose(); }
+      if (e.key === 'Enter')      { onSelect(TEMPLATE_CATALOG[idx].id); onClose(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -90,7 +57,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
 
   if (!isOpen) return null;
 
-  const tpl = TEMPLATES[idx];
+  const tpl = TEMPLATE_CATALOG[idx];
 
   const previewResume = {
     ...DEFAULT_RESUME_STATE,
@@ -122,7 +89,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
           <div className="flex items-center gap-4">
             {/* Dot indicators */}
             <div className="flex gap-1.5">
-              {TEMPLATES.map((t, i) => (
+              {TEMPLATE_CATALOG.map((t, i) => (
                 <button
                   key={t.id}
                   onClick={() => { setDir(i > idx ? 1 : -1); setIdx(i); }}
@@ -136,7 +103,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
                 </button>
               ))}
             </div>
-            <span className="text-[11px] text-text-muted font-mono">{idx + 1} / {TEMPLATES.length}</span>
+            <span className="text-[11px] text-text-muted font-mono">{idx + 1} / {TEMPLATE_CATALOG.length}</span>
             <button
               onClick={onClose}
               className="p-1.5 text-text-muted hover:text-text-main hover:bg-card border border-transparent hover:border-border-color rounded-lg transition cursor-pointer"
@@ -223,7 +190,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
 
                 {/* Template thumbnails strip */}
                 <div className="flex gap-1.5 flex-wrap">
-                  {TEMPLATES.map((t, i) => (
+                  {TEMPLATE_CATALOG.map((t, i) => (
                     <button
                       key={t.id}
                       onClick={() => { setDir(i > idx ? 1 : -1); setIdx(i); }}

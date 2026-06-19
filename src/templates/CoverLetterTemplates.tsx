@@ -3,6 +3,8 @@ import type { CoverLetterState, HighlightItem } from '../types';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { FONT_CSS } from '../config/fonts';
 import { TemplateHeader, formatLinkedinUrl } from './TemplateHeader';
+import { formatMarkdownBold } from '../utils/markdown';
+import { EditableText } from './shared/EditableText';
 
 interface CoverLetterTemplateProps {
   state: CoverLetterState;
@@ -10,50 +12,6 @@ interface CoverLetterTemplateProps {
   onFieldChange?: (field: keyof CoverLetterState, value: string) => void;
   onHighlightChange?: (index: number, field: keyof HighlightItem, value: string) => void;
 }
-
-interface ParagraphProps {
-  text: string;
-  field: 'p1' | 'p2' | 'p3' | 'p4';
-  className?: string;
-  isEditable: boolean;
-  editableClass: string;
-  onFieldChange?: (field: keyof CoverLetterState, value: string) => void;
-  formatMarkdownBold: (text: string) => string;
-}
-
-const Paragraph: React.FC<ParagraphProps> = ({
-  text,
-  field,
-  className,
-  isEditable,
-  editableClass,
-  onFieldChange,
-  formatMarkdownBold,
-}) => {
-  if (isEditable) {
-    return (
-      <p
-        className={`${className || ''} ${editableClass}`}
-        contentEditable={true}
-        suppressContentEditableWarning={true}
-        onBlur={(e) => {
-          const val = e.currentTarget.textContent || '';
-          if (val !== text) {
-            onFieldChange?.(field, val);
-          }
-        }}
-      >
-        {text}
-      </p>
-    );
-  }
-  return (
-    <p
-      className={className}
-      dangerouslySetInnerHTML={{ __html: formatMarkdownBold(text) }}
-    />
-  );
-};
 
 export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = ({
   state,
@@ -138,7 +96,21 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
       .replace(/{{role}}/g, jobTitle || '[Role]');
   };
 
-  const sharedParagraphProps = { isEditable, editableClass, onFieldChange, formatMarkdownBold };
+  const paragraphEl = (
+    text: string,
+    field: 'p1' | 'p2' | 'p3' | 'p4',
+    className?: string,
+  ) => (
+    <EditableText
+      tag="p"
+      value={text}
+      className={className}
+      isEditable={isEditable}
+      editableClass={editableClass}
+      onSave={(val) => onFieldChange?.(field, val)}
+      dangerousInnerHtml={formatMarkdownBold(text)}
+    />
+  );
 
   // -------------------------------------------------------------
   // 1. NAVY TEMPLATE (Navy Elegant)
@@ -158,8 +130,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
             {salutation}
           </div>
           
-          <Paragraph text={interpolate(p1)} field="p1" className="text-justify" {...sharedParagraphProps} />
-          <Paragraph text={interpolate(p2)} field="p2" className="text-justify" {...sharedParagraphProps} />
+          {paragraphEl(interpolate(p1), 'p1', 'text-justify')}
+          {paragraphEl(interpolate(p2), 'p2', 'text-justify')}
           
           {/* Highlights section inside Navy */}
           {highlights && highlights.length > 0 && (
@@ -190,8 +162,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
             </div>
           )}
 
-          <Paragraph text={interpolate(p3)} field="p3" className="text-justify" {...sharedParagraphProps} />
-          <Paragraph text={interpolate(p4)} field="p4" className="text-justify" {...sharedParagraphProps} />
+          {paragraphEl(interpolate(p3), 'p3', 'text-justify')}
+          {paragraphEl(interpolate(p4), 'p4', 'text-justify')}
           
           <div className="pt-4">
             <p>Sincerely,</p>
@@ -227,8 +199,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
             {salutation}
           </div>
           
-          <Paragraph text={interpolate(p1)} field="p1" {...sharedParagraphProps} />
-          <Paragraph text={interpolate(p2)} field="p2" {...sharedParagraphProps} />
+          {paragraphEl(interpolate(p1), 'p1')}
+          {paragraphEl(interpolate(p2), 'p2')}
           
           {highlights && highlights.length > 0 && (
             <div className="py-2 text-[11px]" style={spacingStyle}>
@@ -259,8 +231,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
             </div>
           )}
 
-          <Paragraph text={interpolate(p3)} field="p3" {...sharedParagraphProps} />
-          <Paragraph text={interpolate(p4)} field="p4" {...sharedParagraphProps} />
+          {paragraphEl(interpolate(p3), 'p3')}
+          {paragraphEl(interpolate(p4), 'p4')}
           
           <div className="pt-4 font-sans text-xs">
             <p>Sincerely,</p>
@@ -423,10 +395,10 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
               {salutation}
             </div>
             
-            <Paragraph text={interpolate(p1)} field="p1" className="text-justify" {...sharedParagraphProps} />
-            <Paragraph text={interpolate(p2)} field="p2" className="text-justify" {...sharedParagraphProps} />
-            <Paragraph text={interpolate(p3)} field="p3" className="text-justify" {...sharedParagraphProps} />
-            <Paragraph text={interpolate(p4)} field="p4" className="text-justify" {...sharedParagraphProps} />
+            {paragraphEl(interpolate(p1), 'p1', 'text-justify')}
+            {paragraphEl(interpolate(p2), 'p2', 'text-justify')}
+            {paragraphEl(interpolate(p3), 'p3', 'text-justify')}
+            {paragraphEl(interpolate(p4), 'p4', 'text-justify')}
             
             <div className="pt-6">
               <p>Sincerely,</p>
@@ -462,8 +434,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
           &gt; {salutation}
         </div>
         
-        <Paragraph text={interpolate(p1)} field="p1" className="text-justify font-sans" {...sharedParagraphProps} />
-        <Paragraph text={interpolate(p2)} field="p2" className="text-justify font-sans" {...sharedParagraphProps} />
+        {paragraphEl(interpolate(p1), 'p1', 'text-justify font-sans')}
+        {paragraphEl(interpolate(p2), 'p2', 'text-justify font-sans')}
         
         {highlights && highlights.length > 0 && (
           <div className="py-2" style={spacingStyle}>
@@ -496,8 +468,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
           </div>
         )}
 
-        <Paragraph text={interpolate(p3)} field="p3" className="text-justify font-sans" {...sharedParagraphProps} />
-        <Paragraph text={interpolate(p4)} field="p4" className="text-justify font-sans" {...sharedParagraphProps} />
+        {paragraphEl(interpolate(p3), 'p3', 'text-justify font-sans')}
+        {paragraphEl(interpolate(p4), 'p4', 'text-justify font-sans')}
         
         <div className="pt-4 font-mono text-xs">
           <p>Sincerely,</p>
@@ -523,8 +495,8 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
       <div className="pdf-sheet text-slate-900" style={sheetStyle} id="cover-letter-sheet">
         {/* Header */}
         <header className="mb-6">
-          <CE tag="h1" value={name} isEditable={isEditable} editableClass={editableClass} className="text-xl font-bold text-slate-900" style={{ fontFamily: headingFontCss }} onSave={v => onFieldChange?.('name', v)} />
-          <CE tag="p" value={subtitle} isEditable={isEditable} editableClass={editableClass} className="text-sm text-slate-600 mt-0.5" onSave={v => onFieldChange?.('subtitle', v)} />
+          <EditableText tag="h1" value={name} isEditable={isEditable} editableClass={editableClass} className="text-xl font-bold text-slate-900" style={{ fontFamily: headingFontCss }} onSave={v => onFieldChange?.('name', v)} />
+          <EditableText tag="p" value={subtitle} isEditable={isEditable} editableClass={editableClass} className="text-sm text-slate-600 mt-0.5" onSave={v => onFieldChange?.('subtitle', v)} />
           <div className="flex flex-wrap gap-x-3 text-xs text-slate-600 mt-1.5">
             {phone && <span>{phone}</span>}
             {email && <span>| {email}</span>}
@@ -536,16 +508,24 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
         <p className="text-xs text-slate-600 mb-4">{today}</p>
 
         <div className="mb-4 text-xs text-slate-800">
-          <CE tag="p" value={companyName ? `Hiring Team, ${companyName}` : 'Hiring Team'} isEditable={isEditable} editableClass={editableClass} className="font-semibold" onSave={v => onFieldChange?.('companyName', v)} />
-          {jobTitle && <CE tag="p" value={`Re: ${jobTitle} Position`} isEditable={isEditable} editableClass={editableClass} className="italic text-slate-600 mt-0.5" onSave={v => onFieldChange?.('jobTitle', v)} />}
+          <EditableText tag="p" value={companyName ? `Hiring Team, ${companyName}` : 'Hiring Team'} isEditable={isEditable} editableClass={editableClass} className="font-semibold" onSave={v => onFieldChange?.('companyName', v)} />
+          {jobTitle && <EditableText tag="p" value={`Re: ${jobTitle} Position`} isEditable={isEditable} editableClass={editableClass} className="italic text-slate-600 mt-0.5" onSave={v => onFieldChange?.('jobTitle', v)} />}
         </div>
 
-        <CE tag="p" value={salutation || `Dear Hiring Manager,`} isEditable={isEditable} editableClass={editableClass} className="text-xs text-slate-800 mb-3" onSave={v => onFieldChange?.('salutation', v)} />
+        <EditableText tag="p" value={salutation || `Dear Hiring Manager,`} isEditable={isEditable} editableClass={editableClass} className="text-xs text-slate-800 mb-3" onSave={v => onFieldChange?.('salutation', v)} />
 
         {[p1, p2, p3, p4].map((para, i) => (
           para ? (
-            <Paragraph key={i} text={interpolate(para)} field={(['p1','p2','p3','p4'] as const)[i]}
-              className="text-xs text-slate-800 mb-3 leading-relaxed" {...sharedParagraphProps} />
+            <EditableText
+              key={i}
+              tag="p"
+              value={interpolate(para)}
+              className="text-xs text-slate-800 mb-3 leading-relaxed"
+              isEditable={isEditable}
+              editableClass={editableClass}
+              onSave={(val) => onFieldChange?.((['p1', 'p2', 'p3', 'p4'] as const)[i], val)}
+              dangerousInnerHtml={formatMarkdownBold(interpolate(para))}
+            />
           ) : null
         ))}
 
@@ -575,7 +555,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
 
         <div className="mt-5 text-xs text-slate-800">
           <p>Sincerely,</p>
-          <CE tag="p" value={name} isEditable={isEditable} editableClass={editableClass} className="font-bold mt-2 text-slate-900" onSave={v => onFieldChange?.('name', v)} />
+          <EditableText tag="p" value={name} isEditable={isEditable} editableClass={editableClass} className="font-bold mt-2 text-slate-900" onSave={v => onFieldChange?.('name', v)} />
         </div>
       </div>
     );
@@ -595,11 +575,11 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
         <p className="italic">{jobTitle ? `Re: Application for ${jobTitle}` : 'Re: Open Application'}</p>
       </div>
 
-      <CE tag="p" value={salutation || 'Dear Hiring Manager,'} isEditable={isEditable} editableClass={editableClass}
+      <EditableText tag="p" value={salutation || 'Dear Hiring Manager,'} isEditable={isEditable} editableClass={editableClass}
         className="text-sm font-semibold text-slate-800 mb-4" onSave={v => onFieldChange?.('salutation', v)} />
 
-      <Paragraph text={interpolate(p1)} field="p1" className="text-xs text-justify mb-3 leading-relaxed" {...sharedParagraphProps} />
-      <Paragraph text={interpolate(p2)} field="p2" className="text-xs text-justify mb-4 leading-relaxed" {...sharedParagraphProps} />
+      {paragraphEl(interpolate(p1), 'p1', 'text-xs text-justify mb-3 leading-relaxed')}
+      {paragraphEl(interpolate(p2), 'p2', 'text-xs text-justify mb-4 leading-relaxed')}
 
       {highlights && highlights.length > 0 && (
         <div className="my-4 border border-slate-200 rounded-lg overflow-hidden">
@@ -625,43 +605,16 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
         </div>
       )}
 
-      <Paragraph text={interpolate(p3)} field="p3" className="text-xs text-justify mb-3 leading-relaxed" {...sharedParagraphProps} />
-      <Paragraph text={interpolate(p4)} field="p4" className="text-xs text-justify mb-4 leading-relaxed" {...sharedParagraphProps} />
+      {paragraphEl(interpolate(p3), 'p3', 'text-xs text-justify mb-3 leading-relaxed')}
+      {paragraphEl(interpolate(p4), 'p4', 'text-xs text-justify mb-4 leading-relaxed')}
 
       <div className="mt-5 text-xs text-slate-800">
         <p>Yours sincerely,</p>
-        <CE tag="p" value={name} isEditable={isEditable} editableClass={editableClass}
+        <EditableText tag="p" value={name} isEditable={isEditable} editableClass={editableClass}
           className="font-bold mt-2 text-slate-900 text-sm" onSave={v => onFieldChange?.('name', v)} />
-        <CE tag="p" value={subtitle} isEditable={isEditable} editableClass={editableClass}
+        <EditableText tag="p" value={subtitle} isEditable={isEditable} editableClass={editableClass}
           className="text-slate-500 text-[11px]" onSave={v => onFieldChange?.('subtitle', v)} />
       </div>
     </div>
   );
 };
-
-function formatMarkdownBold(text: string): string {
-  return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-}
-
-// ─── Inline editable helper for cover letter new templates ───────────────────
-function CE({
-  value, tag = 'span', className, style, isEditable, editableClass, onSave, dangerHtml
-}: {
-  value: string; tag?: 'span' | 'p' | 'h1' | 'h2' | 'h3' | 'strong' | 'div';
-  className?: string; style?: React.CSSProperties;
-  isEditable: boolean; editableClass: string;
-  onSave: (v: string) => void; dangerHtml?: string;
-}) {
-  const Tag = tag;
-  if (isEditable) {
-    return (
-      <Tag className={`${className || ''} ${editableClass}`} style={style}
-        contentEditable={true} suppressContentEditableWarning={true}
-        onBlur={e => { const v = (e.currentTarget as HTMLElement).textContent || ''; if (v !== value) onSave(v); }}>
-        {value}
-      </Tag>
-    );
-  }
-  if (dangerHtml !== undefined) return <Tag className={className} style={style} dangerouslySetInnerHTML={{ __html: dangerHtml }} />;
-  return <Tag className={className} style={style}>{value}</Tag>;
-}

@@ -2,8 +2,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, LayoutTemplate } from 'lucide-react';
 import { TemplatePicker } from './TemplatePicker';
-
-type TemplateId = 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive';
+import type { TemplateId } from '../types';
+import { TEMPLATES_FOR_CAROUSEL } from '../config/templates';
 
 interface TemplateCarouselProps {
   docType: 'resume' | 'coverletter';
@@ -11,15 +11,6 @@ interface TemplateCarouselProps {
   activeTemplate: string;
   onSelect: (templateId: TemplateId) => void;
 }
-
-const TEMPLATES: { id: TemplateId; name: string; color: string }[] = [
-  { id: 'navy',      name: 'Navy',      color: '#314855' },
-  { id: 'serif',     name: 'Serif',     color: '#1e293b' },
-  { id: 'sidebar',   name: 'Sidebar',   color: '#0284c7' },
-  { id: 'tech',      name: 'Tech',      color: '#10b981' },
-  { id: 'ats',       name: 'ATS',       color: '#6366f1' },
-  { id: 'executive', name: 'Executive', color: '#b45309' },
-];
 
 export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
   docType, activeTemplate, onSelect,
@@ -57,7 +48,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
 
         {/* Chip strip — clicking opens the fullscreen picker at that template's position */}
         <div className="flex gap-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {TEMPLATES.map((t, i) => {
+          {TEMPLATES_FOR_CAROUSEL.map((t, i) => {
             const isActive = activeTemplate === t.id;
             return (
               <motion.button

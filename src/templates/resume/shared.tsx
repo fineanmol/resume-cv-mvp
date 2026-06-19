@@ -1,0 +1,14 @@
+export { LI } from '../shared/LinkedInIcon';
+export { WorkLink } from '../shared/WorkLink';
+export { ItemLogo } from '../shared/ItemLogo';
+export { ItemWrapper } from '../shared/ItemWrapper';
+export type { ItemWrapperProps } from '../shared/ItemWrapper';
+export { SectionWrapper } from '../shared/SectionWrapper';
+export type { SectionWrapperProps } from '../shared/SectionWrapper';
+export { BottomSections } from '../shared/BottomSections';
+export type { BottomSectionsProps } from '../shared/BottomSections';
+export { DraggableSection } from '../shared/DraggableSection';
+export type { DraggableSectionProps } from '../shared/DraggableSection';
+export { ProfilePhotoWithWaves } from '../shared/ProfilePhotoWithWaves';
+export { parseEducationGrade } from '../shared/parseEducationGrade';
+export { LanguageBubbles, getLanguageBubbleCount } from '../shared/LanguageBubbles';

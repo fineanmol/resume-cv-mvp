@@ -1,5 +1,8 @@
 # 📖 Technical Architecture & Migration Report
 
+> **For current architecture, folder map, component refactor plan, and contributor guide, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).**  
+> This file focuses on the original Vanilla JS → React migration and historical design decisions.
+
 This document details the architecture, design patterns, and engineering choices implemented in the **React-Tailwind CV & Cover Letter SaaS Suite** (`resume-cv-mvp`). It acts as a comprehensive documentation manual for the project's layout templates, state-management models, offline synchronization, and PDF rendering layers.
 
 ---
@@ -54,9 +57,10 @@ Standard vector capture tools like `html2canvas` crash when meeting modern CSS c
 - **`ATSWidget.tsx`**: Compares CV text with job description keyword densities and handles inline AI suggestion chips.
 
 ### 2. `src/templates/` (Document Renderers)
-- **`ResumeTemplates.tsx`**: Houses Navy, Serif, Sidebar, and Tech resume layouts.
-- **`CoverLetterTemplates.tsx`**: Houses Navy, Serif, Sidebar, and Tech cover letter layouts.
-- Both components support `contentEditable={true}` fields with custom `onBlur` listeners to capture modifications instantly.
+- **`ResumeTemplates.tsx`**: Seven resume layouts — navy, serif, sidebar, tech, ats, executive (fallback), designer.
+- **`CoverLetterTemplates.tsx`**: Matching cover letter layouts.
+- **`TemplateHeader.tsx`**: Shared header component (centered, left, banner, minimal, enhancv).
+- All support `contentEditable={true}` fields with custom `onBlur` listeners to capture modifications instantly.
 
 ### 3. `src/services/` (Backends & AI)
 - **`db.ts`**: Checks user state and routes changes dynamically between Firestore collections (for authenticated users) and LocalStorage (for guest users).

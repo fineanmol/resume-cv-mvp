@@ -34,44 +34,44 @@ An enterprise-ready, modular, and premium Candidate CV & Cover Letter tailoring 
 
 ## 📁 Codebase Architecture
 
-The project is structured under `src/` as a clean, production-ready React application:
+The app is a React + TypeScript SPA under `src/`. For a full guide — editor layout, state flow, template system, duplication map, and the **planned modular component structure** — see:
+
+**→ [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
+
+### Quick map
 
 ```
 src/
-├── types/                # Strict TypeScript Type & Interface declarations
-│   └── index.ts          # Common types (ResumeState, CoverLetterState, etc.)
-├── config/               # Default document configs and layout presets
-│   ├── defaultCL.ts      # Default cover letter profile (Jordan Carter)
-│   └── defaultResume.ts  # Default resume profile (Jordan Carter)
-├── hooks/                # Custom React hooks
-│   ├── useUndoRedo.ts    # History-aware state tracking for undo/redo
-│   └── useOnlineStatus.ts# Monitors online connectivity to disable AI blocks offline
-├── services/             # Core services for database, AI, and exports
-│   ├── firebase.ts       # Firebase SDK config & connection check
-│   ├── db.ts             # Firestore DB and LocalStorage hybrid draft manager
-│   ├── gemini.ts         # Gemini AI API request structure and html parser
-│   └── pdf.ts            # pdf.js headshot extractor & html2pdf generator
-├── templates/            # PDF layout template renderers
-│   ├── ResumeTemplates.tsx     # Navy, Serif, Sidebar, and Tech resume layouts
-│   └── CoverLetterTemplates.tsx# Navy, Serif, Sidebar, and Tech cover letter layouts
-├── components/           # Reusable workspace components
-│   ├── Auth.tsx          # Login/Signup forms with toggleable local mode
-│   ├── Dashboard.tsx     # Workspace list and template picker triggers
-│   ├── EditorHeader.tsx  # Zoom, save status, undo/redo, and PDF download buttons
-│   ├── LandingPage.tsx   # Visual landing page and preview gallery
-│   ├── TemplatePicker.tsx# Template selector modal with live mock A4 renders
-│   ├── TemplateCarousel.tsx# Sidebar horizontal layout slider with live miniatures
-│   ├── ResumeForm.tsx    # Resume sidebar fields (personal info, experience, etc.)
-│   ├── CoverLetterForm.tsx# Cover Letter sidebar fields (drag-and-drop highlights)
-│   ├── JDPanel.tsx       # Link scraper, text area, and ATS widget
-│   └── ATSWidget.tsx     # Keyword score checker and AI keyword badge triggers
-└── tests/                # Automated Vitest integration tests
-    ├── pdf.test.tsx      # Tests PDF service and oklch/oklab color space conversion
-    ├── templates.test.tsx# Tests edit-mode contentEditable renders and blur triggers
-    ├── ats.test.tsx      # Tests keyword mapping and injection triggers
-    ├── auth.test.tsx     # Tests local credentials toggle
-    └── dashboard.test.tsx# Tests document creation and selector modals
+├── App.tsx                     # Editor shell, auth routing, three-panel layout
+├── types/index.ts              # ResumeState, CoverLetterState, LayoutSettings
+├── config/                     # defaultResume, defaultCL, fonts
+├── hooks/                      # useUndoRedo, useAutoSave, useAiActions, …
+├── services/                   # db, firebase, gemini, pdf
+├── utils/                      # bullets, jdMatcher
+├── components/                 # Forms, panels, modals (flat — refactor planned)
+│   ├── ResumeForm.tsx          # Left panel — 8 resume sections
+│   ├── CoverLetterForm.tsx     # Left panel — cover letter
+│   ├── DesignPanel.tsx         # Right panel — design controls
+│   ├── EditorHeader.tsx        # Toolbar, zoom, template/section modals
+│   ├── TemplatesModal.tsx      # Template picker with live preview
+│   ├── AddSectionModal.tsx     # Designer template — add section
+│   ├── RearrangeSectionsModal.tsx
+│   ├── JDPanel.tsx / ATSWidget.tsx
+│   └── Dashboard, LandingPage, Auth, …
+├── templates/
+│   ├── ResumeTemplates.tsx     # 7 resume layouts (navy, serif, sidebar, tech, ats, executive, designer)
+│   ├── CoverLetterTemplates.tsx
+│   └── TemplateHeader.tsx      # Shared header (5 styles)
+└── tests/                      # Vitest — templates, pdf, ats, auth, dashboard
 ```
+
+### Editor at a glance
+
+| Panel | Component | Purpose |
+|-------|-----------|---------|
+| Left | `ResumeForm` / `CoverLetterForm` | Structured field editing |
+| Centre | `ResumeTemplateRenderer` | Live A4 preview (WYSIWYG `contentEditable`) |
+| Right | `DesignPanel` / `JDPanel` | Typography, colours, ATS & AI |
 
 ---
 

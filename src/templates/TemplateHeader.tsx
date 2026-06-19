@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mail, Phone, MapPin, Settings, Camera, Trash2 } from 'lucide-react';
 import type { HeaderStyle } from '../types';
+import { EditableText } from './shared/EditableText';
 
 export function formatLinkedinUrl(url: string): string {
   if (!url) return '';
@@ -51,43 +52,6 @@ export interface TemplateHeaderProps {
   isActive?: boolean;
   onSelect?: () => void;
 }
-
-// Reusable editable span / link anchor
-const EF: React.FC<{
-  field: EditField;
-  isEditable: boolean;
-  ec: string;
-  className?: string;
-  style?: React.CSSProperties;
-  href?: string;
-}> = ({ field, isEditable, ec, className, style, href }) => {
-  if (isEditable) {
-    return (
-      <span
-        data-href={href}
-        className={`${className ?? ''} ${ec}`}
-        style={style}
-        contentEditable={true}
-        suppressContentEditableWarning={true}
-        onBlur={e => field.onSave((e.currentTarget as HTMLElement).textContent ?? '')}
-      >
-        {field.value}
-      </span>
-    );
-  }
-  if (href) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={`${className ?? ''} hover:underline cursor-pointer`} style={style}>
-        {field.value}
-      </a>
-    );
-  }
-  return (
-    <span className={className} style={style}>
-      {field.value}
-    </span>
-  );
-};
 
 export const AvatarCircleEditable: React.FC<{
   src: string;
@@ -312,25 +276,25 @@ const ContactRow: React.FC<{
       {hasPhone && (
         <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
           <Phone className="w-3 h-3 flex-shrink-0 mt-[1px]" />
-          <EF field={phone} isEditable={isEditable} ec={ec} />
+          <EditableText value={phone.value} onSave={phone.onSave} isEditable={isEditable} editableClass={ec} />
         </span>
       )}
       {hasEmail && (
         <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
           <Mail className="w-3 h-3 flex-shrink-0 mt-[1px]" />
-          <EF field={email} isEditable={isEditable} ec={ec} href={`mailto:${email.value}`} />
+          <EditableText value={email.value} onSave={email.onSave} isEditable={isEditable} editableClass={ec} href={`mailto:${email.value}`} />
         </span>
       )}
       {hasLocation && (
         <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
           <MapPin className="w-3 h-3 flex-shrink-0 mt-[1px]" />
-          <EF field={location} isEditable={isEditable} ec={ec} />
+          <EditableText value={location.value} onSave={location.onSave} isEditable={isEditable} editableClass={ec} />
         </span>
       )}
       {hasLinkedin && (
         <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
           <LI />
-          <EF field={linkedin} isEditable={isEditable} ec={ec} href={formatLinkedinUrl(linkedin.value)} />
+          <EditableText value={linkedin.value} onSave={linkedin.onSave} isEditable={isEditable} editableClass={ec} href={formatLinkedinUrl(linkedin.value)} />
         </span>
       )}
     </div>
@@ -586,10 +550,10 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
           }}>
           <div className="flex justify-between items-start gap-4">
             <div>
-              <EF field={p.name} isEditable={p.isEditable} ec={lightEc}
+              <EditableText value={p.name.value} onSave={p.name.onSave} isEditable={p.isEditable} editableClass={lightEc}
                 className={`block text-3xl font-bold tracking-tight text-white ${nameClassName}`} style={nameStyle} />
               {showTitle && (
-                <EF field={p.subtitle} isEditable={p.isEditable} ec={lightEc}
+                <EditableText value={p.subtitle.value} onSave={p.subtitle.onSave} isEditable={p.isEditable} editableClass={lightEc}
                   className="block text-sm text-white/80 mt-1 uppercase tracking-wide" />
               )}
             </div>
@@ -638,10 +602,10 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
         >
           <div className="flex-1 min-w-0">
             <div>
-              <EF field={p.name} isEditable={p.isEditable} ec={p.ec}
+              <EditableText value={p.name.value} onSave={p.name.onSave} isEditable={p.isEditable} editableClass={p.ec}
                 className={`block text-3xl font-extrabold tracking-tight ${nameClassName}`} style={{ ...nameStyle, color: p.brandColor }} />
               {showTitle && (
-                <EF field={p.subtitle} isEditable={p.isEditable} ec={p.ec}
+                <EditableText value={p.subtitle.value} onSave={p.subtitle.onSave} isEditable={p.isEditable} editableClass={p.ec}
                   className="block text-sm font-semibold uppercase mt-1.5 tracking-wide text-slate-500" />
               )}
             </div>
@@ -652,7 +616,7 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
                 <span className="flex items-center gap-1.5 min-w-0">
                   <Mail className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                   <span className="truncate">
-                    <EF field={p.email} isEditable={p.isEditable} ec={p.ec} href={`mailto:${p.email.value}`} />
+                    <EditableText value={p.email.value} onSave={p.email.onSave} isEditable={p.isEditable} editableClass={p.ec} href={`mailto:${p.email.value}`} />
                   </span>
                 </span>
               )}
@@ -660,7 +624,7 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
                 <span className="flex items-center gap-1.5 min-w-0">
                   <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                   <span className="truncate">
-                    <EF field={p.phone} isEditable={p.isEditable} ec={p.ec} />
+                    <EditableText value={p.phone.value} onSave={p.phone.onSave} isEditable={p.isEditable} editableClass={p.ec} />
                   </span>
                 </span>
               )}
@@ -668,7 +632,7 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
                 <span className="flex items-center gap-1.5 min-w-0">
                   <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                   <span className="truncate">
-                    <EF field={p.location} isEditable={p.isEditable} ec={p.ec} />
+                    <EditableText value={p.location.value} onSave={p.location.onSave} isEditable={p.isEditable} editableClass={p.ec} />
                   </span>
                 </span>
               )}
@@ -676,7 +640,7 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
                 <span className="flex items-center gap-1.5 min-w-0">
                   <LI />
                   <span className="truncate">
-                    <EF field={p.linkedin} isEditable={p.isEditable} ec={p.ec} href={formatLinkedinUrl(p.linkedin.value)} />
+                    <EditableText value={p.linkedin.value} onSave={p.linkedin.onSave} isEditable={p.isEditable} editableClass={p.ec} href={formatLinkedinUrl(p.linkedin.value)} />
                   </span>
                 </span>
               )}
@@ -721,10 +685,10 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
           style={{ borderColor: p.brandColor }}>
           <div className="flex-1">
             <div>
-              <EF field={p.name} isEditable={p.isEditable} ec={p.ec}
+              <EditableText value={p.name.value} onSave={p.name.onSave} isEditable={p.isEditable} editableClass={p.ec}
                 className={`block text-3xl font-bold tracking-tight ${nameClassName}`} style={{ ...nameStyle, color: p.brandColor }} />
               {showTitle && (
-                <EF field={p.subtitle} isEditable={p.isEditable} ec={p.ec}
+                <EditableText value={p.subtitle.value} onSave={p.subtitle.onSave} isEditable={p.isEditable} editableClass={p.ec}
                   className="block text-sm text-slate-500 uppercase mt-1 tracking-wide" />
               )}
             </div>
@@ -781,10 +745,10 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
               />
             )}
             <div>
-              <EF field={p.name} isEditable={p.isEditable} ec={p.ec}
+              <EditableText value={p.name.value} onSave={p.name.onSave} isEditable={p.isEditable} editableClass={p.ec}
                 className={`block text-3xl font-bold tracking-tight ${nameClassName}`} style={{ ...nameStyle, color: p.brandColor }} />
               {showTitle && (
-                <EF field={p.subtitle} isEditable={p.isEditable} ec={p.ec}
+                <EditableText value={p.subtitle.value} onSave={p.subtitle.onSave} isEditable={p.isEditable} editableClass={p.ec}
                   className="block text-sm text-slate-500 uppercase mt-1 tracking-wide" />
               )}
             </div>
@@ -829,10 +793,10 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
             />
           </div>
         )}
-        <EF field={p.name} isEditable={p.isEditable} ec={p.ec}
+        <EditableText value={p.name.value} onSave={p.name.onSave} isEditable={p.isEditable} editableClass={p.ec}
           className={`block text-3xl font-bold tracking-tight ${nameClassName}`} style={{ ...nameStyle, color: p.brandColor }} />
         {showTitle && (
-          <EF field={p.subtitle} isEditable={p.isEditable} ec={p.ec}
+          <EditableText value={p.subtitle.value} onSave={p.subtitle.onSave} isEditable={p.isEditable} editableClass={p.ec}
             className="block text-sm text-slate-500 uppercase mt-1 tracking-wide" />
         )}
         <ContactRow {...p} cls="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-slate-600 mt-3" />

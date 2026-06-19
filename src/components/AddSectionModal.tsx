@@ -1,6 +1,6 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { X, Award, CheckCircle2 } from 'lucide-react';
+import { Modal } from './ui/Modal';
 
 interface AddSectionModalProps {
   isOpen: boolean;
@@ -139,86 +139,84 @@ export const AddSectionModal: React.FC<AddSectionModalProps> = ({
   activeSections,
   onAddSection
 }) => {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-editor/85 backdrop-blur-sm p-4 overflow-y-auto">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: 15 }}
-        transition={{ duration: 0.2 }}
-        className="w-full max-w-4xl bg-sidebar border border-border-color rounded-2xl shadow-2xl overflow-hidden flex flex-col my-8"
-        style={{ maxHeight: '90vh' }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-border-color/60 flex-shrink-0">
-          <div>
-            <h2 className="text-lg font-bold text-text-main">Add a new section</h2>
-            <p className="text-xs text-text-muted mt-1">Select a section preview card below to insert it into your resume</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 text-text-muted hover:text-text-main hover:bg-card border border-transparent hover:border-border-color rounded-lg transition cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-4xl"
+      noPadding
+      panelClassName="overflow-hidden my-8"
+      overlayClassName="bg-editor/85 overflow-y-auto"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-5 border-b border-border-color/60 flex-shrink-0">
+        <div>
+          <h2 className="text-lg font-bold text-text-main">Add a new section</h2>
+          <p className="text-xs text-text-muted mt-1">Select a section preview card below to insert it into your resume</p>
         </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1.5 text-text-muted hover:text-text-main hover:bg-card border border-transparent hover:border-border-color rounded-lg transition cursor-pointer"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-none">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {SECTION_TYPES.map((sec) => {
-              const isAdded = activeSections.includes(sec.id);
-              return (
-                <div
-                  key={sec.id}
-                  onClick={() => {
-                    if (!isAdded) {
-                      onAddSection(sec.id);
-                      onClose();
-                    }
-                  }}
-                  className={`border rounded-xl overflow-hidden bg-card/20 group/card relative flex flex-col h-[200px] transition-all duration-300 ${
-                    isAdded
-                      ? 'border-brand-accent/40 bg-brand-accent/5 opacity-80'
-                      : 'border-border-color/60 hover:border-brand-accent cursor-pointer hover:shadow-lg hover:-translate-y-0.5'
-                  }`}
-                >
-                  {/* Card Previews */}
-                  <div className="p-4 flex-1 overflow-hidden bg-white/5 group-hover/card:bg-white/10 transition-colors">
-                    {sec.preview}
-                  </div>
-
-                  {/* Card Footer Banner */}
-                  <div className="p-3 border-t border-border-color/40 bg-sidebar flex items-center justify-between flex-shrink-0">
-                    <div>
-                      <h3 className="text-xs font-bold text-text-main">{sec.title}</h3>
-                      <p className="text-[10px] text-text-muted mt-0.5">{sec.desc}</p>
-                    </div>
-                    {isAdded && (
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-brand-accent bg-brand-accent/10 px-2 py-0.5 rounded-full">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Added
-                      </span>
-                    )}
-                  </div>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6 scrollbar-none" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {SECTION_TYPES.map((sec) => {
+            const isAdded = activeSections.includes(sec.id);
+            return (
+              <div
+                key={sec.id}
+                onClick={() => {
+                  if (!isAdded) {
+                    onAddSection(sec.id);
+                    onClose();
+                  }
+                }}
+                className={`border rounded-xl overflow-hidden bg-card/20 group/card relative flex flex-col h-[200px] transition-all duration-300 ${
+                  isAdded
+                    ? 'border-brand-accent/40 bg-brand-accent/5 opacity-80'
+                    : 'border-border-color/60 hover:border-brand-accent cursor-pointer hover:shadow-lg hover:-translate-y-0.5'
+                }`}
+              >
+                {/* Card Previews */}
+                <div className="p-4 flex-1 overflow-hidden bg-white/5 group-hover/card:bg-white/10 transition-colors">
+                  {sec.preview}
                 </div>
-              );
-            })}
-          </div>
-        </div>
 
-        {/* Footer actions */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-border-color/60 bg-sidebar flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-border-color hover:bg-card text-xs font-semibold rounded-lg text-text-muted hover:text-text-main transition cursor-pointer"
-          >
-            Cancel
-          </button>
+                {/* Card Footer Banner */}
+                <div className="p-3 border-t border-border-color/40 bg-sidebar flex items-center justify-between flex-shrink-0">
+                  <div>
+                    <h3 className="text-xs font-bold text-text-main">{sec.title}</h3>
+                    <p className="text-[10px] text-text-muted mt-0.5">{sec.desc}</p>
+                  </div>
+                  {isAdded && (
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-brand-accent bg-brand-accent/10 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Added
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </motion.div>
-    </div>
+      </div>
+
+      {/* Footer actions */}
+      <div className="flex justify-end gap-3 px-6 py-4 border-t border-border-color/60 bg-sidebar flex-shrink-0">
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-2 border border-border-color hover:bg-card text-xs font-semibold rounded-lg text-text-muted hover:text-text-main transition cursor-pointer"
+        >
+          Cancel
+        </button>
+      </div>
+    </Modal>
   );
 };

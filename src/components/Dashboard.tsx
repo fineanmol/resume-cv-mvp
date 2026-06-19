@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { dbService } from '../services/db';
-import type { DocumentMetadata } from '../types';
+import type { DocumentMetadata, TemplateId } from '../types';
 import { 
   FileText, 
   Mail, 
@@ -23,7 +23,7 @@ interface DashboardProps {
   userId: string;
   isLocal: boolean;
   onSelectDocument: (id: string, type: 'resume' | 'coverletter') => void;
-  onCreateNew: (type: 'resume' | 'coverletter', template: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive') => void;
+  onCreateNew: (type: 'resume' | 'coverletter', template: TemplateId) => void;
   onLogout: () => void;
 }
 
@@ -88,7 +88,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setIsPickerOpen(true);
   };
 
-  const handleSelectTemplate = (template: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive') => {
+  const handleSelectTemplate = (template: TemplateId) => {
     setIsPickerOpen(false);
     onCreateNew(pickerDocType, template);
   };
