@@ -2,6 +2,7 @@ import React from 'react';
 import type { LayoutSettings } from '../../types';
 import { resolvePhotoShape } from '../../utils/photoShape';
 import { AvatarCircleEditable } from '../TemplateHeader';
+import { HeaderWaveLines } from './HeaderWaveLines';
 import { PhotoDecorativeFrame } from './PhotoDecorativeFrame';
 
 /** Gap between photo edge and dashed ring (px) */
@@ -22,6 +23,7 @@ export const ProfilePhotoWithWaves: React.FC<{
   avatar,
   name = 'Profile',
   brandColor,
+  accentColor2,
   isEditable = false,
   onAvatarChange,
   layoutSettings,
@@ -35,6 +37,7 @@ export const ProfilePhotoWithWaves: React.FC<{
       className={`relative flex-shrink-0 box-content overflow-visible z-[2] ${size}`}
       style={{ padding: FRAME_GAP }}
     >
+      <HeaderWaveLines brandColor={brandColor} accentColor2={accentColor2} />
       <PhotoDecorativeFrame shape={photoShape} brandColor={brandColor} />
       <div className={`relative z-[1] ${size}`}>
         <AvatarCircleEditable

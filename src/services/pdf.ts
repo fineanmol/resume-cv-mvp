@@ -539,7 +539,7 @@ export class PdfService {
                 transform: none !important;
               }
               .profile-photo-waves {
-                opacity: 0.35 !important;
+                opacity: 0.5 !important;
               }
               .pdf-sheet span.inline-flex.items-center,
               .pdf-sheet .inline-flex.items-center,

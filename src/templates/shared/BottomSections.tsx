@@ -21,7 +21,7 @@ import {
 } from './entrySettings';
 import { isEntryFieldVisible } from '../../utils/entryVisibility';
 import { splitIntoBullets } from '../../utils/bullets';
-import { getLanguageBubbleCount } from '../../utils/languageLevel';
+import { getLanguageBubbleCount, getLanguageLevelFromBubbleCount } from '../../utils/languageLevel';
 import { getDynamicAchievementIcon, getDynamicProjectIcon } from './templateIconHelpers';
 
 export interface BottomSectionsProps {
@@ -315,7 +315,14 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
                             <E value={lang.level} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[10px]"
                               onSave={(v) => onLanguageChange?.(idx, 'level', v)} />
                           ) : null}
-                          <LanguageBubbles count={bubbles} activeColor={accentColor} />
+                          <LanguageBubbles
+                            count={bubbles}
+                            activeColor={accentColor}
+                            isEditable={isEditable}
+                            onCountChange={(bubbleCount) =>
+                              onLanguageChange?.(idx, 'level', getLanguageLevelFromBubbleCount(bubbleCount))
+                            }
+                          />
                         </>
                       )}
                     </span>

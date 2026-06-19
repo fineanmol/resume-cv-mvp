@@ -37,3 +37,17 @@ export function getLanguageBubbleCount(levelText: string): number {
     return 2;
   return 3;
 }
+
+export const LANGUAGE_LEVELS_BY_BUBBLE = [
+  'Beginner',
+  'Elementary',
+  'Intermediate',
+  'Advanced',
+  'Fluent',
+] as const;
+
+/** Map bubble count (1–5) back to a canonical proficiency label. */
+export function getLanguageLevelFromBubbleCount(count: number): string {
+  const clamped = Math.min(5, Math.max(1, Math.round(count)));
+  return LANGUAGE_LEVELS_BY_BUBBLE[clamped - 1];
+}

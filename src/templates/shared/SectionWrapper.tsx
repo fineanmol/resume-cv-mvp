@@ -95,7 +95,7 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
 
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`absolute -top-10 left-1/2 -translate-x-1/2 transition-all flex items-center gap-0.5 bg-white border border-slate-200 shadow-lg rounded-lg px-2 py-1 z-40 edit-only ${
+        className={`absolute -top-2 right-0 flex flex-nowrap items-center gap-0.5 whitespace-nowrap bg-white border border-slate-200 shadow-lg rounded-lg px-2 py-1 z-40 edit-only ${
           isActive ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/section:opacity-100 group-hover/section:visible'
         }`}
       >

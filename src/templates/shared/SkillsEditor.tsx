@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { GripVertical } from 'lucide-react';
 import { EditableText } from './EditableText';
 
 export const SkillsEditor = React.memo<{
@@ -43,17 +44,28 @@ export const SkillsEditor = React.memo<{
   };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
-    if (focusedSkillIdx !== null) {
-      e.preventDefault();
-      return;
+    e.stopPropagation();
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
     }
+    setFocusedSkillIdx(null);
     setDragIdx(index);
     e.dataTransfer.setData('text/plain', index.toString());
     e.dataTransfer.effectAllowed = 'move';
+
+    const chipEl = (e.currentTarget as HTMLElement).closest('[data-skill-chip]');
+    if (chipEl instanceof HTMLElement) {
+      e.dataTransfer.setDragImage(
+        chipEl,
+        Math.min(chipEl.offsetWidth / 2, 40),
+        chipEl.offsetHeight / 2,
+      );
+    }
   };
 
   const handleDragOver = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
+    e.stopPropagation();
     if (dragIdx === null) return;
     if (dragIdx === targetIndex) {
       e.dataTransfer.dropEffect = 'none';
@@ -66,6 +78,7 @@ export const SkillsEditor = React.memo<{
 
   const handleDrop = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
+    e.stopPropagation();
     const sourceIndexStr = e.dataTransfer.getData('text/plain');
     if (sourceIndexStr === '') {
       resetDrag();
@@ -153,20 +166,32 @@ export const SkillsEditor = React.memo<{
           return (
             <span
               key={i}
-              draggable={focusedSkillIdx === null}
-              onDragStart={(e) => handleDragStart(e, i)}
+              data-skill-chip
               onDragOver={(e) => handleDragOver(e, i)}
               onDrop={(e) => handleDrop(e, i)}
-              onDragEnd={resetDrag}
-              className={`${chipBase} pl-2 pr-1.5 relative group/chip transition-[box-shadow,opacity] duration-100 ${
+              className={`${chipBase} pl-0.5 pr-2 relative group/chip transition-[box-shadow,opacity] duration-100 ${
                 isFocused ? 'border-teal-400 ring-1 ring-teal-400/30' : 'hover:border-slate-300'
-              } ${focusedSkillIdx === null ? 'cursor-grab active:cursor-grabbing' : 'cursor-text'} ${chipDropClass(i)}`}
+              } ${chipDropClass(i)}`}
               style={baseStyle}
             >
               <span
+                draggable
+                onDragStart={(e) => handleDragStart(e, i)}
+                onDragEnd={resetDrag}
+                aria-label="Drag to reorder skill"
+                title="Drag to reorder"
+                className={`edit-only flex items-center shrink-0 cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 touch-none select-none p-0.5 -ml-0.5 rounded hover:bg-slate-100/80 ${
+                  isFocused ? 'opacity-100' : 'opacity-0 group-hover/chip:opacity-100'
+                }`}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <GripVertical className="w-3 h-3 pointer-events-none" />
+              </span>
+              <span
                 contentEditable={true}
                 suppressContentEditableWarning={true}
-                className="outline-none inline min-w-0 align-middle"
+                className="outline-none inline min-w-0 align-middle cursor-text"
                 style={chipFieldStyle}
                 onFocus={() => setFocusedSkillIdx(i)}
                 onBlur={(e) => {
@@ -218,7 +243,7 @@ export const SkillsEditor = React.memo<{
                   }
                 }}
                 data-skill-index={i}
-                title="Click to edit · Enter to add next · Backspace on empty to delete · Drag to reorder"
+                title="Click to edit · Enter to add next · Backspace on empty to delete · Drag handle to reorder"
               >
                 {s}
               </span>
@@ -229,7 +254,9 @@ export const SkillsEditor = React.memo<{
                   list.splice(i, 1);
                   onSave(list.join(', '));
                 }}
-                className="edit-only text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 rounded-full flex items-center justify-center opacity-0 overflow-hidden transition-[width,height,opacity,margin] duration-150 font-bold text-[9px] cursor-pointer shrink-0 w-0 h-0 ml-0 group-hover/chip:w-3.5 group-hover/chip:h-3.5 group-hover/chip:opacity-100 group-hover/chip:ml-1"
+                className={`edit-only absolute -top-1.5 -right-1.5 z-10 w-3.5 h-3.5 rounded-full border border-slate-200 bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 shadow-sm flex items-center justify-center font-bold text-[9px] leading-none cursor-pointer pointer-events-none transition-opacity duration-150 ${
+                  isFocused ? 'opacity-100 pointer-events-auto' : 'opacity-0 group-hover/chip:opacity-100 group-hover/chip:pointer-events-auto'
+                }`}
                 title="Remove skill"
                 type="button"
               >
