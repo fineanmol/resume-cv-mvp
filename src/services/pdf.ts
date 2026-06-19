@@ -164,17 +164,19 @@ export class PdfService {
     const sheetElement = (element.querySelector('.pdf-sheet') || element) as HTMLElement;
 
     // Create a hidden wrapper positioned at (0,0) with a negative z-index to stay invisible to the user.
-    // This allows the clone to be rendered in an unscaled context so html2canvas computes correct bounding boxes.
+    // Use position: absolute and height: auto to prevent clipping when rendering multi-page documents.
     const wrapper = document.createElement('div');
     wrapper.style.cssText = [
-      'position: fixed',
+      'position: absolute',
       'left: 0',
       'top: 0',
       'width: 794px',
-      'height: 100%',
-      'overflow: hidden',
+      'height: auto',
       'z-index: -9999',
       'pointer-events: none',
+      'padding: 0',
+      'margin: 0',
+      'box-sizing: border-box',
     ].join(';');
 
     // Clone and strip all transforms/shadows so html2canvas sees a plain A4 element
@@ -228,9 +230,39 @@ export class PdfService {
             || (clonedDoc.body.querySelector('*') as HTMLElement);
 
           if (clonedSheet) {
+            // Copy all styles from the parent document to the cloned document's head.
+            // This resolves relative stylesheet URL issues (/assets/index-*.css) inside the about:blank iframe on production.
+            try {
+              for (const sheet of Array.from(document.styleSheets)) {
+                try {
+                  const rules = sheet.cssRules || sheet.rules;
+                  if (rules) {
+                    const cssText = Array.from(rules)
+                      .map(rule => rule.cssText)
+                      .join('\n');
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = cssText;
+                    clonedDoc.head.appendChild(style);
+                  }
+                } catch {
+                  // Skip cross-origin stylesheets (like Google Fonts CDN links) to prevent SecurityError
+                }
+              }
+            } catch (err) {
+              console.warn('Failed to copy document stylesheets:', err);
+            }
+
             // Append style override tag to cloned document to hide layout tools (pseudo-elements, focus outlines)
             const style = clonedDoc.createElement('style');
             style.innerHTML = `
+              body {
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              * {
+                font-variant-ligatures: none !important;
+                text-rendering: optimizeLegibility !important;
+              }
               .pdf-sheet::before, .pdf-sheet::after {
                 display: none !important;
                 content: none !important;
