@@ -90,7 +90,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
     onChange(prev => { const u = [...prev.resumeLanguages]; u[idx] = { ...u[idx], [k]: clean(v) }; return { ...prev, resumeLanguages: u }; });
 
   return (
-    <aside className="w-[380px] border-r border-border-color/60 bg-sidebar flex flex-col flex-shrink-0 overflow-y-auto p-5 space-y-5">
+    <div className="w-full flex-1 flex flex-col overflow-y-auto p-5 space-y-5">
 
       {/* PDF Import */}
       <div className="bg-card/20 border border-border-color/60 rounded-xl p-4 space-y-2.5">
@@ -373,6 +373,6 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
         </div>
 
       </div>
-    </aside>
+    </div>
   );
 };

@@ -51,7 +51,7 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
   };
 
   return (
-    <aside className="w-[380px] border-r border-border-color/60 bg-sidebar flex flex-col flex-shrink-0 overflow-y-auto p-5 space-y-5">
+    <div className="w-full flex-1 flex flex-col overflow-y-auto p-5 space-y-5">
 
       <div className="space-y-3">
 
@@ -221,6 +221,6 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
         </div>
 
       </div>
-    </aside>
+    </div>
   );
 };

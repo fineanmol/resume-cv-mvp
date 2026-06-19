@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -101,6 +101,54 @@ export default function App() {
   const [zoomScale,    setZoomScale]    = useState(0.85);
   const [rightTab,     setRightTab]     = useState<'design' | 'ats'>('design');
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  
+  const [leftWidth, setLeftWidth] = useState(380);
+  const [rightWidth, setRightWidth] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const startResizeLeft = useCallback((mouseDownEvent: React.MouseEvent) => {
+    mouseDownEvent.preventDefault();
+    setIsResizing(true);
+    const startX = mouseDownEvent.clientX;
+    const startWidth = leftWidth;
+
+    const doResize = (mouseMoveEvent: MouseEvent) => {
+      const deltaX = mouseMoveEvent.clientX - startX;
+      const newWidth = Math.max(280, Math.min(550, startWidth + deltaX));
+      setLeftWidth(newWidth);
+    };
+
+    const stopResize = () => {
+      setIsResizing(false);
+      window.removeEventListener('mousemove', doResize);
+      window.removeEventListener('mouseup', stopResize);
+    };
+
+    window.addEventListener('mousemove', doResize);
+    window.addEventListener('mouseup', stopResize);
+  }, [leftWidth]);
+
+  const startResizeRight = useCallback((mouseDownEvent: React.MouseEvent) => {
+    mouseDownEvent.preventDefault();
+    setIsResizing(true);
+    const startX = mouseDownEvent.clientX;
+    const startWidth = rightWidth;
+
+    const doResize = (mouseMoveEvent: MouseEvent) => {
+      const deltaX = mouseMoveEvent.clientX - startX;
+      const newWidth = Math.max(260, Math.min(500, startWidth - deltaX));
+      setRightWidth(newWidth);
+    };
+
+    const stopResize = () => {
+      setIsResizing(false);
+      window.removeEventListener('mousemove', doResize);
+      window.removeEventListener('mouseup', stopResize);
+    };
+
+    window.addEventListener('mousemove', doResize);
+    window.addEventListener('mouseup', stopResize);
+  }, [rightWidth]);
 
   // Job Description
   const [jobDescription, setJobDescription] = useState(() => localStorage.getItem('LAST_JD') ?? '');
@@ -342,18 +390,30 @@ export default function App() {
             )}
 
             {/* LEFT — Content form (sections) */}
-            {isResume ? (
-              <ResumeForm
-                state={resume.state}
-                onChange={resume.set}
-                onImproveBullet={ai.improveBullet}
-                aiLoading={ai.aiLoading}
-                isOnline={isOnline}
-                geminiKey={geminiKey}
-              />
-            ) : (
-              <CoverLetterForm state={cl.state} onChange={cl.set} />
-            )}
+            <aside
+              style={{ width: `${leftWidth}px` }}
+              className="flex-shrink-0 border-r border-border-color/60 bg-sidebar flex flex-col overflow-hidden"
+            >
+              {isResume ? (
+                <ResumeForm
+                  state={resume.state}
+                  onChange={resume.set}
+                  onImproveBullet={ai.improveBullet}
+                  aiLoading={ai.aiLoading}
+                  isOnline={isOnline}
+                  geminiKey={geminiKey}
+                />
+              ) : (
+                <CoverLetterForm state={cl.state} onChange={cl.set} />
+              )}
+            </aside>
+
+            {/* Resize handle for left panel */}
+            <div
+              onMouseDown={startResizeLeft}
+              className="w-[4px] hover:w-[6px] h-full cursor-col-resize bg-border-color/10 hover:bg-brand-accent/50 transition-colors flex-shrink-0 z-40 relative select-none"
+              title="Drag to resize panel"
+            />
 
             {/* CENTRE — Live A4 preview (always visible, no modal) */}
             <section className="flex-1 overflow-hidden relative flex flex-col bg-[#dde3ec]">
@@ -388,9 +448,18 @@ export default function App() {
               </div>
             </section>
 
+            {/* Resize handle for right panel */}
+            {rightPanelOpen && (
+              <div
+                onMouseDown={startResizeRight}
+                className="w-[4px] hover:w-[6px] h-full cursor-col-resize bg-border-color/10 hover:bg-brand-accent/50 transition-colors flex-shrink-0 z-40 relative select-none"
+                title="Drag to resize panel"
+              />
+            )}
+
             {/* RIGHT — Design + ATS tabs */}
             <motion.aside
-              animate={{ width: rightPanelOpen ? 320 : 0 }}
+              animate={{ width: rightPanelOpen ? rightWidth : 0 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
               className={`flex-shrink-0 bg-sidebar flex flex-col overflow-hidden relative ${rightPanelOpen ? 'border-l border-border-color/60' : 'border-transparent'}`}
             >
@@ -447,8 +516,8 @@ export default function App() {
               onClick={() => setRightPanelOpen(p => !p)}
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-6 h-6 rounded-full border border-border-color/60 bg-sidebar text-text-muted hover:text-text-main flex items-center justify-center shadow-md cursor-pointer z-50 hover:bg-brand-accent hover:text-editor transition-all"
               style={{
-                right: rightPanelOpen ? '320px' : '0px',
-                transition: 'right 0.2s ease-out',
+                right: rightPanelOpen ? `${rightWidth}px` : '0px',
+                transition: isResizing ? 'none' : 'right 0.2s ease-out',
               }}
               title={rightPanelOpen ? "Close panel" : "Open panel"}
             >
