@@ -36,7 +36,7 @@ export const SettingsPanelShell: React.FC<SettingsPanelShellProps> = ({
   return (
     <div
       ref={panelRef}
-      className={`bg-white rounded-md shadow-lg border border-slate-200 w-64 p-4 space-y-3 edit-only ${className}`}
+      className={`bg-white rounded-md shadow-lg border border-slate-200 w-64 p-4 space-y-3 edit-only relative z-[110] ${className}`}
       onClick={(e) => e.stopPropagation()}
     >
       {rows.map((row) => (

@@ -54,7 +54,7 @@ export function BulletList({
   return (
     <ul className={`list-none pl-0 space-y-1 ${className}`}>
       {lines.map((bullet, bIdx) => (
-        <li key={bIdx} className="flex items-start">
+        <li key={`${prefixId}-${lines.length}-${bIdx}`} className="flex items-start">
           {hasCustomMarker && (
             <span contentEditable={false} className="flex-shrink-0 mt-[4px] select-none flex items-center justify-start text-[10px] w-4">
               {getMarker(bIdx)}

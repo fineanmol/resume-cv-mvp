@@ -67,7 +67,7 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
         isActive
           ? 'bg-white z-[30] p-2 -m-2 section-active'
           : 'border border-dashed border-transparent hover:border-gray-200 hover:bg-slate-50/30 p-2 -m-2'
-      }`}
+      } ${showSettings ? '!z-[100]' : ''}`}
     >
       {children}
 
@@ -139,7 +139,7 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
             </button>
 
             {showSettings && (
-              <div className="absolute right-0 top-7 z-50 bg-white border border-slate-200 shadow-xl rounded-lg p-3 flex flex-col gap-2.5 edit-only w-64">
+              <div className="absolute right-0 top-full mt-1 z-[110] bg-white border border-slate-200 shadow-xl rounded-lg p-3 flex flex-col gap-2.5 edit-only w-64">
                 {onAlignChange && (
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Alignment</span>

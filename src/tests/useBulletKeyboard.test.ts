@@ -59,7 +59,21 @@ describe('useBulletKeyboard', () => {
       expect(result).toBe('unchanged');
     });
 
-    it('ignores backspace when the bullet has text', () => {
+    it('merges text into the previous bullet when backspace is pressed at the start', () => {
+      let result = '';
+      const handled = handleBulletBackspaceKey({
+        bullets: ['First line', 'Second'],
+        bIdx: 1,
+        text: 'Second',
+        cursorPos: 0,
+        onChange: (value) => { result = value; },
+        prefixId: 'test',
+      });
+      expect(handled).toBe(true);
+      expect(result).toBe('First lineSecond');
+    });
+
+    it('ignores backspace when the bullet has text and cursor is not at start', () => {
       let result = 'unchanged';
       const handled = handleBulletBackspaceKey({
         bullets: ['Hello'],

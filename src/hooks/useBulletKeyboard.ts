@@ -1,5 +1,13 @@
 import type { KeyboardEvent } from 'react';
 
+export function normalizeBulletText(text: string): string {
+  return text.replace(/\u200B/g, '').replace(/\n/g, '');
+}
+
+export function isBulletEmpty(text: string): boolean {
+  return normalizeBulletText(text).length === 0;
+}
+
 export function parseEditableBullets(value: string): string[] {
   const lines = value ? value.split('\n') : [''];
   return lines.length ? lines : [''];
@@ -77,11 +85,24 @@ export function handleBulletBackspaceKey(options: {
   bullets: string[];
   bIdx: number;
   text: string;
+  cursorPos?: number;
   onChange: (value: string) => void;
   prefixId: string;
 }): boolean {
-  const { bullets, bIdx, text, onChange, prefixId } = options;
-  if (text) return false;
+  const { bullets, bIdx, text, cursorPos = 0, onChange, prefixId } = options;
+  const normalized = normalizeBulletText(text);
+
+  // Merge into previous bullet when cursor is at start and current line has text
+  if (cursorPos === 0 && normalized && bIdx > 0) {
+    const updated = [...bullets];
+    updated[bIdx - 1] = (updated[bIdx - 1] ?? '') + normalized;
+    updated.splice(bIdx, 1);
+    onChange(updated.join('\n'));
+    focusBulletElement(prefixId, bIdx - 1, 'end');
+    return true;
+  }
+
+  if (!isBulletEmpty(text)) return false;
   if (bullets.length <= 1) return true;
 
   const updated = bullets.filter((_, i) => i !== bIdx);
@@ -116,8 +137,17 @@ export function createInputBulletKeyDownHandler(options: {
       return;
     }
 
-    if (e.key === 'Backspace' && !bullet) {
-      if (handleBulletBackspaceKey({ bullets, bIdx, text: bullet, onChange, prefixId })) {
+    if (e.key === 'Backspace') {
+      const inputEl = e.currentTarget;
+      const start = inputEl.selectionStart ?? 0;
+      if (handleBulletBackspaceKey({
+        bullets,
+        bIdx,
+        text: bullet,
+        cursorPos: start,
+        onChange,
+        prefixId,
+      })) {
         e.preventDefault();
       }
     }
@@ -149,8 +179,17 @@ export function createContentEditableBulletKeyDownHandler(options: {
       return;
     }
 
-    if (e.key === 'Backspace' && !text) {
-      if (handleBulletBackspaceKey({ bullets, bIdx, text, onChange, prefixId })) {
+    if (e.key === 'Backspace') {
+      const cursorPos = getContentEditableCursorOffset(e.currentTarget);
+      const text = e.currentTarget.textContent ?? '';
+      if (handleBulletBackspaceKey({
+        bullets,
+        bIdx,
+        text,
+        cursorPos,
+        onChange,
+        prefixId,
+      })) {
         e.preventDefault();
       }
     }

@@ -20,7 +20,11 @@ export const ProfilePhotoWithWaves: React.FC<{
   onAvatarChange,
   layoutSettings,
   onLayoutSettingsChange,
-}) => (
+}) => {
+  const roundPhoto = layoutSettings?.roundPhoto ?? true;
+  const ringShape = roundPhoto ? 'rounded-full' : 'rounded-lg';
+
+  return (
   <div className="relative w-28 h-28 flex items-center justify-center flex-shrink-0">
     <svg className="absolute inset-0 w-full h-full opacity-30 overflow-visible pointer-events-none" viewBox="0 0 100 100" fill="none">
       <path d="M-20,40 Q15,15 50,40 T120,40" stroke={accentColor2} strokeWidth="1" strokeDasharray="3 3" />
@@ -28,7 +32,7 @@ export const ProfilePhotoWithWaves: React.FC<{
       <path d="M-20,60 Q35,45 70,60 T120,60" stroke={accentColor2} strokeWidth="0.5" />
     </svg>
 
-    <div className="absolute inset-0 rounded-full border-4 border-dashed border-[#eab308] opacity-75 animate-[spin_180s_linear_infinite] pointer-events-none" />
+    <div className={`absolute inset-0 ${ringShape} border-4 border-dashed border-[#eab308] opacity-75 animate-[spin_180s_linear_infinite] pointer-events-none`} />
 
     <AvatarCircleEditable
       src={avatar}
@@ -41,4 +45,5 @@ export const ProfilePhotoWithWaves: React.FC<{
       onLayoutSettingsChange={onLayoutSettingsChange}
     />
   </div>
-);
+  );
+};

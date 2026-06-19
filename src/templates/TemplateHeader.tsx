@@ -211,7 +211,7 @@ export const AvatarCircleEditable: React.FC<{
       {showPopover && (
         <div
           ref={popoverRef}
-          className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 w-56 bg-white text-slate-800 border border-slate-200 rounded-xl p-3 shadow-xl text-left font-sans text-xs space-y-3 edit-only"
+          className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-[110] w-56 bg-white text-slate-800 border border-slate-200 rounded-xl p-3 shadow-xl text-left font-sans text-xs space-y-3 edit-only"
         >
           <div className="font-bold text-slate-900 border-b pb-1 flex items-center justify-between">
             <span>Photo Settings</span>
@@ -362,7 +362,7 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
     return (
       <div
         ref={settingsRef}
-        className="absolute right-2 top-10 z-50 w-64 bg-white text-slate-800 border border-slate-200 rounded-xl p-4 shadow-xl text-left font-sans text-xs space-y-4 edit-only"
+        className="absolute right-2 top-10 z-[110] w-64 bg-white text-slate-800 border border-slate-200 rounded-xl p-4 shadow-xl text-left font-sans text-xs space-y-4 edit-only"
         style={{ transformOrigin: 'top right' }}
       >
         <div className="font-bold text-slate-900 border-b pb-1.5 flex items-center justify-between">

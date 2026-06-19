@@ -167,7 +167,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
         />
       )}
 
-      <section className="flex-1 overflow-hidden relative flex flex-col bg-[#dde3ec]">
+      <section className="flex-1 min-h-0 relative flex flex-col bg-[#dde3ec]">
         <div className="sheet-preview-container flex-1 w-full relative">
           <div
             ref={sheetRef}

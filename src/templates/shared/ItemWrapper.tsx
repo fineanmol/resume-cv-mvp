@@ -65,12 +65,14 @@ export const ItemWrapper: React.FC<ItemWrapperProps> = ({
 
   return (
     <div
-      className={`relative group/item rounded transition-all duration-200 ${isItemActive ? 'p-2 -m-2 item-active' : 'p-0'}`}
+      className={`relative group/item rounded transition-all duration-200 ${
+        isItemActive ? 'p-2 -m-2 item-active' : 'p-0'
+      } ${showSettings ? 'z-[100]' : ''}`}
       onClick={handleItemClick}
     >
       {children}
 
-      <div className="edit-only absolute -top-2 right-0 flex items-center gap-0.5 bg-white border border-slate-200 shadow-md rounded-md px-1 py-0.5 opacity-0 group-hover/item:opacity-100 transition-all duration-150 z-30">
+      <div className="edit-only absolute -top-2 right-0 flex items-center gap-0.5 bg-white border border-slate-200 shadow-md rounded-md px-1 py-0.5 opacity-0 group-hover/item:opacity-100 transition-all duration-150 z-[90]">
         {index > 0 && handleMoveUp && (
           <button
             type="button"
@@ -125,7 +127,7 @@ export const ItemWrapper: React.FC<ItemWrapperProps> = ({
               <Settings className="w-3 h-3" />
             </button>
             {showSettings && panelContent && (
-              <div className="absolute right-0 top-5 z-50">
+              <div className="absolute right-0 top-full mt-1 z-[110]">
                 {panelContent}
               </div>
             )}

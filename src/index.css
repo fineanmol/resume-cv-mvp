@@ -261,6 +261,16 @@ body {
   z-index: 45;
 }
 
+/* Entry settings popover open — lift above sibling entries and sections */
+.pdf-sheet .group\/item.z-\[100\] {
+  z-index: 100 !important;
+}
+
+.pdf-sheet .group\/section.z-\[100\],
+.pdf-sheet .group\/section.\!z-\[100\] {
+  z-index: 100 !important;
+}
+
 /* Active header */
 .pdf-sheet.has-active-section .header-active {
   opacity: 1 !important;
