@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, Type, Layout, SlidersHorizontal, Image, List } from 'lucide-react';
+import { Palette, Type, Layout, SlidersHorizontal, Image, List, Tag } from 'lucide-react';
 import type { LayoutSettings, FontFamily, HeaderStyle, TemplateId } from '../types';
 import { SectionHeader } from './SectionHeader';
 import { FONT_OPTIONS, FONT_CSS } from '../config/fonts';
@@ -291,6 +291,43 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({ layout, onChange, docT
                         </button>
                       );
                     })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* ── SKILLS STYLE ──────────────────────────────────────── */}
+        {docType === 'resume' && (
+          <div className="border border-border-color/50 rounded-xl overflow-hidden bg-card/10">
+            <SectionHeader id="skillsStyle" icon={Tag} label="Skills Style" openSection={open} onToggle={toggle} />
+            <AnimatePresence initial={false}>
+              {open === 'skillsStyle' && (
+                <motion.div key="skillsStyle" {...SECTION_ANIM} style={{ overflow: 'hidden' }}>
+                  <div className="p-3 border-t border-border-color/40 grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={() => onChange({ skillsStyle: 'chips' })}
+                      className={`px-2.5 py-2 rounded-lg border text-left transition cursor-pointer ${
+                        (layout.skillsStyle ?? 'chips') === 'chips'
+                          ? 'border-brand-accent bg-brand-accent/8 text-brand-accent font-bold'
+                          : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                      }`}
+                    >
+                      <span className="text-[10px] font-semibold block">Chips / Badges</span>
+                      <span className="text-[8px] opacity-70 leading-tight block mt-0.5">Styled pill layout</span>
+                    </button>
+                    <button
+                      onClick={() => onChange({ skillsStyle: 'normal' })}
+                      className={`px-2.5 py-2 rounded-lg border text-left transition cursor-pointer ${
+                        (layout.skillsStyle ?? 'chips') === 'normal'
+                          ? 'border-brand-accent bg-brand-accent/8 text-brand-accent font-bold'
+                          : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                      }`}
+                    >
+                      <span className="text-[10px] font-semibold block">Normal Text</span>
+                      <span className="text-[8px] opacity-70 leading-tight block mt-0.5">Plain comma-separated list</span>
+                    </button>
                   </div>
                 </motion.div>
               )}

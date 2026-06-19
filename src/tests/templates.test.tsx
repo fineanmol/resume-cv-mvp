@@ -324,3 +324,30 @@ describe('ResumeTemplates — work and certification links', () => {
   });
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// RESUME — skillsStyle option (chips vs normal)
+// ─────────────────────────────────────────────────────────────────────────────
+describe('ResumeTemplates — skillsStyle option', () => {
+  it('renders skills as chips by default', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'navy', skillsStyle: 'chips' })} />
+    );
+    // Chips should have the inline-flex styles
+    const chip = container.querySelector('span.inline-flex');
+    expect(chip).toBeTruthy();
+    expect(chip?.textContent).toBe('React');
+  });
+
+  it('renders skills as normal text when skillsStyle="normal"', () => {
+    const { container } = render(
+      <ResumeTemplateRenderer state={resumeWith({ template: 'navy', skillsStyle: 'normal' })} />
+    );
+    // Normal style shouldn't contain span.inline-flex chips
+    const chip = container.querySelector('span.inline-flex');
+    expect(chip).toBeNull();
+    // It should render the entire comma-separated value
+    expect(container.textContent).toContain('React, TypeScript, Node.js');
+  });
+});
+
+

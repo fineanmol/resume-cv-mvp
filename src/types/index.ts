@@ -15,6 +15,7 @@ export interface LayoutSettings {
   headerStyle?: HeaderStyle;  // layout variant for the name/contact block
   showPhoto?: boolean;        // whether to display avatar in templates that support it
   bulletStyle?: 'disc' | 'circle' | 'square' | 'dash' | 'arrow' | 'number' | 'none';
+  skillsStyle?: 'chips' | 'normal';
 }
 
 export interface HighlightItem {

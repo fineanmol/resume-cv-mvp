@@ -164,7 +164,8 @@ const SkillsEditor: React.FC<{
   defaultBadgeStyle?: React.CSSProperties;
   className?: string;
   editClassName?: string;
-}> = ({ value, isEditable, ec, onSave, accentColor2, brandColor, badgeStyle, defaultBadgeStyle, className = '', editClassName = '' }) => {
+  skillsStyle?: 'chips' | 'normal';
+}> = ({ value, isEditable, ec, onSave, accentColor2, brandColor, badgeStyle, defaultBadgeStyle, className = '', editClassName = '', skillsStyle = 'chips' }) => {
   const [editing, setEditing] = useState(false);
   const skillsList = value ? value.split(',').map(s => s.trim()).filter(Boolean) : [];
 
@@ -189,11 +190,31 @@ const SkillsEditor: React.FC<{
 
   const fallbackDefaultStyle = defaultBadgeStyle || { background: brandColor, color: '#fff' };
 
+  if (skillsStyle === 'normal') {
+    if (!isEditable) {
+      return (
+        <p className={`text-xs text-slate-700 leading-relaxed ${className}`}>
+          {value}
+        </p>
+      );
+    }
+    return (
+      <E
+        tag="p"
+        value={value}
+        isEditable={true}
+        editableClass={ec}
+        className={`text-xs text-slate-700 leading-relaxed w-full ${className}`}
+        onSave={onSave}
+      />
+    );
+  }
+
   if (!isEditable) {
     return (
       <div className={`flex flex-wrap gap-x-2 gap-y-1.5 text-xs ${className}`}>
         {skillsList.map((s, i) => (
-          <span key={i} className="px-2 py-0.5 rounded font-medium border"
+          <span key={i} className="inline-flex items-center justify-center px-2.5 py-1 rounded font-medium border leading-none text-center"
             style={accentColor2 ? badgeStyle(i) : fallbackDefaultStyle}>
             {s}
           </span>
@@ -227,7 +248,7 @@ const SkillsEditor: React.FC<{
         >
           {skillsList.length > 0 ? (
             skillsList.map((s, i) => (
-              <span key={i} className="px-2 py-0.5 rounded font-medium border select-none"
+              <span key={i} className="inline-flex items-center justify-center px-2.5 py-1 rounded font-medium border leading-none text-center select-none"
                 style={accentColor2 ? badgeStyle(i) : fallbackDefaultStyle}>
                 {s}
               </span>
@@ -337,6 +358,7 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
     headerStyle = 'centered',
     showPhoto = true,
     bulletStyle = 'disc',
+    skillsStyle = 'chips',
   } = layoutSettings;
 
   const bodyFontCss    = FONT_CSS[fontFamily] ?? FONT_CSS.inter;
@@ -404,6 +426,7 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               brandColor={brandColor}
               badgeStyle={badgeStyle}
               defaultBadgeStyle={{ background: '#f1f5f9', color: '#1e293b', borderColor: '#e2e8f0' }}
+              skillsStyle={skillsStyle}
             />
           </section>
         )}
@@ -490,6 +513,7 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               badgeStyle={badgeStyle}
               className="text-center font-sans"
               editClassName="text-xs p-2 bg-slate-50 border border-dashed border-slate-200 font-sans text-center"
+              skillsStyle={skillsStyle}
             />
           </section>
         )}
@@ -589,6 +613,7 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
                 defaultBadgeStyle={{ background: brandColor + 'cc', color: '#fff', borderRadius: '9999px' }}
                 className="text-[10px] gap-1"
                 editClassName="text-[10px] p-1 bg-white/50 border border-dashed border-slate-300"
+                skillsStyle={skillsStyle}
               />
             </div>
           )}
@@ -738,6 +763,7 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               defaultBadgeStyle={{ borderColor: '#cbd5e1', color: '#334155', background: '#f8fafc' }}
               className="font-mono text-[10px]"
               editClassName="text-[10px] font-mono p-2 bg-slate-50 border border-dashed border-slate-200"
+              skillsStyle={skillsStyle}
             />
           </section>
         )}
@@ -862,6 +888,7 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               badgeStyle={badgeStyle}
               className="text-xs text-slate-800"
               editClassName="text-xs p-1 bg-slate-50 border border-dashed border-slate-200"
+              skillsStyle={skillsStyle}
             />
           </section>
         )}
@@ -999,6 +1026,7 @@ export const ResumeTemplateRenderer: React.FC<ResumeTemplateProps> = ({
               defaultBadgeStyle={{ background: brandColor, color: '#fff', borderRadius: '9999px' }}
               className="text-[11px] gap-x-2 gap-y-1.5"
               editClassName="text-xs p-2 bg-slate-50 border border-dashed border-slate-200"
+              skillsStyle={skillsStyle}
             />
         </section>
       )}

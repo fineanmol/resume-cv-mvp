@@ -87,5 +87,6 @@ export const DEFAULT_RESUME_STATE: ResumeState = {
     headerStyle: 'centered',
     showPhoto: true,
     bulletStyle: 'disc',
+    skillsStyle: 'chips',
   }
 };
