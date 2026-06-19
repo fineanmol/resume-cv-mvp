@@ -163,6 +163,52 @@ export class PdfService {
 
     const sheetElement = (element.querySelector('.pdf-sheet') || element) as HTMLElement;
 
+    // Create a hidden wrapper positioned at (0,0) with a negative z-index to stay invisible to the user.
+    // This allows the clone to be rendered in an unscaled context so html2canvas computes correct bounding boxes.
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = [
+      'position: fixed',
+      'left: 0',
+      'top: 0',
+      'width: 794px',
+      'height: 100%',
+      'overflow: hidden',
+      'z-index: -9999',
+      'pointer-events: none',
+    ].join(';');
+
+    // Clone and strip all transforms/shadows so html2canvas sees a plain A4 element
+    const clone = sheetElement.cloneNode(true) as HTMLElement;
+    
+    // Override specific layout properties for PDF generation while keeping original inline styles (like fonts, padding)
+    clone.style.transform = 'none';
+    clone.style.transition = 'none';
+    clone.style.boxShadow = 'none';
+    clone.style.position = 'relative';
+    clone.style.left = '0px';
+    clone.style.top = '0px';
+    // Positive z-index so html2canvas (which renders the clone specifically) does not skip it
+    clone.style.zIndex = '9999';
+    clone.style.width = '794px';
+    clone.style.height = 'auto';
+    clone.style.display = 'block';
+    clone.style.opacity = '1';
+    clone.style.visibility = 'visible';
+    clone.style.pointerEvents = 'none';
+
+    // Convert oklch/oklab color values to standard browser-compatible rgba
+    convertElementColors(sheetElement, clone);
+    const origEls = sheetElement.querySelectorAll('*');
+    const cloneEls = clone.querySelectorAll('*');
+    for (let i = 0; i < origEls.length; i++) {
+      if (origEls[i] && cloneEls[i]) {
+        convertElementColors(origEls[i] as HTMLElement, cloneEls[i] as HTMLElement);
+      }
+    }
+
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+
     const opt = {
       margin: 0,
       filename,
@@ -182,21 +228,6 @@ export class PdfService {
             || (clonedDoc.body.querySelector('*') as HTMLElement);
 
           if (clonedSheet) {
-            // Strip layout constraints/transforms that shouldn't appear in the PDF
-            clonedSheet.style.boxShadow = 'none';
-            clonedSheet.style.transform = 'none';
-            clonedSheet.style.transition = 'none';
-
-            // Convert oklch/oklab color values to standard browser-compatible rgba
-            convertElementColors(sheetElement, clonedSheet);
-            const origEls = sheetElement.querySelectorAll('*');
-            const cloneEls = clonedSheet.querySelectorAll('*');
-            for (let i = 0; i < origEls.length; i++) {
-              if (origEls[i] && cloneEls[i]) {
-                convertElementColors(origEls[i] as HTMLElement, cloneEls[i] as HTMLElement);
-              }
-            }
-
             // Append style override tag to cloned document to hide layout tools (pseudo-elements, focus outlines)
             const style = clonedDoc.createElement('style');
             style.innerHTML = `
@@ -219,10 +250,14 @@ export class PdfService {
 
     html2pdf()
       .set(opt)
-      .from(sheetElement)
+      .from(clone)
       .save()
+      .then(() => {
+        document.body.removeChild(wrapper);
+      })
       .catch((err: unknown) => {
         console.error('PDF download failed:', err);
+        document.body.removeChild(wrapper);
       });
   }
 }

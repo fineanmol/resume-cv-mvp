@@ -44,8 +44,22 @@ describe('PdfService', () => {
       jsPDF: expect.objectContaining({ format: 'a4' })
     }));
 
-    // Verify the live element is passed directly to html2pdf.from()
-    expect(mockFrom).toHaveBeenCalledWith(originalDiv);
+    // Verify html2pdf.js was invoked with the clone
+    expect(mockFrom).toHaveBeenCalled();
+    const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
+    expect(clonedElement).toBeTruthy();
+    expect(clonedElement).not.toBe(originalDiv);
+
+    // Verify clone layout settings for plain A4 sheet generation
+    expect(clonedElement.style.transform).toBe('none');
+    expect(clonedElement.style.boxShadow).toBe('none');
+    expect(clonedElement.style.position).toBe('relative');
+    expect(clonedElement.style.zIndex).toBe('9999');
+
+    // Verify original inline styles are preserved on clone
+    expect(clonedElement.style.fontSize).toBe('12pt');
+    expect(clonedElement.style.padding).toBe('20mm 15mm');
+    expect(clonedElement.style.fontFamily).toBe('Inter');
 
     // Retrieve the opt object passed to mockSet to test onclone callback
     const opt = mockSet.mock.calls[0][0];
@@ -63,17 +77,13 @@ describe('PdfService', () => {
     // Trigger the onclone callback
     opt.html2canvas.onclone(mockClonedDoc);
 
-    // Assert that the cloned element had layout constraints stripped
-    expect(mockClonedSheet.style.boxShadow).toBe('none');
-    expect(mockClonedSheet.style.transform).toBe('none');
-    expect(mockClonedSheet.style.transition).toBe('none');
-
     // Assert that the custom style element was added to hide borders and pseudo-elements
     const styleTags = mockClonedDoc.head.querySelectorAll('style');
     expect(styleTags.length).toBeGreaterThan(0);
     expect(styleTags[0].innerHTML).toContain('.pdf-sheet::before, .pdf-sheet::after');
     expect(styleTags[0].innerHTML).toContain('[contenteditable="true"]');
 
+    // The wrapper is cleaned up synchronously in test because mockSave resolves instantly
     document.body.removeChild(originalDiv);
   });
 });
