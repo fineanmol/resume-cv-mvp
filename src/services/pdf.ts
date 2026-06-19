@@ -43,110 +43,24 @@ function convertOklToRgb(colorStr: string): string {
   }
 }
 
-function copyComputedStyles(original: HTMLElement, cloned: HTMLElement) {
+function resolveOklchColors(original: HTMLElement, cloned: HTMLElement) {
   const computed = window.getComputedStyle(original);
-
-  const propertiesToCopy = [
+  const colorProps = [
     'color',
     'background-color',
-    'background-image',
-    'background-position',
-    'background-repeat',
-    'background-size',
     'border-color',
-    'border-style',
-    'border-width',
     'border-top-color',
-    'border-top-style',
-    'border-top-width',
     'border-bottom-color',
-    'border-bottom-style',
-    'border-bottom-width',
     'border-left-color',
-    'border-left-style',
-    'border-left-width',
     'border-right-color',
-    'border-right-style',
-    'border-right-width',
-    'border-radius',
-    'border-top-left-radius',
-    'border-top-right-radius',
-    'border-bottom-left-radius',
-    'border-bottom-right-radius',
-    'font-family',
-    'font-size',
-    'font-weight',
-    'font-style',
-    'line-height',
-    'letter-spacing',
-    'text-align',
-    'text-decoration',
-    'text-transform',
-    'padding',
-    'padding-top',
-    'padding-bottom',
-    'padding-left',
-    'padding-right',
-    'margin',
-    'margin-top',
-    'margin-bottom',
-    'margin-left',
-    'margin-right',
-    'width',
-    'height',
-    'min-width',
-    'min-height',
-    'max-width',
-    'max-height',
-    'display',
-    'flex-direction',
-    'flex-wrap',
-    'flex-grow',
-    'flex-shrink',
-    'flex-basis',
-    'justify-content',
-    'align-items',
-    'align-self',
-    'gap',
-    'row-gap',
-    'column-gap',
-    'position',
-    'top',
-    'bottom',
-    'left',
-    'right',
-    'z-index',
-    'opacity',
-    'visibility',
-    'box-sizing',
-    'list-style-type',
-    'list-style-position',
     'fill',
-    'stroke',
-    'stroke-width',
-    'vertical-align',
-    'transform'
+    'stroke'
   ];
 
-  propertiesToCopy.forEach((prop) => {
-    // Skip width, min-width, and max-width for non-SVG elements to prevent scale/squeezing layout distortion
-    if ((prop === 'width' || prop === 'min-width' || prop === 'max-width') && original.tagName.toLowerCase() !== 'svg') {
-      return;
-    }
-
-    // Skip height for block containers to prevent vertical overflow/clipping, but copy for SVGs and inline-block/inline-flex items (chips/links)
-    if (prop === 'height' || prop === 'min-height' || prop === 'max-height') {
-      const isSvg = original.tagName.toLowerCase() === 'svg';
-      const displayVal = computed.getPropertyValue('display') || '';
-      const isInline = displayVal.includes('inline');
-      if (!isSvg && !isInline) {
-        return;
-      }
-    }
-
+  colorProps.forEach((prop) => {
     const val = computed.getPropertyValue(prop);
-    if (val) {
-      const resolved = (val.includes('oklch') || val.includes('oklab')) ? convertOklToRgb(val) : val;
+    if (val && (val.includes('oklch') || val.includes('oklab'))) {
+      const resolved = convertOklToRgb(val);
       cloned.style.setProperty(prop, resolved);
     }
   });
@@ -314,18 +228,13 @@ export class PdfService {
       }
     });
 
-    // Copy computed layout and typographic styles from original elements to cloned elements first
-    copyComputedStyles(sheetElement, clone);
+    // Resolve Tailwind v4 OKLCH colors to standard RGB/RGBA colors on the clone
+    resolveOklchColors(sheetElement, clone);
     const origEls = sheetElement.querySelectorAll('*');
     const cloneEls = clone.querySelectorAll('*');
     for (let i = 0; i < origEls.length; i++) {
       if (origEls[i] && cloneEls[i]) {
-        const origEl = origEls[i] as HTMLElement;
-        // Skip SVG children (path, rect, circle, g, etc.) to prevent layout and scale distortions
-        if (origEl.closest('svg') && origEl.tagName.toLowerCase() !== 'svg') {
-          continue;
-        }
-        copyComputedStyles(origEl, cloneEls[i] as HTMLElement);
+        resolveOklchColors(origEls[i] as HTMLElement, cloneEls[i] as HTMLElement);
       }
     }
 
