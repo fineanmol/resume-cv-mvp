@@ -23,6 +23,7 @@ import { useToast } from './hooks/useToast';
 
 import { dbService } from './services/db';
 import { PdfService } from './services/pdf';
+import { dispatchClearEditorFocus } from './utils/editorFocus';
 import { DEFAULT_RESUME_STATE } from './config/defaultResume';
 import { DEFAULT_CL_STATE } from './config/defaultCL';
 
@@ -146,6 +147,7 @@ export default function App() {
 
   const handleDownloadPdf = () => {
     if (!sheetRef.current) return;
+    dispatchClearEditorFocus();
     const filename = activeDocType === 'resume'
       ? `${resume.state.name.replace(/\s+/g, '_')}_Resume.pdf`
       : `${cl.state.name.replace(/\s+/g, '_')}_Cover_Letter.pdf`;

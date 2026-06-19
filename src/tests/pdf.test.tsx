@@ -41,7 +41,7 @@ describe('PdfService', () => {
   it('correctly sets up and executes pdf generation by stripping edit controls and resolving oklch colors', async () => {
     // Setup mock element in JSDOM
     const originalDiv = document.createElement('div');
-    originalDiv.className = 'pdf-sheet';
+    originalDiv.className = 'pdf-sheet has-active-section';
     originalDiv.id = 'resume-sheet';
     
     // Add edit controls to check if they are stripped
@@ -81,6 +81,10 @@ describe('PdfService', () => {
     expect(clonedElement.querySelector('.edit-only')).toBeNull();
     expect(clonedElement.querySelector('[contenteditable]')).toBeNull();
     expect(clonedElement.querySelector('span')?.classList.contains('outline-none')).toBeFalsy();
+
+    // Verify focus/backdrop classes are stripped from PDF clone
+    expect(clonedElement.classList.contains('has-active-section')).toBe(false);
+    expect(clonedElement.classList.contains('has-active-item')).toBe(false);
 
     // Verify save was called
     expect(mockSave).toHaveBeenCalled();

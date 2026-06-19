@@ -1,4 +1,5 @@
 import html2pdf from 'html2pdf.js';
+import { stripEditorFocusClasses } from '../utils/editorFocus';
 
 declare const pdfjsLib: {
   GlobalWorkerOptions: { workerSrc: string };
@@ -174,6 +175,9 @@ export class PdfService {
 
     // Clone the sheet element
     const clone = sheetElement.cloneNode(true) as HTMLElement;
+
+    // Remove in-editor focus/backdrop classes so PDF shows all sections equally
+    stripEditorFocusClasses(clone);
     
     // Resolve relative image src attributes to absolute URLs so they load correctly inside the about:blank iframe
     clone.querySelectorAll('img').forEach((img) => {
@@ -344,6 +348,20 @@ export class PdfService {
                 padding: 0 !important;
                 background: transparent !important;
                 background-color: transparent !important;
+              }
+              .group\\/section,
+              .group\\/item,
+              .section-active,
+              .item-active,
+              .header-active {
+                opacity: 1 !important;
+                filter: none !important;
+                background: transparent !important;
+                background-color: transparent !important;
+                border-color: transparent !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
               }
             `;
             clonedDoc.head.appendChild(style);

@@ -1,7 +1,11 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type React from 'react';
 import type { ResumeState, HeaderStyle } from '../../types';
 import { FONT_CSS } from '../../config/fonts';
+import {
+  EDITOR_CLEAR_FOCUS_EVENT,
+  shouldKeepEditorFocus,
+} from '../../utils/editorFocus';
 import type { ResumeTemplateProps } from './types';
 
 export type TemplateRenderContext = ReturnType<typeof useTemplateSetup>;
@@ -120,10 +124,29 @@ export function useTemplateSetup({
     ? (activeItemId ? 'has-active-item' : activeSectionId ? 'has-active-section' : '')
     : '';
 
-  const clearActive = () => {
+  const clearActive = useCallback(() => {
     setActiveSectionId(null);
     setActiveItemId(null);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!isEditable || (!activeSectionId && !activeItemId)) return;
+
+    const handlePointerDown = (e: MouseEvent) => {
+      if (shouldKeepEditorFocus(e.target)) return;
+      clearActive();
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [isEditable, activeSectionId, activeItemId, clearActive]);
+
+  useEffect(() => {
+    if (!isEditable) return;
+    const handleClearEvent = () => clearActive();
+    document.addEventListener(EDITOR_CLEAR_FOCUS_EVENT, handleClearEvent);
+    return () => document.removeEventListener(EDITOR_CLEAR_FOCUS_EVENT, handleClearEvent);
+  }, [isEditable, clearActive]);
 
   const handleSectionDragStart = (e: React.DragEvent, sectionId: string) => {
     e.dataTransfer.effectAllowed = 'move';
