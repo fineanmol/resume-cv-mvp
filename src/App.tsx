@@ -20,7 +20,6 @@ import { useSheetOverflow } from './hooks/useSheetOverflow';
 import { useToast } from './hooks/useToast';
 
 import { dbService } from './services/db';
-import { PdfService } from './services/pdf';
 import { DEFAULT_RESUME_STATE } from './config/defaultResume';
 import { DEFAULT_CL_STATE } from './config/defaultCL';
 
@@ -220,12 +219,7 @@ export default function App() {
   };
 
   const handleDownloadPdf = () => {
-    if (!sheetRef.current) return;
-    const filename = activeDocType === 'resume'
-      ? `${resume.state.name.replace(/\s+/g, '_')}_Resume.pdf`
-      : `${cl.state.name.replace(/\s+/g, '_')}_Cover_Letter.pdf`;
-    PdfService.downloadPdf(sheetRef.current, filename);
-    toast.info('Preparing PDF download…');
+    window.print();
   };
 
   const handleSelectDocument = async (id: string, type: DocType) => {

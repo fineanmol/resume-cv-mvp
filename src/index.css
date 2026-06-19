@@ -100,17 +100,115 @@ body {
   pointer-events: none;
 }
 
-/* Print simulation styles to hide background gradients and ensure high quality printing */
+/* Print media styles to ensure pixel-perfect browser printing to PDF */
 @media print {
-  body {
-    background: none;
-    color: #000;
-  }
-  .pdf-sheet {
-    box-shadow: none;
-    padding: 0;
+  /* Force A4 print size and strip default browser headers/footers (title, date, URL) */
+  @page {
+    size: A4;
     margin: 0;
-    width: 100%;
-    min-height: 100%;
+  }
+
+  /* Hide all editor chrome and navigation items */
+  header,
+  aside,
+  nav,
+  .offline-banner,
+  .toast-container,
+  button,
+  .settings-dropdown,
+  #btn-download-pdf {
+    display: none !important;
+  }
+
+  /* Reset body and html for seamless page-boundary printing */
+  html, body, #root {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 210mm !important; /* Standard A4 Width */
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Reset parent wrappers containing flex layout blocks */
+  .min-h-screen,
+  .flex-col,
+  .flex-1,
+  .flex {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  /* Reset main preview page container layout */
+  section.flex-1 {
+    display: block !important;
+    background: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .sheet-preview-container {
+    display: block !important;
+    background: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  /* Disable transform scale zoom factor completely during printing so the document is printed at 100% scaling */
+  .sheet-preview-container > div {
+    transform: none !important;
+    transition: none !important;
+    display: block !important;
+    height: auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Force A4 size matching on the sheet preview element */
+  .pdf-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    margin: 0 auto !important;
+    width: 210mm !important; /* Lock to exact A4 dimensions */
+    min-height: 297mm !important;
+    box-sizing: border-box !important;
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Hide edit outline guides, dashed lines, and contenteditable highlights */
+  .pdf-sheet::before,
+  .pdf-sheet::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  [contenteditable="true"] {
+    outline: none !important;
+    border: none !important;
+    background-color: transparent !important;
+  }
+
+  /* Force background graphics to print across all elements */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
