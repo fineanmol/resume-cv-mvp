@@ -169,7 +169,7 @@ export const SkillsEditor = React.memo<{
               data-skill-chip
               onDragOver={(e) => handleDragOver(e, i)}
               onDrop={(e) => handleDrop(e, i)}
-              className={`${chipBase} pl-0.5 pr-2 relative group/chip transition-[box-shadow,opacity] duration-100 ${
+              className={`${chipBase} relative group/chip transition-[box-shadow,opacity] duration-100 ${
                 isFocused ? 'border-teal-400 ring-1 ring-teal-400/30' : 'hover:border-slate-300'
               } ${chipDropClass(i)}`}
               style={baseStyle}
@@ -180,13 +180,13 @@ export const SkillsEditor = React.memo<{
                 onDragEnd={resetDrag}
                 aria-label="Drag to reorder skill"
                 title="Drag to reorder"
-                className={`edit-only flex items-center shrink-0 cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 touch-none select-none p-0.5 -ml-0.5 rounded hover:bg-slate-100/80 ${
-                  isFocused ? 'opacity-100' : 'opacity-0 group-hover/chip:opacity-100'
+                className={`edit-only absolute -top-1.5 -left-1.5 z-10 w-3.5 h-3.5 rounded border border-slate-200 bg-white flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 touch-none select-none shadow-sm pointer-events-none transition-opacity duration-150 ${
+                  isFocused ? 'opacity-100 pointer-events-auto' : 'opacity-0 group-hover/chip:opacity-100 group-hover/chip:pointer-events-auto'
                 }`}
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
               >
-                <GripVertical className="w-3 h-3 pointer-events-none" />
+                <GripVertical className="w-2.5 h-2.5 pointer-events-none" />
               </span>
               <span
                 contentEditable={true}

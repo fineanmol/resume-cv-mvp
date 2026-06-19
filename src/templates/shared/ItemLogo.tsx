@@ -36,15 +36,15 @@ export const ItemLogo: React.FC<ItemLogoProps> = ({
   if (!isEditable) return logoEl;
 
   return (
-    <div className="relative flex-shrink-0 group/logo edit-only" ref={ref}>
+    <div className="relative flex-shrink-0 group/logo pdf-keep" data-pdf-keep ref={ref}>
+      {logoEl}
       <button
         type="button"
         onClick={() => { setUrl(logo || ''); setShowInput(!showInput); }}
-        className="flex items-center justify-center w-6 h-6 rounded overflow-hidden hover:ring-2 ring-brand-accent transition cursor-pointer"
+        className="edit-only absolute inset-0 z-[1] flex items-center justify-center rounded overflow-hidden opacity-0 cursor-pointer"
         title="Set company/school logo"
-      >
-        {logoEl}
-      </button>
+        aria-label="Set company/school logo"
+      />
 
       {showInput && (
         <div className="absolute left-0 top-8 z-50 bg-white border border-slate-200 shadow-xl rounded-lg p-3 w-64 flex flex-col gap-2 edit-only">

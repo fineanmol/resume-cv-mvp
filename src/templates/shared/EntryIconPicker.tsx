@@ -47,15 +47,15 @@ export const EntryIconPicker: React.FC<{
   }
 
   return (
-    <div className="relative inline-flex edit-only flex-shrink-0" ref={ref}>
+    <div className="relative inline-flex flex-shrink-0 self-start pdf-keep" data-pdf-keep ref={ref}>
+      {renderIcon(currentIcon || defaultIcon, 'w-3 h-3 flex-shrink-0 mt-0.5')}
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className="rounded-md cursor-pointer transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/60"
+        className="edit-only absolute inset-0 z-[1] rounded-md cursor-pointer opacity-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/60"
         title="Change icon"
-      >
-        {renderIcon(currentIcon || defaultIcon, 'w-3 h-3 flex-shrink-0 mt-0.5')}
-      </button>
+        aria-label="Change icon"
+      />
       {open && (
         <div
           className="absolute left-0 top-full mt-1 z-[120] bg-white border border-slate-200 shadow-lg rounded-md p-1.5 grid grid-cols-6 gap-0.5 edit-only w-[11rem] max-h-[9.5rem] overflow-y-auto scrollbar-thin"

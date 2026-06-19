@@ -65,6 +65,7 @@ const PDF_LAYOUT_PROPS = [
   'display',
   'flex-direction',
   'flex-wrap',
+  'flex-shrink',
   'align-items',
   'align-self',
   'align-content',
@@ -90,7 +91,14 @@ const PDF_LAYOUT_PROPS = [
   'border-radius',
   'border-width',
   'border-style',
+  'border-color',
   'white-space',
+  'box-sizing',
+  'min-height',
+  'min-width',
+  'width',
+  'height',
+  'vertical-align',
 ];
 
 function safeColor(value: string): string {
@@ -202,55 +210,136 @@ function sanitizeInlineStyles(root: Element) {
   });
 }
 
-function prepareSkillChipsForPdf(clone: HTMLElement) {
-  clone.querySelectorAll('[data-skill-index]').forEach((el) => {
-    const text = el.textContent?.trim() || '';
-    const chip = el.parentElement;
-    if (!chip) return;
+function prepareSkillChipsForPdf(clone: HTMLElement, source: HTMLElement) {
+  const sourceChips = source.querySelectorAll('[data-skill-chip]');
+  const cloneChips = clone.querySelectorAll('[data-skill-chip]');
 
-    chip.querySelector('button')?.remove();
+  sourceChips.forEach((srcChip, i) => {
+    const chip = cloneChips[i];
+    if (!(chip instanceof HTMLElement) || !(srcChip instanceof HTMLElement)) return;
+
+    const textEl = srcChip.querySelector('[data-skill-index]');
+    const text = textEl?.textContent?.trim() || srcChip.textContent?.trim() || '';
+
+    chip.querySelectorAll('.edit-only, button').forEach((el) => el.remove());
     chip.classList.remove('edit-only');
-
-    const chipStyle = chip.getAttribute('style') ?? '';
-    const chipClass = chip.className.replace(/\bedit-only\b/g, '').trim();
     chip.textContent = text;
-    chip.className = chipClass;
-    if (chipStyle) chip.setAttribute('style', chipStyle);
+
+    inlineLayoutStyles(srcChip, chip, window);
+    const cs = window.getComputedStyle(srcChip);
     chip.style.display = 'inline-flex';
     chip.style.alignItems = 'center';
     chip.style.justifyContent = 'center';
+    chip.style.boxSizing = 'border-box';
     chip.style.lineHeight = '1.375';
+    chip.style.whiteSpace = 'nowrap';
+    chip.style.verticalAlign = 'middle';
+    chip.style.padding = cs.padding;
+    chip.style.minHeight = cs.minHeight;
+    chip.style.fontSize = cs.fontSize;
+    chip.style.fontWeight = cs.fontWeight;
+    chip.style.borderRadius = cs.borderRadius;
+    chip.style.border = cs.border;
+    chip.style.backgroundColor = safeColor(cs.backgroundColor);
+    chip.style.color = safeColor(cs.color);
+  });
+
+  // Non-editable skill chips (no data-skill-chip wrapper)
+  const sourceSkillSpans = source.querySelectorAll('.flex.flex-wrap.items-center.gap-1\\.5 > span');
+  const cloneSkillSpans = clone.querySelectorAll('.flex.flex-wrap.items-center.gap-1\\.5 > span');
+  sourceSkillSpans.forEach((src, i) => {
+    const chip = cloneSkillSpans[i];
+    if (!(chip instanceof HTMLElement) || !(src instanceof HTMLElement)) return;
+    if (src.hasAttribute('data-skill-chip')) return;
+    inlineLayoutStyles(src, chip, window);
+    const cs = window.getComputedStyle(src);
+    chip.style.display = 'inline-flex';
+    chip.style.alignItems = 'center';
+    chip.style.justifyContent = 'center';
+    chip.style.boxSizing = 'border-box';
+    chip.style.lineHeight = '1.375';
+    chip.style.whiteSpace = 'nowrap';
+    chip.style.verticalAlign = 'middle';
+    chip.style.padding = cs.padding;
+    chip.style.minHeight = cs.minHeight;
+    chip.style.fontSize = cs.fontSize;
+    chip.style.border = cs.border;
+    chip.style.borderRadius = cs.borderRadius;
+    chip.style.backgroundColor = safeColor(cs.backgroundColor);
+    chip.style.color = safeColor(cs.color);
+  });
+
+  source.querySelectorAll('.flex.flex-wrap.items-center.gap-1\\.5').forEach((srcWrap, i) => {
+    const wrap = clone.querySelectorAll('.flex.flex-wrap.items-center.gap-1\\.5')[i];
+    if (!(wrap instanceof HTMLElement) || !(srcWrap instanceof HTMLElement)) return;
+    wrap.style.display = 'block';
+    wrap.style.lineHeight = '1.375';
+    wrap.style.fontSize = window.getComputedStyle(srcWrap).fontSize;
+    wrap.querySelectorAll('[data-skill-chip], :scope > span').forEach((chip, j) => {
+      const srcChip = srcWrap.querySelectorAll('[data-skill-chip], :scope > span')[j];
+      if (!(chip instanceof HTMLElement) || !(srcChip instanceof HTMLElement)) return;
+      chip.style.display = 'inline-flex';
+      chip.style.margin = '0 6px 6px 0';
+      chip.style.verticalAlign = 'middle';
+    });
   });
 }
 
-function prepareFlexIconRows(clone: HTMLElement, source: HTMLElement) {
-  const selector = [
-    'span.inline-flex.items-center',
-    'li.flex.items-center',
-    '.flex.items-center.gap-1\\.5',
-    '.flex.items-center.gap-1',
-  ].join(', ');
+const FLEX_ICON_ROW_SELECTORS = [
+  'span.inline-flex.items-center',
+  'li.flex.items-start',
+  'li.flex.gap-2',
+  'li.flex.gap-2\\.5',
+  '.flex.items-start.gap-2',
+  '.flex.items-center.gap-1\\.5',
+  '.flex.items-center.gap-1',
+  '.flex.items-center.gap-2',
+  'header .flex.flex-wrap',
+].join(', ');
 
-  const sources = source.querySelectorAll(selector);
-  const targets = clone.querySelectorAll(selector);
+function prepareInlineIcon(el: Element, win: Window) {
+  if (!(el instanceof HTMLElement)) return;
+  const cs = win.getComputedStyle(el);
+  el.style.display = 'inline-block';
+  el.style.flexShrink = '0';
+  el.style.verticalAlign = 'middle';
+  el.style.margin = '0';
+  if (cs.width && cs.width !== 'auto') el.style.width = cs.width;
+  if (cs.height && cs.height !== 'auto') el.style.height = cs.height;
+}
+
+function prepareFlexIconRows(clone: HTMLElement, source: HTMLElement) {
+  const sources = source.querySelectorAll(FLEX_ICON_ROW_SELECTORS);
+  const targets = clone.querySelectorAll(FLEX_ICON_ROW_SELECTORS);
+
   sources.forEach((src, i) => {
     const tgt = targets[i];
-    if (!tgt) return;
+    if (!(tgt instanceof HTMLElement) || !(src instanceof HTMLElement)) return;
+
     inlineLayoutStyles(src, tgt, window);
-    if (tgt instanceof HTMLElement) {
-      tgt.style.display = window.getComputedStyle(src).display.includes('flex') ? 'inline-flex' : 'flex';
-      tgt.style.flexDirection = 'row';
-      tgt.style.alignItems = 'center';
-    }
-    src.querySelectorAll('svg').forEach((svg, j) => {
-      const tSvg = tgt.querySelectorAll('svg')[j];
-      if (!(tSvg instanceof SVGElement)) return;
-      const cs = window.getComputedStyle(svg);
-      tSvg.style.display = 'block';
-      tSvg.style.flexShrink = '0';
-      tSvg.style.width = cs.width;
-      tSvg.style.height = cs.height;
-      tSvg.style.margin = '0';
+    const cs = window.getComputedStyle(src);
+    const isInline = cs.display.includes('inline');
+    tgt.style.display = isInline ? 'inline-flex' : 'flex';
+    tgt.style.flexDirection = 'row';
+    tgt.style.alignItems = cs.alignItems || 'center';
+    tgt.style.alignContent = cs.alignContent || 'normal';
+    tgt.style.flexWrap = cs.flexWrap || 'nowrap';
+
+    src.querySelectorAll('svg, img').forEach((_icon, j) => {
+      const tIcon = tgt.querySelectorAll('svg, img')[j];
+      if (tIcon) prepareInlineIcon(tIcon, window);
+    });
+
+    // Entry icon badge wrapper (colored square behind lucide icon)
+    src.querySelectorAll('span.inline-flex.items-center.justify-center').forEach((badge, j) => {
+      const tBadge = tgt.querySelectorAll('span.inline-flex.items-center.justify-center')[j];
+      if (!(tBadge instanceof HTMLElement) || !(badge instanceof HTMLElement)) return;
+      inlineLayoutStyles(badge, tBadge, window);
+      tBadge.style.display = 'inline-flex';
+      tBadge.style.alignItems = 'center';
+      tBadge.style.justifyContent = 'center';
+      tBadge.style.flexShrink = '0';
+      tBadge.style.verticalAlign = 'middle';
     });
   });
 }
@@ -373,7 +462,7 @@ export class PdfService {
     syncStylesFromSource(sheetElement, clone, window);
     sanitizeInlineStyles(clone);
 
-    prepareSkillChipsForPdf(clone);
+    prepareSkillChipsForPdf(clone, sheetElement);
     prepareFlexIconRows(clone, sheetElement);
 
     // Remove edit-only UI elements completely to prevent rendering them in the PDF
@@ -487,7 +576,7 @@ export class PdfService {
               inlineAllResolvedColors(clonedSheet, clonedDoc.defaultView);
             }
             sanitizeInlineStyles(clonedSheet);
-            prepareSkillChipsForPdf(clonedSheet);
+            prepareSkillChipsForPdf(clonedSheet, sheetElement);
             prepareFlexIconRows(clonedSheet, sheetElement);
 
             const style = clonedDoc.createElement('style');
@@ -541,27 +630,78 @@ export class PdfService {
               .profile-photo-waves {
                 opacity: 0.5 !important;
               }
+              .pdf-sheet img {
+                display: inline-block !important;
+                vertical-align: middle !important;
+                height: auto !important;
+                max-height: none !important;
+              }
+              .pdf-sheet svg.lucide,
+              .pdf-sheet svg:not(.profile-photo-frame):not(.profile-photo-waves) {
+                display: inline-block !important;
+                vertical-align: middle !important;
+                flex-shrink: 0 !important;
+              }
               .pdf-sheet span.inline-flex.items-center,
               .pdf-sheet .inline-flex.items-center,
-              .pdf-sheet li.flex.items-center,
+              .pdf-sheet .flex.items-start.gap-2,
               .pdf-sheet .flex.items-center.gap-1\\.5,
-              .pdf-sheet .flex.items-center.gap-1 {
+              .pdf-sheet .flex.items-center.gap-1,
+              .pdf-sheet .flex.items-center.gap-2 {
                 flex-direction: row !important;
-                align-items: center !important;
                 align-content: center !important;
               }
+              .pdf-sheet span.inline-flex.items-center,
+              .pdf-sheet .inline-flex.items-center,
+              .pdf-sheet .flex.items-center.gap-1\\.5,
+              .pdf-sheet .flex.items-center.gap-1,
+              .pdf-sheet .flex.items-center.gap-2,
+              .pdf-sheet header .flex.flex-wrap {
+                align-items: center !important;
+              }
+              .pdf-sheet li.flex.gap-2,
+              .pdf-sheet li.flex.gap-2\\.5,
+              .pdf-sheet .flex.items-start.gap-2 {
+                align-items: flex-start !important;
+              }
               .pdf-sheet span.inline-flex.items-center > svg,
-              .pdf-sheet li.flex.items-center > svg,
-              .pdf-sheet .flex.items-center > svg {
-                display: block !important;
+              .pdf-sheet span.inline-flex.items-center > img,
+              .pdf-sheet li.flex > svg,
+              .pdf-sheet li.flex > img,
+              .pdf-sheet li.flex > span > svg,
+              .pdf-sheet .flex.items-center > svg,
+              .pdf-sheet .flex.items-start > span > svg,
+              .pdf-sheet .flex.items-start > span > img {
+                display: inline-block !important;
                 flex-shrink: 0 !important;
                 margin: 0 !important;
+                vertical-align: middle !important;
               }
-              .pdf-sheet .flex.flex-wrap.items-center.gap-1\\.5 > span {
+              .pdf-sheet .flex.flex-wrap.items-center.gap-1\\.5 {
+                gap: 6px !important;
+                row-gap: 6px !important;
+                column-gap: 6px !important;
+                align-items: center !important;
+                align-content: flex-start !important;
+              }
+              .pdf-sheet .flex.flex-wrap.items-center.gap-1\\.5 > span,
+              .pdf-sheet [data-skill-chip] {
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
+                box-sizing: border-box !important;
                 vertical-align: middle !important;
+                line-height: 1.375 !important;
+                white-space: nowrap !important;
+              }
+              .pdf-sheet header .flex.flex-wrap {
+                align-items: center !important;
+                row-gap: 6px !important;
+                column-gap: 16px !important;
+              }
+              .pdf-sheet .pdf-keep {
+                visibility: visible !important;
+                opacity: 1 !important;
               }
             `;
             clonedDoc.head.appendChild(style);

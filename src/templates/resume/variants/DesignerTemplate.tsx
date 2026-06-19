@@ -499,7 +499,7 @@ export const DesignerTemplate: React.FC = () => {
         isEditable={isEditable}
         layoutSettings={layoutSettings}
         onLayoutSettingsChange={(patch) => onLayoutSettingsChange?.({ ...layoutSettings, ...patch })}
-        className="flex justify-between items-start pb-4 mb-4 overflow-visible"
+        className="flex justify-between items-start pb-2 mb-2 overflow-visible"
       >
         <div className="flex-1 relative z-[3] min-w-0 pr-4">
           <E tag="h1" value={name} isEditable={isEditable} editableClass={ec}
@@ -510,7 +510,7 @@ export const DesignerTemplate: React.FC = () => {
               className="text-xs font-semibold uppercase mt-1.5 tracking-wider" style={{ color: accentColor2 || brandColor }} onSave={ef('subtitle')} />
           )}
 
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3.5 text-[10px] text-slate-500 font-medium">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 text-[10px] text-slate-500 font-medium">
             {hasPhone && (
               <span className="inline-flex items-center gap-1.5 align-middle">
                 <Phone className="w-3 h-3 text-slate-400 flex-shrink-0 inline-block" aria-hidden />
@@ -553,7 +553,7 @@ export const DesignerTemplate: React.FC = () => {
 
       <div
         data-testid="designer-column-grid"
-        className="grid grid-cols-[1.4fr_1fr] mt-4"
+        className="grid grid-cols-[1.4fr_1fr] mt-2"
         style={{ gap: `${layoutSettings?.columnGap ?? 16}px` }}
       >
         <div

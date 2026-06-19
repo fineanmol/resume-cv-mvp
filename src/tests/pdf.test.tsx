@@ -95,8 +95,11 @@ describe('PdfService', () => {
     const originalDiv = document.createElement('div');
     originalDiv.className = 'pdf-sheet';
 
+    const wrap = document.createElement('div');
+    wrap.className = 'flex flex-wrap items-center gap-1.5 text-xs';
     const chip = document.createElement('span');
     chip.className = 'inline-flex px-2 py-0.5 rounded-full border';
+    chip.setAttribute('data-skill-chip', '');
     const skillText = document.createElement('span');
     skillText.setAttribute('data-skill-index', '0');
     skillText.textContent = 'TypeScript';
@@ -105,17 +108,72 @@ describe('PdfService', () => {
     const addBtn = document.createElement('button');
     addBtn.className = 'edit-only';
     addBtn.textContent = '+';
+    chip.appendChild(addBtn);
 
-    originalDiv.appendChild(chip);
+    wrap.appendChild(chip);
+    originalDiv.appendChild(wrap);
     originalDiv.appendChild(addBtn);
 
     document.body.appendChild(originalDiv);
     await PdfService.downloadPdf(originalDiv, 'skills.pdf');
 
     const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
+    const clonedChip = clonedElement.querySelector('[data-skill-chip]') as HTMLElement;
     expect(clonedElement.textContent).toContain('TypeScript');
     expect(clonedElement.querySelector('[data-skill-index]')).toBeNull();
     expect(clonedElement.querySelector('.edit-only')).toBeNull();
+    expect(clonedChip?.style.display).toBe('inline-flex');
+    expect(clonedChip?.style.alignItems).toBe('center');
+
+    document.body.removeChild(originalDiv);
+  });
+
+  it('preserves entry icons and logos in PDF clone when edit controls are stripped', async () => {
+    const originalDiv = document.createElement('div');
+    originalDiv.className = 'pdf-sheet';
+
+    const iconPicker = document.createElement('div');
+    iconPicker.className = 'relative inline-flex flex-shrink-0 pdf-keep';
+    iconPicker.setAttribute('data-pdf-keep', '');
+    const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    iconSvg.setAttribute('class', 'lucide');
+    iconPicker.appendChild(iconSvg);
+    const iconBtn = document.createElement('button');
+    iconBtn.className = 'edit-only';
+    iconPicker.appendChild(iconBtn);
+
+    const logoWrap = document.createElement('div');
+    logoWrap.className = 'relative flex-shrink-0 pdf-keep';
+    logoWrap.setAttribute('data-pdf-keep', '');
+    const logoImg = document.createElement('img');
+    logoImg.src = 'https://example.com/logo.png';
+    logoImg.className = 'w-6 h-6';
+    logoWrap.appendChild(logoImg);
+    const logoBtn = document.createElement('button');
+    logoBtn.className = 'edit-only';
+    logoWrap.appendChild(logoBtn);
+
+    const contactRow = document.createElement('span');
+    contactRow.className = 'inline-flex items-center gap-1.5 align-middle';
+    const mailSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    mailSvg.setAttribute('class', 'lucide w-3 h-3');
+    contactRow.appendChild(mailSvg);
+    const email = document.createElement('span');
+    email.textContent = 'test@example.com';
+    contactRow.appendChild(email);
+
+    originalDiv.appendChild(iconPicker);
+    originalDiv.appendChild(logoWrap);
+    originalDiv.appendChild(contactRow);
+
+    document.body.appendChild(originalDiv);
+    await PdfService.downloadPdf(originalDiv, 'icons.pdf');
+
+    const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
+    expect(clonedElement.querySelector('.pdf-keep svg.lucide')).toBeTruthy();
+    expect(clonedElement.querySelector('.pdf-keep img')).toBeTruthy();
+    expect(clonedElement.querySelector('.edit-only')).toBeNull();
+    expect(clonedElement.querySelector('span.inline-flex.items-center svg')).toBeTruthy();
 
     document.body.removeChild(originalDiv);
   });

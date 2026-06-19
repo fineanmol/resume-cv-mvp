@@ -49,7 +49,7 @@ export const HeaderWrapper: React.FC<HeaderWrapperProps> = ({
   return (
     <header
       onClick={handleSelect}
-      className={`relative group/header overflow-visible ${isEditable ? 'cursor-pointer' : ''} ${isActive ? 'header-active' : ''} ${hasSettings ? 'mt-10' : ''} ${className}`}
+      className={`relative group/header overflow-visible ${isEditable ? 'cursor-pointer' : ''} ${isActive ? 'header-active' : ''} ${className}`}
       style={style}
     >
       {children}
@@ -57,7 +57,7 @@ export const HeaderWrapper: React.FC<HeaderWrapperProps> = ({
       {hasSettings && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`absolute -top-10 left-1/2 -translate-x-1/2 transition-all flex items-center gap-0.5 bg-white border border-slate-200 shadow-lg rounded-lg px-2 py-1 z-40 edit-only ${
+          className={`absolute -top-2 right-0 transition-all flex items-center gap-0.5 bg-white border border-slate-200 shadow-lg rounded-lg px-2 py-1 z-40 edit-only ${
             isActive ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/header:opacity-100 group-hover/header:visible'
           } ${showSettings ? '!z-[100]' : ''}`}
         >
