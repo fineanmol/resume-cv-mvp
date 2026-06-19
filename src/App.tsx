@@ -1,4 +1,4 @@
-import React, { useState, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Sparkles } from 'lucide-react';
 
@@ -23,6 +23,9 @@ import { dbService } from './services/db';
 import { PdfService } from './services/pdf';
 import { DEFAULT_RESUME_STATE } from './config/defaultResume';
 import { DEFAULT_CL_STATE } from './config/defaultCL';
+
+import { auth, isConfigured } from './services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 import type { ResumeState, CoverLetterState, AuthUser, DocType, SaveStatus, TemplateId } from './types';
 import { isLocalUser, userEmail } from './types';
@@ -88,9 +91,9 @@ export default function App() {
   // Auth
   const [user, setUser] = useState<AuthUser | null>(null);
 
-  // Workspace navigation
-  const [activeDocId,   setActiveDocId]   = useState<string | null>(null);
-  const [activeDocType, setActiveDocType] = useState<DocType | null>(null);
+  // Workspace navigation (restored from localStorage if available to persist routing on refresh)
+  const [activeDocId,   setActiveDocId]   = useState<string | null>(() => localStorage.getItem('ACTIVE_DOC_ID'));
+  const [activeDocType, setActiveDocType] = useState<DocType | null>(() => localStorage.getItem('ACTIVE_DOC_TYPE') as DocType | null);
 
   // Settings
   const [geminiKey,    setGeminiKey]    = useState(() => localStorage.getItem('GEMINI_API_KEY') ?? '');
@@ -106,6 +109,65 @@ export default function App() {
 
   // Notifications
   const toast = useToast();
+
+  // Listen for auth state changes globally to auto-restore session on page load/refresh
+  useEffect(() => {
+    if (isConfigured && auth) {
+      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        if (firebaseUser) {
+          setUser(firebaseUser);
+        } else {
+          setUser(null);
+        }
+      });
+      return unsubscribe;
+    } else {
+      const localUser = localStorage.getItem("LOCAL_USER");
+      if (localUser) {
+        setUser({ email: localUser, isLocal: true } as any);
+      }
+    }
+  }, []);
+
+  // Sync activeDocId to localStorage
+  useEffect(() => {
+    if (activeDocId) {
+      localStorage.setItem('ACTIVE_DOC_ID', activeDocId);
+    } else {
+      localStorage.removeItem('ACTIVE_DOC_ID');
+    }
+  }, [activeDocId]);
+
+  // Sync activeDocType to localStorage
+  useEffect(() => {
+    if (activeDocType) {
+      localStorage.setItem('ACTIVE_DOC_TYPE', activeDocType);
+    } else {
+      localStorage.removeItem('ACTIVE_DOC_TYPE');
+    }
+  }, [activeDocType]);
+
+  // Load restored document data on refresh once user session and routing are resolved
+  useEffect(() => {
+    if (!user || !activeDocId || !activeDocType) return;
+    let isMounted = true;
+    const loadRestoredDoc = async () => {
+      const uid = userEmail(user);
+      if (activeDocType === 'resume') {
+        const data = await dbService.getResume(uid, activeDocId);
+        if (data && isMounted) {
+          resume.reset(data);
+        }
+      } else {
+        const data = await dbService.getCoverLetter(uid, activeDocId);
+        if (data && isMounted) {
+          cl.reset(data);
+        }
+      }
+    };
+    loadRestoredDoc();
+    return () => { isMounted = false; };
+  }, [user, activeDocId, activeDocType]);
 
   // Connection
   const isOnline = useOnlineStatus();
