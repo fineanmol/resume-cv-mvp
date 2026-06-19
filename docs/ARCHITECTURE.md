@@ -17,7 +17,8 @@ This document describes how **resume-cv-mvp** is organized today, how data flows
 9. [Target modular structure](#target-modular-structure)
 10. [Migration roadmap](#migration-roadmap)
 11. [Reference implementation](#reference-implementation)
-12. [Contributor cookbook](#contributor-cookbook)
+12. [PDF export](#pdf-export)
+13. [Contributor cookbook](#contributor-cookbook)
 
 ---
 
@@ -32,7 +33,7 @@ This document describes how **resume-cv-mvp** is organized today, how data flows
 | Add a new resume template | New branch in `ResumeTemplates.tsx` (see [Template system](#template-system)) |
 | Wire undo/redo or autosave | `src/hooks/useUndoRedo.ts`, `useAutoSave.ts` |
 | Change AI / ATS behaviour | `src/hooks/useAiActions.ts`, `src/services/gemini.ts`, `JDPanel.tsx` |
-| Change PDF export | `src/services/pdf.ts` |
+| Change PDF export | `src/services/pdf.ts` — see [PDF export](#pdf-export); use print, not html2canvas |
 | Add or change TypeScript types | `src/types/index.ts` |
 | Run tests | `npm run test` (Vitest) |
 
@@ -130,7 +131,7 @@ src/
 │   ├── db.ts               # Firestore + LocalStorage hybrid
 │   ├── firebase.ts
 │   ├── gemini.ts           # AI prompts, PDF text parsing
-│   └── pdf.ts              # html2pdf + oklch/oklab colour fix
+│   └── pdf.ts              # Print-based PDF export (iframe + window.print)
 │
 ├── utils/
 │   ├── bullets.ts          # splitIntoBullets (shared string format)
@@ -631,6 +632,68 @@ Work in small PRs. Old and new patterns can coexist during migration.
 ```
 
 Cover letter sections use the same `<AccordionSection>` pattern in `CoverLetterForm.tsx` (3 sections). Resume preview editing uses `templates/shared/EditableText`; cover letter preview still uses local `CE` / `Paragraph` components.
+
+---
+
+## PDF export
+
+### Decision: use browser print, not html2canvas
+
+| Approach | Used by | Result |
+|----------|---------|--------|
+| **`window.print()` + `@media print`** | Resume.io, Zety, Novoresume, CVFREE, this app | Pixel-perfect match to preview |
+| **html2canvas + jsPDF** | Older tutorials, our deprecated `downloadPdfLegacy()` | Broken flex, icons, chips, oklch colors |
+
+**Do not re-enable html2pdf/html2canvas for the Download PDF button.** We tried extensive oklch sanitization and layout inlining; layout still diverged from the preview.
+
+### How download works today
+
+Entry point: `EditorRoute.tsx` → `PdfService.downloadPdf(sheetRef.current, filename)` in `src/services/pdf.ts`.
+
+```
+User clicks "Download PDF"
+        │
+        ▼
+Clone .pdf-sheet from live preview
+  • strip .edit-only, [data-pdf-hide]
+  • remove contenteditable
+  • resolve img src to absolute URLs
+        │
+        ▼
+Build hidden iframe document
+  • copy all document.styleSheets CSS
+  • copy Google Fonts <link> tags
+  • inject @page { size: A4; margin: 0 }
+  • inject print-color-adjust: exact
+        │
+        ▼
+iframe.contentWindow.print()
+        │
+        ▼
+User selects "Save as PDF" in browser dialog
+```
+
+The suggested filename (`Name_Resume.pdf`) is not auto-applied — the browser print dialog controls the save path. Toast copy in `EditorRoute` tells the user to pick **Save as PDF**.
+
+### Files to touch when changing export
+
+| File | Role |
+|------|------|
+| `src/services/pdf.ts` | `downloadPdf()` — iframe build + print trigger |
+| `src/index.css` | `@media print` — hide editor chrome, A4 sizing, color-adjust |
+| `src/pages/EditorRoute.tsx` | Download button handler + toast messages |
+| `src/tests/pdf.test.tsx` | Tests iframe write + print (not html2pdf) |
+
+### Legacy code (reference only)
+
+- `PdfService.downloadPdfLegacy()` — old html2pdf.js pipeline; **not used by UI**
+- `sanitizeCssOklch()` — still exported/tested; was for html2canvas; keep if legacy path stays
+
+### If export looks wrong
+
+1. Fix **`@media print` in `index.css`** first — print uses real CSS, not canvas hacks
+2. Ensure editor-only UI has class **`edit-only`** or **`data-pdf-hide`** so it is stripped from the clone
+3. Do **not** add html2canvas workarounds unless product explicitly requires silent one-click download without a print dialog (that would need a server-side Puppeteer/Playwright API instead)
 
 ---
 

@@ -107,11 +107,11 @@ export function EditorRoute({
     const filename = activeDocType === 'resume'
       ? `${resume.state.name.replace(/\s+/g, '_')}_Resume.pdf`
       : `${cl.state.name.replace(/\s+/g, '_')}_Cover_Letter.pdf`;
-    toast.info('Preparing PDF download…');
+    toast.info('Opening print dialog — select "Save as PDF" to download…');
     try {
       const { PdfService } = await import('../services/pdf');
       await PdfService.downloadPdf(sheetRef.current, filename);
-      toast.success('PDF downloaded.');
+      toast.success('Print dialog opened. Choose "Save as PDF".');
     } catch {
       toast.error('PDF download failed. Please try again.');
     }

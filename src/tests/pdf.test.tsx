@@ -1,235 +1,146 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { PdfService, sanitizeCssOklch } from '../services/pdf';
 
-type MockPdfChain = {
-  then: (cb: () => void) => MockPdfChain;
-  catch: () => MockPdfChain;
-};
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-const mockFrom = vi.fn().mockReturnThis();
-const mockSet = vi.fn().mockReturnThis();
-const mockSave = vi.fn().mockImplementation(function (this: MockPdfChain) {
-  return this;
-});
-const mockThen = vi.fn().mockImplementation(function (this: MockPdfChain, cb: () => void) {
-  cb();
-  return this;
-});
-const mockCatch = vi.fn().mockReturnThis();
+function makeSheet(inner = ''): HTMLElement {
+  const div = document.createElement('div');
+  div.className = 'pdf-sheet';
+  div.id = 'resume-sheet';
+  div.innerHTML = inner;
+  document.body.appendChild(div);
+  return div;
+}
 
-const mockHtml2Pdf = vi.fn().mockImplementation(() => {
-  return {
-    set: mockSet,
-    from: mockFrom,
-    save: mockSave,
-    then: mockThen,
-    catch: mockCatch
-  };
-});
+// ── sanitizeCssOklch ─────────────────────────────────────────────────────────
 
-vi.mock('html2pdf.js', () => {
-  return {
-    default: () => mockHtml2Pdf()
-  };
-});
-
-describe('PdfService', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
+describe('sanitizeCssOklch', () => {
   it('strips oklch from CSS text', () => {
     const input = '.foo { color: oklch(0.6 0.2 240); background: oklch(50% 0.1 180 / 0.5); }';
     const output = sanitizeCssOklch(input);
-    expect(output).not.toMatch(/oklch|oklab/i);
+    expect(output).not.toMatch(/oklch|oklab|color-mix/i);
     expect(output).toContain('.foo');
   });
 
-  it('resolves SVG currentColor attributes on the PDF clone', async () => {
-    const originalDiv = document.createElement('div');
-    originalDiv.className = 'pdf-sheet';
-    originalDiv.style.color = 'oklch(0.6 0.2 240)';
-
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'lucide');
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('stroke', 'currentColor');
-    svg.appendChild(path);
-    originalDiv.appendChild(svg);
-
-    document.body.appendChild(originalDiv);
-    await PdfService.downloadPdf(originalDiv, 'svg.pdf');
-
-    const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
-    const clonedPath = clonedElement.querySelector('path');
-    expect(clonedPath?.getAttribute('stroke')).toBeTruthy();
-    expect(clonedPath?.getAttribute('stroke')).not.toMatch(/oklch|currentColor/i);
-
-    document.body.removeChild(originalDiv);
+  it('strips nested color-mix(in oklch, …) from CSS text', () => {
+    const input = '.bar { color: color-mix(in oklch, oklch(0.6 0.2 240) 50%, transparent); }';
+    const output = sanitizeCssOklch(input);
+    expect(output).not.toMatch(/oklch|oklab|color-mix/i);
+    expect(output).toContain('.bar');
   });
 
-  it('preserves profile photo decorative SVG in PDF clone', async () => {
-    const originalDiv = document.createElement('div');
-    originalDiv.className = 'pdf-sheet';
+  it('passes through plain rgb/hex values unchanged', () => {
+    const input = '.a { color: rgb(10, 20, 30); background: #abc; }';
+    expect(sanitizeCssOklch(input)).toBe(input);
+  });
+});
 
-    const frame = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    frame.setAttribute('class', 'profile-photo-frame pdf-keep');
-    frame.setAttribute('data-pdf-keep', '');
-    originalDiv.appendChild(frame);
+// ── downloadPdf (iframe+print approach) ──────────────────────────────────────
 
-    const waves = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    waves.setAttribute('class', 'profile-photo-waves pdf-keep');
-    originalDiv.appendChild(waves);
+describe('PdfService.downloadPdf', () => {
+  let printSpy: ReturnType<typeof vi.fn>;
+  let iframeWriteSpy: ReturnType<typeof vi.fn>;
 
-    document.body.appendChild(originalDiv);
-    await PdfService.downloadPdf(originalDiv, 'test_output.pdf');
+  beforeEach(() => {
+    // Stub iframe contentWindow.print and document.write
+    printSpy = vi.fn();
+    iframeWriteSpy = vi.fn();
 
-    const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
-    expect(clonedElement.querySelector('.profile-photo-frame')).toBeTruthy();
-    expect(clonedElement.querySelector('.profile-photo-waves')).toBeTruthy();
-
-    document.body.removeChild(originalDiv);
+    // Override createElement to intercept iframe creation
+    const realCreate = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string, ...args) => {
+      const el = realCreate(tag, ...args as [ElementCreationOptions?]);
+      if (tag === 'iframe') {
+        Object.defineProperty(el, 'contentDocument', {
+          get: () => ({
+            open: vi.fn(),
+            write: iframeWriteSpy,
+            close: vi.fn(),
+          }),
+          configurable: true,
+        });
+        Object.defineProperty(el, 'contentWindow', {
+          get: () => ({
+            print: printSpy,
+            focus: vi.fn(),
+            document: {
+              open: vi.fn(),
+              write: iframeWriteSpy,
+              close: vi.fn(),
+            },
+            addEventListener: (ev: string, cb: () => void) => {
+              if (ev === 'load') setTimeout(cb, 0);
+            },
+          }),
+          configurable: true,
+        });
+      }
+      return el;
+    });
   });
 
-  it('preserves skill chip text in PDF clone', async () => {
-    const originalDiv = document.createElement('div');
-    originalDiv.className = 'pdf-sheet';
-
-    const wrap = document.createElement('div');
-    wrap.className = 'flex flex-wrap items-center gap-1.5 text-xs';
-    const chip = document.createElement('span');
-    chip.className = 'inline-flex px-2 py-0.5 rounded-full border';
-    chip.setAttribute('data-skill-chip', '');
-    const skillText = document.createElement('span');
-    skillText.setAttribute('data-skill-index', '0');
-    skillText.textContent = 'TypeScript';
-    chip.appendChild(skillText);
-
-    const addBtn = document.createElement('button');
-    addBtn.className = 'edit-only';
-    addBtn.textContent = '+';
-    chip.appendChild(addBtn);
-
-    wrap.appendChild(chip);
-    originalDiv.appendChild(wrap);
-    originalDiv.appendChild(addBtn);
-
-    document.body.appendChild(originalDiv);
-    await PdfService.downloadPdf(originalDiv, 'skills.pdf');
-
-    const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
-    const clonedChip = clonedElement.querySelector('[data-skill-chip]') as HTMLElement;
-    expect(clonedElement.textContent).toContain('TypeScript');
-    expect(clonedElement.querySelector('[data-skill-index]')).toBeNull();
-    expect(clonedElement.querySelector('.edit-only')).toBeNull();
-    expect(clonedChip?.style.display).toBe('inline-flex');
-    expect(clonedChip?.style.alignItems).toBe('center');
-
-    document.body.removeChild(originalDiv);
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.querySelectorAll('.pdf-sheet').forEach(el => el.remove());
   });
 
-  it('preserves entry icons and logos in PDF clone when edit controls are stripped', async () => {
-    const originalDiv = document.createElement('div');
-    originalDiv.className = 'pdf-sheet';
-
-    const iconPicker = document.createElement('div');
-    iconPicker.className = 'relative inline-flex flex-shrink-0 pdf-keep';
-    iconPicker.setAttribute('data-pdf-keep', '');
-    const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    iconSvg.setAttribute('class', 'lucide');
-    iconPicker.appendChild(iconSvg);
-    const iconBtn = document.createElement('button');
-    iconBtn.className = 'edit-only';
-    iconPicker.appendChild(iconBtn);
-
-    const logoWrap = document.createElement('div');
-    logoWrap.className = 'relative flex-shrink-0 pdf-keep';
-    logoWrap.setAttribute('data-pdf-keep', '');
-    const logoImg = document.createElement('img');
-    logoImg.src = 'https://example.com/logo.png';
-    logoImg.className = 'w-6 h-6';
-    logoWrap.appendChild(logoImg);
-    const logoBtn = document.createElement('button');
-    logoBtn.className = 'edit-only';
-    logoWrap.appendChild(logoBtn);
-
-    const contactRow = document.createElement('span');
-    contactRow.className = 'inline-flex items-center gap-1.5 align-middle';
-    const mailSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    mailSvg.setAttribute('class', 'lucide w-3 h-3');
-    contactRow.appendChild(mailSvg);
-    const email = document.createElement('span');
-    email.textContent = 'test@example.com';
-    contactRow.appendChild(email);
-
-    originalDiv.appendChild(iconPicker);
-    originalDiv.appendChild(logoWrap);
-    originalDiv.appendChild(contactRow);
-
-    document.body.appendChild(originalDiv);
-    await PdfService.downloadPdf(originalDiv, 'icons.pdf');
-
-    const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
-    expect(clonedElement.querySelector('.pdf-keep svg.lucide')).toBeTruthy();
-    expect(clonedElement.querySelector('.pdf-keep img')).toBeTruthy();
-    expect(clonedElement.querySelector('.edit-only')).toBeNull();
-    expect(clonedElement.querySelector('span.inline-flex.items-center svg')).toBeTruthy();
-
-    document.body.removeChild(originalDiv);
+  it('calls window.print() on the iframe', async () => {
+    const sheet = makeSheet('<h1>Test Resume</h1>');
+    await PdfService.downloadPdf(sheet, 'test.pdf');
+    expect(printSpy).toHaveBeenCalled();
   });
 
-  it('correctly sets up and executes pdf generation by stripping edit controls and resolving oklch colors', async () => {
-    // Setup mock element in JSDOM
-    const originalDiv = document.createElement('div');
-    originalDiv.className = 'pdf-sheet has-active-section';
-    originalDiv.id = 'resume-sheet';
-    
-    // Add edit controls to check if they are stripped
-    const editOnlyBtn = document.createElement('button');
-    editOnlyBtn.className = 'edit-only';
-    originalDiv.appendChild(editOnlyBtn);
-    
-    const contentEditable = document.createElement('span');
-    contentEditable.setAttribute('contenteditable', 'true');
-    contentEditable.className = 'outline-none hover:bg-slate-100/80';
-    originalDiv.appendChild(contentEditable);
+  it('writes the sheet HTML into the iframe document', async () => {
+    const sheet = makeSheet('<p>Content</p>');
+    await PdfService.downloadPdf(sheet, 'test.pdf');
+    const written = (iframeWriteSpy.mock.calls[0]?.[0] ?? '') as string;
+    expect(written).toContain('pdf-sheet');
+    expect(written).toContain('Content');
+  });
 
-    // Set style parameters
-    originalDiv.style.color = 'oklch(0.6 0.2 240)';
-    originalDiv.style.fontSize = '12pt';
-    originalDiv.style.padding = '20mm 15mm';
-    originalDiv.style.fontFamily = 'Inter';
-    
-    document.body.appendChild(originalDiv);
+  it('strips edit-only elements from the printed HTML', async () => {
+    const sheet = makeSheet('<button class="edit-only">+</button><span>Skill</span>');
+    await PdfService.downloadPdf(sheet, 'test.pdf');
+    const written = (iframeWriteSpy.mock.calls[0]?.[0] ?? '') as string;
+    expect(written).not.toContain('edit-only');
+    expect(written).toContain('Skill');
+  });
 
-    // Trigger download
-    await PdfService.downloadPdf(originalDiv, 'test_output.pdf');
+  it('removes contenteditable attributes from the printed HTML', async () => {
+    const sheet = makeSheet('<span contenteditable="true">Text</span>');
+    await PdfService.downloadPdf(sheet, 'test.pdf');
+    const written = (iframeWriteSpy.mock.calls[0]?.[0] ?? '') as string;
+    expect(written).not.toContain('contenteditable');
+    expect(written).toContain('Text');
+  });
 
-    // Verify html2pdf was called
-    expect(mockHtml2Pdf).toHaveBeenCalled();
-    expect(mockFrom).toHaveBeenCalled();
-    const clonedElement = mockFrom.mock.calls[0][0] as HTMLElement;
-    expect(clonedElement).toBeTruthy();
-    expect(clonedElement).not.toBe(originalDiv);
+  it('preserves profile photo decorative SVGs in the printed HTML', async () => {
+    const inner = `
+      <svg class="profile-photo-frame pdf-keep" data-pdf-keep></svg>
+      <svg class="profile-photo-waves pdf-keep" data-pdf-keep></svg>
+    `;
+    const sheet = makeSheet(inner);
+    await PdfService.downloadPdf(sheet, 'test.pdf');
+    const written = (iframeWriteSpy.mock.calls[0]?.[0] ?? '') as string;
+    expect(written).toContain('profile-photo-frame');
+    expect(written).toContain('profile-photo-waves');
+  });
 
-    // Verify clone layout settings for A4 sheet generation
-    expect(clonedElement.style.transform).toBe('none');
-    expect(clonedElement.style.position).toBe('relative');
-    expect(clonedElement.style.width).toBe('794px');
+  it('includes @page { size: A4; margin: 0 } in the injected styles', async () => {
+    const sheet = makeSheet('<p>hi</p>');
+    await PdfService.downloadPdf(sheet, 'test.pdf');
+    const written = (iframeWriteSpy.mock.calls[0]?.[0] ?? '') as string;
+    expect(written).toMatch(/@page/);
+    expect(written).toContain('210mm');
+  });
+});
 
-    // Verify edit controls are stripped
-    expect(clonedElement.querySelector('.edit-only')).toBeNull();
-    expect(clonedElement.querySelector('[contenteditable]')).toBeNull();
-    expect(clonedElement.querySelector('span')?.classList.contains('outline-none')).toBeFalsy();
+// ── extractFirstPhoto (unchanged) ────────────────────────────────────────────
 
-    // Verify focus/backdrop classes are stripped from PDF clone
-    expect(clonedElement.classList.contains('has-active-section')).toBe(false);
-    expect(clonedElement.classList.contains('has-active-item')).toBe(false);
-
-    // Verify save was called
-    expect(mockSave).toHaveBeenCalled();
-
-    // Cleanup
-    document.body.removeChild(originalDiv);
+describe('PdfService.extractFirstPhoto', () => {
+  it('returns null for an empty/non-PDF file without crashing', async () => {
+    const file = new File(['not a pdf'], 'test.txt', { type: 'text/plain' });
+    const result = await PdfService.extractFirstPhoto(file);
+    expect(result).toBeNull();
   });
 });

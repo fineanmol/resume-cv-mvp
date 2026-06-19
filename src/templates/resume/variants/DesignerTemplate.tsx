@@ -162,8 +162,8 @@ export const DesignerTemplate: React.FC = () => {
                         )}
                       >
                         <div className="text-[11px]">
-                          <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <div className="flex items-start gap-2">
+                            <span className="flex items-start gap-1.5 flex-1 min-w-0">
                               {showLogo && (
                                 <ItemLogo logo={exp.logo} brandColor={brandColor} placeholderIcon={<Building2 className="w-3.5 h-3.5" />} />
                               )}
@@ -241,7 +241,7 @@ export const DesignerTemplate: React.FC = () => {
                       >
                         <div className="text-[11px] flex gap-3 justify-between items-start">
                           <div className="flex-1 space-y-1.5">
-                            <div className="font-bold flex items-center gap-1.5 leading-snug">
+                            <div className="font-bold flex items-start gap-1.5 leading-snug">
                               {showLogo && (
                                 <ItemLogo logo={edu.logo} brandColor={brandColor} placeholderIcon={<GraduationCap className="w-3.5 h-3.5" />} />
                               )}
@@ -328,29 +328,30 @@ export const DesignerTemplate: React.FC = () => {
                           />
                         )}
                       >
-                        <li className={`flex gap-2 items-start text-${certsAlign}`}>
-                          {showProjectIcons && showCert(cert, 'icon') && (
-                            isEditable ? (
-                              <EntryIconPicker
-                                variant="project"
-                                currentIcon={cert.icon || 'briefcase'}
-                                onChange={(icon) => onCertChange?.(idx, 'icon', icon)}
-                                isEditable={isEditable}
-                              accentColor={brandColor}
-                              accentColor2={accentColor2}
-                              index={idx}
-                              title={cert.title}
-                            />
-                          ) : (
-                              getDynamicProjectIcon(idx, cert.title, cert.icon, brandColor, 'w-3 h-3 flex-shrink-0 mt-0.5', accentColor2)
-                            )
-                          )}
-                          <div className="flex-1 min-w-0">
-                          <div className={`flex items-center gap-1 font-bold ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
-                            <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="font-bold"
-                              style={{ color: entryTitleColor }}
-                              onSave={v => onCertChange?.(idx, 'title', v)} />
-                            {showCert(cert, 'link') && <WorkLink url={cert.url} brandColor={brandColor} />}
+                        <li className={`text-${certsAlign}`}>
+                          <div className={`flex items-start gap-1.5 font-bold leading-snug ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
+                            {showProjectIcons && showCert(cert, 'icon') && (
+                              isEditable ? (
+                                <EntryIconPicker
+                                  variant="project"
+                                  currentIcon={cert.icon || 'briefcase'}
+                                  onChange={(icon) => onCertChange?.(idx, 'icon', icon)}
+                                  isEditable={isEditable}
+                                  accentColor={brandColor}
+                                  accentColor2={accentColor2}
+                                  index={idx}
+                                  title={cert.title}
+                                />
+                              ) : (
+                                getDynamicProjectIcon(idx, cert.title, cert.icon, brandColor, 'w-3 h-3 flex-shrink-0 mt-0.5', accentColor2)
+                              )
+                            )}
+                            <span className={`flex items-center gap-1 min-w-0 ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
+                              <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="font-bold"
+                                style={{ color: entryTitleColor }}
+                                onSave={v => onCertChange?.(idx, 'title', v)} />
+                              {showCert(cert, 'link') && <WorkLink url={cert.url} brandColor={brandColor} />}
+                            </span>
                           </div>
                           {showProjectDesc && cleanDesc && (
                             <E tag="p" value={cleanDesc} isEditable={isEditable} editableClass={ec} className={`text-slate-600 mt-0.5 leading-relaxed text-${certsAlign}`}
@@ -361,7 +362,6 @@ export const DesignerTemplate: React.FC = () => {
                               {techStack}
                             </div>
                           )}
-                          </div>
                         </li>
                       </ItemWrapper>
                     );
@@ -400,35 +400,35 @@ export const DesignerTemplate: React.FC = () => {
                         />
                       )}
                     >
-                      <li className="flex gap-2.5 items-start">
-                        {showAchievementIcons && showAch(ach, 'icon') && (
-                          isEditable ? (
-                            <EntryIconPicker
-                              variant="achievement"
-                              currentIcon={ach.icon || 'star'}
-                              onChange={(icon) => onAchievementChange?.(idx, 'icon', icon)}
-                              isEditable={isEditable}
-                            accentColor={brandColor}
-                            accentColor2={accentColor2}
-                            index={idx}
-                            title={ach.title}
-                          />
-                        ) : (
-                            getDynamicAchievementIcon(idx, ach.title, ach.icon, brandColor, 'w-3 h-3 flex-shrink-0 mt-0.5', accentColor2)
-                          )
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1">
+                      <li>
+                        <div className="flex items-start gap-1.5 font-bold leading-snug">
+                          {showAchievementIcons && showAch(ach, 'icon') && (
+                            isEditable ? (
+                              <EntryIconPicker
+                                variant="achievement"
+                                currentIcon={ach.icon || 'star'}
+                                onChange={(icon) => onAchievementChange?.(idx, 'icon', icon)}
+                                isEditable={isEditable}
+                                accentColor={brandColor}
+                                accentColor2={accentColor2}
+                                index={idx}
+                                title={ach.title}
+                              />
+                            ) : (
+                              getDynamicAchievementIcon(idx, ach.title, ach.icon, brandColor, 'w-3 h-3 flex-shrink-0 mt-0.5', accentColor2)
+                            )
+                          )}
+                          <span className="flex items-center gap-1 min-w-0">
                             <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className="font-bold"
                               style={{ color: entryTitleColor }}
                               onSave={v => onAchievementChange?.(idx, 'title', v)} />
                             {showLink && <WorkLink url={ach.url} brandColor={brandColor} />}
-                          </div>
-                          {showAchievementDesc && showAch(ach, 'desc') && (
-                            <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-600 text-[10px] mt-0.5 leading-relaxed"
-                              onSave={v => onAchievementChange?.(idx, 'desc', v)} />
-                          )}
+                          </span>
                         </div>
+                        {showAchievementDesc && showAch(ach, 'desc') && (
+                          <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-600 text-[10px] mt-0.5 leading-relaxed"
+                            onSave={v => onAchievementChange?.(idx, 'desc', v)} />
+                        )}
                       </li>
                     </ItemWrapper>
                     );

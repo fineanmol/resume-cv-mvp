@@ -1,6 +1,6 @@
 # Rebuilt React-Tailwind CV & Cover Letter SaaS MVP
 
-An enterprise-ready, modular, and premium Candidate CV & Cover Letter tailoring application. Rebuilt from the ground up utilizing React, TypeScript, and Tailwind CSS. It features Firebase cloud authentication and storage, IndexedDB / LocalStorage hybrid syncing, real-time Gemini AI document tailoring, interactive ATS keyword score widgets, and an advanced client-side vector PDF builder.
+An enterprise-ready, modular, and premium Candidate CV & Cover Letter tailoring application. Rebuilt from the ground up utilizing React, TypeScript, and Tailwind CSS. It features Firebase cloud authentication and storage, IndexedDB / LocalStorage hybrid syncing, real-time Gemini AI document tailoring, interactive ATS keyword score widgets, and browser-native print-to-PDF export.
 
 ---
 
@@ -20,9 +20,22 @@ An enterprise-ready, modular, and premium Candidate CV & Cover Letter tailoring 
 - **Horizontal Switchers**: Reusable sliding carousels positioned at the top of editing sidebars.
 - **Live Miniatures**: Rather than simple skeletons, they render live scaled-down A4 miniature previews (`scale(0.11)`) populated with the user's actual document data. This allows users to inspect exactly how their own content looks in Navy Elegant, Harvard Serif, Creative Sidebar, or Tech Monospace at a glance before clicking to switch layouts.
 
-### 4. Advanced PDF Downloader Engine
-- **Tailwind v4 Patch**: Tailwind v4 uses computed `oklch()` and `oklab()` color spaces which crash standard `html2canvas` parser runs. We built a high-performance, single-pixel Canvas 2D color resolver that converts all computed oklch/oklab styles to browser-native `rgba()` color strings before generating the PDF.
-- **Clean Print Output**: Unscaled document renders are appended to the DOM behind viewport bounds (`position: fixed; z-index: -9999`) to preserve layout DPI scaling, and shadows/borders are stripped dynamically to output vector A4 prints.
+### 4. PDF Export (browser print — not html2canvas)
+
+**Do not switch back to html2canvas / html2pdf for resume download.** That path re-renders the DOM into a canvas and breaks flex layout, SVG icons, skill chips, and Tailwind v4 `oklch()` colors.
+
+We use the same approach as Resume.io, Zety, Novoresume, and most resume SaaS products:
+
+1. Clone the live `.pdf-sheet` from the preview (strip `.edit-only` and `contenteditable`)
+2. Inject all page styles + Google Fonts into a hidden iframe
+3. Call `iframe.contentWindow.print()` — the **browser’s own print engine** renders what you see
+4. User chooses **Save as PDF** in the print dialog
+
+**Why this works:** WYSIWYG — the print engine is the same one that paints the preview. No oklch conversion hacks, no icon misalignment, no distorted chips.
+
+**Where it lives:** `src/services/pdf.ts` → `PdfService.downloadPdf()`. Print CSS: `src/index.css` (`@media print`). Legacy html2canvas code remains as `downloadPdfLegacy()` for reference only — do not wire it to the UI.
+
+**Full decision record:** [docs/ARCHITECTURE.md — PDF export](docs/ARCHITECTURE.md#pdf-export)
 
 ### 5. AI Tailoring & ATS Scoring Panel
 - **Weighted Match Scoring**: Computes compatibility score based on Job Description keyword occurrences.

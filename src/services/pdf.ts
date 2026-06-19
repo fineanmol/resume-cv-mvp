@@ -16,11 +16,24 @@ const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
 function convertOklToRgb(colorStr: string): string {
   if (!colorStr || !/oklch|oklab|color-mix/i.test(colorStr)) return colorStr;
 
-  // Browser resolves oklch → rgb on style assignment (most reliable in real DOM)
   const probe = document.createElement('span');
-  probe.style.setProperty('color', colorStr.trim());
-  const resolved = probe.style.color;
-  if (resolved && !/oklch|oklab/i.test(resolved)) return resolved;
+  probe.style.setProperty('position', 'absolute', 'important');
+  probe.style.setProperty('visibility', 'hidden', 'important');
+  probe.style.setProperty('pointer-events', 'none', 'important');
+  document.body.appendChild(probe);
+
+  try {
+    for (const prop of ['color', 'background-color', 'border-color'] as const) {
+      probe.style.setProperty(prop, colorStr.trim(), 'important');
+      const resolved = getComputedStyle(probe).getPropertyValue(prop);
+      probe.style.removeProperty(prop);
+      if (resolved && !/oklch|oklab|color-mix/i.test(resolved)) {
+        return resolved;
+      }
+    }
+  } finally {
+    document.body.removeChild(probe);
+  }
 
   if (!colorCtx) return '#334155';
 
@@ -35,15 +48,41 @@ function convertOklToRgb(colorStr: string): string {
   }
 }
 
-const COLOR_FUNC_RE = /(?:okl(?:ch|ab)|color-mix)\([^)]*(?:\/[^)]*)?\)/gi;
+const COLOR_FUNCTION_NAMES = ['color-mix', 'oklab', 'oklch'] as const;
+
+function extractColorFunction(css: string, fnStart: number): { match: string; end: number } | null {
+  const open = css.indexOf('(', fnStart);
+  if (open === -1) return null;
+  let depth = 0;
+  for (let i = open; i < css.length; i++) {
+    if (css[i] === '(') depth++;
+    else if (css[i] === ')') {
+      depth--;
+      if (depth === 0) return { match: css.slice(fnStart, i + 1), end: i };
+    }
+  }
+  return null;
+}
 
 /** Replace oklch/oklab/color-mix in CSS text so html2canvas can parse it. */
 export function sanitizeCssOklch(cssText: string): string {
   let out = cssText;
-  let prev = '';
-  while (out !== prev) {
-    prev = out;
-    out = out.replace(COLOR_FUNC_RE, (match) => convertOklToRgb(match));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const name of COLOR_FUNCTION_NAMES) {
+      let idx = 0;
+      while (true) {
+        const fnStart = out.indexOf(name, idx);
+        if (fnStart === -1) break;
+        const extracted = extractColorFunction(out, fnStart);
+        if (!extracted) break;
+        const replacement = convertOklToRgb(extracted.match);
+        if (replacement !== extracted.match) changed = true;
+        out = out.slice(0, fnStart) + replacement + out.slice(extracted.end + 1);
+        idx = fnStart + Math.max(replacement.length, 1);
+      }
+    }
   }
   return out;
 }
@@ -113,7 +152,71 @@ function inlineLayoutStyles(source: Element, target: Element, win: Window) {
   const cs = win.getComputedStyle(source);
   for (const prop of PDF_LAYOUT_PROPS) {
     const val = cs.getPropertyValue(prop);
-    if (val) target.style.setProperty(prop, val);
+    if (!val) continue;
+    if (prop === 'border-color' || prop.endsWith('-color')) {
+      target.style.setProperty(prop, safeColor(val));
+    } else {
+      target.style.setProperty(prop, val);
+    }
+  }
+}
+
+const DEEP_COLOR_PROPS = [
+  'color',
+  'background-color',
+  'border-top-color',
+  'border-right-color',
+  'border-bottom-color',
+  'border-left-color',
+  'outline-color',
+  'text-decoration-color',
+  'column-rule-color',
+  'fill',
+  'stroke',
+  'stop-color',
+  'box-shadow',
+  'text-shadow',
+];
+
+/** Force resolved rgb colors on every node — last line of defense before html2canvas. */
+function deepSanitizeColorsForTree(sourceRoot: Element, targetRoot: Element, win: Window) {
+  const sources = [sourceRoot, ...Array.from(sourceRoot.querySelectorAll('*'))];
+  const targets = [targetRoot, ...Array.from(targetRoot.querySelectorAll('*'))];
+  const len = Math.min(sources.length, targets.length);
+
+  for (let i = 0; i < len; i++) {
+    const src = sources[i];
+    const tgt = targets[i];
+    if (!(tgt instanceof HTMLElement || tgt instanceof SVGElement)) continue;
+
+    const cs = win.getComputedStyle(src);
+    for (const prop of DEEP_COLOR_PROPS) {
+      const val = cs.getPropertyValue(prop);
+      if (!val || val === 'none') continue;
+      if (/oklch|oklab|color-mix/i.test(val)) {
+        tgt.style.setProperty(prop, sanitizeCssOklch(val), 'important');
+      } else if (prop.includes('shadow')) {
+        tgt.style.setProperty(prop, val, 'important');
+      } else if (val !== 'transparent' || prop === 'color') {
+        tgt.style.setProperty(prop, safeColor(val), 'important');
+      }
+    }
+
+    if (tgt instanceof SVGElement) {
+      for (const attr of ['fill', 'stroke'] as const) {
+        const raw = tgt.getAttribute(attr);
+        if (!raw || raw === 'none') continue;
+        if (raw === 'currentColor' || /oklch|oklab|color-mix/i.test(raw)) {
+          const computed = safeColor(cs.getPropertyValue(attr) || cs.color);
+          if (computed !== 'none') tgt.setAttribute(attr, computed);
+        }
+      }
+    }
+
+    const inlineStyle = tgt.getAttribute('style');
+    if (inlineStyle && /oklch|oklab|color-mix/i.test(inlineStyle)) {
+      tgt.setAttribute('style', sanitizeCssOklch(inlineStyle));
+    }
   }
 }
 
@@ -157,8 +260,8 @@ function inlineElementColors(source: Element, target: Element, win: Window) {
 
 /** Walk source/target trees in parallel and inline colors + layout from the live DOM. */
 function syncStylesFromSource(sourceRoot: Element, targetRoot: Element, sourceWin: Window) {
-  const sources = [sourceRoot, ...sourceRoot.querySelectorAll('*')];
-  const targets = [targetRoot, ...targetRoot.querySelectorAll('*')];
+  const sources = [sourceRoot, ...Array.from(sourceRoot.querySelectorAll('*'))];
+  const targets = [targetRoot, ...Array.from(targetRoot.querySelectorAll('*'))];
   const len = Math.min(sources.length, targets.length);
   for (let i = 0; i < len; i++) {
     inlineElementColors(sources[i], targets[i], sourceWin);
@@ -167,7 +270,7 @@ function syncStylesFromSource(sourceRoot: Element, targetRoot: Element, sourceWi
 }
 
 function inlineAllResolvedColors(root: Element, win: Window) {
-  for (const el of [root, ...root.querySelectorAll('*')]) {
+  for (const el of [root, ...Array.from(root.querySelectorAll('*'))]) {
     inlineElementColors(el, el, win);
   }
 }
@@ -196,9 +299,9 @@ function injectSanitizedStyles(clonedDoc: Document) {
 function sanitizeInlineStyles(root: Element) {
   root.querySelectorAll('[style]').forEach((el) => {
     const style = el.getAttribute('style');
-    if (style && /oklch|oklab|color-mix/i.test(style)) {
-      el.setAttribute('style', sanitizeCssOklch(style));
-    }
+    if (!style) return;
+    const sanitized = sanitizeCssOklch(style);
+    if (sanitized !== style) el.setAttribute('style', sanitized);
   });
   root.querySelectorAll('[fill],[stroke]').forEach((el) => {
     for (const attr of ['fill', 'stroke']) {
@@ -208,6 +311,38 @@ function sanitizeInlineStyles(root: Element) {
       }
     }
   });
+}
+
+function prepareEntryIconAlignment(clone: HTMLElement) {
+  clone.querySelectorAll('.pdf-keep, .group\\/logo').forEach((el) => {
+    if (!(el instanceof HTMLElement)) return;
+    el.style.alignSelf = 'flex-start';
+    el.style.flexShrink = '0';
+    el.style.marginTop = '1px';
+  });
+}
+
+function prepareSheetForExport(clone: HTMLElement, sheetElement: HTMLElement): number {
+  const cs = window.getComputedStyle(sheetElement);
+  clone.classList.add('pdf-export');
+  clone.style.minHeight = 'auto';
+  clone.style.height = 'auto';
+  clone.style.maxHeight = 'none';
+  clone.style.boxShadow = 'none';
+  clone.style.margin = '0';
+  clone.style.padding = cs.padding;
+  clone.style.paddingTop = cs.paddingTop;
+  clone.style.paddingBottom = cs.paddingBottom;
+  return sheetElement.scrollHeight;
+}
+
+function finalizePdfClone(clone: HTMLElement, source: HTMLElement, win: Window) {
+  syncStylesFromSource(source, clone, win);
+  sanitizeInlineStyles(clone);
+  deepSanitizeColorsForTree(source, clone, win);
+  prepareSkillChipsForPdf(clone, source);
+  prepareFlexIconRows(clone, source);
+  prepareEntryIconAlignment(clone);
 }
 
 function prepareSkillChipsForPdf(clone: HTMLElement, source: HTMLElement) {
@@ -239,7 +374,9 @@ function prepareSkillChipsForPdf(clone: HTMLElement, source: HTMLElement) {
     chip.style.fontSize = cs.fontSize;
     chip.style.fontWeight = cs.fontWeight;
     chip.style.borderRadius = cs.borderRadius;
-    chip.style.border = cs.border;
+    chip.style.borderWidth = cs.borderTopWidth;
+    chip.style.borderStyle = cs.borderTopStyle;
+    chip.style.borderColor = safeColor(cs.borderTopColor);
     chip.style.backgroundColor = safeColor(cs.backgroundColor);
     chip.style.color = safeColor(cs.color);
   });
@@ -263,7 +400,9 @@ function prepareSkillChipsForPdf(clone: HTMLElement, source: HTMLElement) {
     chip.style.padding = cs.padding;
     chip.style.minHeight = cs.minHeight;
     chip.style.fontSize = cs.fontSize;
-    chip.style.border = cs.border;
+    chip.style.borderWidth = cs.borderTopWidth;
+    chip.style.borderStyle = cs.borderTopStyle;
+    chip.style.borderColor = safeColor(cs.borderTopColor);
     chip.style.borderRadius = cs.borderRadius;
     chip.style.backgroundColor = safeColor(cs.backgroundColor);
     chip.style.color = safeColor(cs.color);
@@ -321,7 +460,10 @@ function prepareFlexIconRows(clone: HTMLElement, source: HTMLElement) {
     const isInline = cs.display.includes('inline');
     tgt.style.display = isInline ? 'inline-flex' : 'flex';
     tgt.style.flexDirection = 'row';
-    tgt.style.alignItems = cs.alignItems || 'center';
+    const alignItems = cs.alignItems || 'center';
+    tgt.style.alignItems = tgt.classList.contains('items-start') || alignItems === 'flex-start'
+      ? 'flex-start'
+      : alignItems;
     tgt.style.alignContent = cs.alignContent || 'normal';
     tgt.style.flexWrap = cs.flexWrap || 'nowrap';
 
@@ -425,11 +567,201 @@ export class PdfService {
     return null;
   }
 
-  public static downloadPdf(element: HTMLElement, filename: string): Promise<void> {
+  /**
+   * Print-based PDF export — pixel-perfect because it uses the browser's own render engine.
+   * Opens the sheet in a hidden iframe with all page styles, calls print(), then removes
+   * the iframe. The user selects "Save as PDF" in the browser print dialog.
+   *
+   * This is the approach used by Resume.io, Zety, Novoresume, and most SaaS resume builders.
+   * html2canvas is fundamentally unreliable for complex CSS (flexbox, oklch, SVG icons, etc.).
+   */
+  public static downloadPdf(element: HTMLElement, _filename: string): Promise<void> {
     const sheetElement = (element.querySelector('.pdf-sheet') || element) as HTMLElement;
 
-    // Create a hidden wrapper positioned at (0,0) with a negative z-index to stay invisible to the user.
-    // Use position: absolute and height: auto to prevent clipping when rendering multi-page documents.
+    // Collect all styles from the parent document
+    let allStyles = '';
+    for (const sheet of Array.from(document.styleSheets)) {
+      try {
+        const rules = sheet.cssRules || sheet.rules;
+        if (rules) {
+          allStyles += Array.from(rules).map(r => r.cssText).join('\n') + '\n';
+        }
+      } catch {
+        // Cross-origin stylesheet — skip (fonts are handled via <link> below)
+      }
+    }
+
+    // Collect Google Fonts link tags
+    const fontLinks = Array.from(
+      document.querySelectorAll('link[href*="fonts.googleapis.com"], link[href*="fonts.gstatic.com"]')
+    ).map(l => l.outerHTML).join('\n');
+
+    // Prepare clone: strip editor-only chrome, restore print state
+    const clone = sheetElement.cloneNode(true) as HTMLElement;
+    stripEditorFocusClasses(clone);
+    clone.querySelectorAll('.edit-only, [data-pdf-hide]').forEach(el => el.remove());
+    clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+
+    // Strip the gray placeholder background from the avatar container (bg-slate-100)
+    clone.querySelectorAll('.group\\/avatar > div').forEach(el => {
+      if (el instanceof HTMLElement) el.style.backgroundColor = 'transparent';
+    });
+    // Remove bg-slate-100 class from any element that has it inside the photo area
+    clone.querySelectorAll('[class*="bg-slate-100"]').forEach(el => {
+      el.className = el.className.replace(/\bbg-slate-100\b/g, '');
+    });
+
+    // Force all images to absolute URLs (iframe is about:blank, relative hrefs break)
+    clone.querySelectorAll('img').forEach(img => {
+      const src = img.getAttribute('src');
+      if (src && !src.startsWith('data:') && !src.startsWith('http')) {
+        img.src = new URL(src, window.location.href).href;
+      }
+    });
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  ${fontLinks}
+  <style>
+    ${allStyles}
+    @page { size: A4; margin: 0; }
+
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #fff !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+    }
+
+    .pdf-sheet {
+      box-shadow: none !important;
+      margin: 0 !important;
+      min-height: auto !important;
+      width: 210mm !important;
+      box-sizing: border-box !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    /* Strip the gray placeholder background — only needed in editor */
+    .group\\/avatar > div,
+    [class*="bg-slate-100"] {
+      background-color: transparent !important;
+    }
+
+    /* Preserve border-radius clipping for circle/rounded photos */
+    .rounded-full,
+    .rounded-lg,
+    .rounded-md,
+    .rounded {
+      overflow: hidden !important;
+    }
+
+    /* Ensure the photo image fills its container */
+    .group\\/avatar img {
+      display: block !important;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+    }
+
+    /* Strip all editor decoration */
+    .pdf-sheet::before,
+    .pdf-sheet::after {
+      display: none !important;
+      content: none !important;
+    }
+
+    /* Hide animation on wave/frame lines */
+    .photo-wave-dash,
+    .photo-wave-dash-slow,
+    .photo-frame-dash {
+      animation: none !important;
+    }
+
+    /* Force backgrounds to print */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+  </style>
+</head>
+<body>
+  ${clone.outerHTML}
+</body>
+</html>`;
+
+    return new Promise((resolve, reject) => {
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;border:0;opacity:0;pointer-events:none;';
+      document.body.appendChild(iframe);
+
+      const cleanup = () => {
+        if (document.body.contains(iframe)) document.body.removeChild(iframe);
+      };
+
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!iframeDoc) {
+          cleanup();
+          reject(new Error('Could not access iframe document'));
+          return;
+        }
+
+        iframeDoc.open();
+        iframeDoc.write(html);
+        iframeDoc.close();
+
+        const win = iframe.contentWindow;
+        if (!win) {
+          cleanup();
+          reject(new Error('Could not access iframe window'));
+          return;
+        }
+
+        let printed = false;
+        const triggerPrint = () => {
+          if (printed) return;
+          printed = true;
+          try {
+            win.focus();
+            win.print();
+          } catch (err) {
+            cleanup();
+            reject(err);
+            return;
+          }
+          // Give the print dialog time to open before removing the iframe
+          setTimeout(cleanup, 3000);
+          resolve();
+        };
+
+        win.addEventListener('load', () => setTimeout(triggerPrint, 350));
+
+        // Fallback: if load event never fires (e.g. some browsers with about:blank)
+        const fallback = setTimeout(triggerPrint, 2500);
+        win.addEventListener('load', () => clearTimeout(fallback));
+
+      } catch (err) {
+        cleanup();
+        reject(err);
+      }
+    });
+  }
+
+  /** @deprecated Keep old html2canvas implementation available as legacy fallback */
+  public static async downloadPdfLegacy(element: HTMLElement, filename: string): Promise<void> {
+    const sheetElement = (element.querySelector('.pdf-sheet') || element) as HTMLElement;
+
     const wrapper = document.createElement('div');
     wrapper.style.cssText = [
       'position: absolute',
@@ -459,11 +791,7 @@ export class PdfService {
     });
 
     // Copy resolved colors + layout from the live preview (including SVG / Lucide icons)
-    syncStylesFromSource(sheetElement, clone, window);
-    sanitizeInlineStyles(clone);
-
-    prepareSkillChipsForPdf(clone, sheetElement);
-    prepareFlexIconRows(clone, sheetElement);
+    finalizePdfClone(clone, sheetElement, window);
 
     // Remove edit-only UI elements completely to prevent rendering them in the PDF
     clone.querySelectorAll('.edit-only, [data-pdf-hide]').forEach((el) => {
@@ -524,11 +852,8 @@ export class PdfService {
     clone.style.zIndex = '9999';
     clone.style.width = '794px';
     
-    const originalHeight = sheetElement.offsetHeight || 1123;
+    const contentHeight = prepareSheetForExport(clone, sheetElement);
 
-    clone.style.height = 'auto';
-    clone.style.minHeight = `${originalHeight}px`;
-    clone.style.maxHeight = 'none';
     if (clone.style.display === 'none') {
       clone.style.display = 'block';
     }
@@ -538,6 +863,9 @@ export class PdfService {
 
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
+
+    // Measure after clone is in DOM so html2canvas captures exact content height (no A4 min-height padding)
+    const captureHeight = Math.max(clone.scrollHeight, contentHeight);
 
     const opt = {
       margin: 0,
@@ -551,15 +879,30 @@ export class PdfService {
         scrollX: 0,
         scrollY: 0,
         windowWidth: 794,
+        height: captureHeight,
+        windowHeight: captureHeight,
         onclone: (clonedDoc: Document) => {
           const clonedSheet = (sheetElement.id ? clonedDoc.getElementById(sheetElement.id) : null)
             || clonedDoc.querySelector('.pdf-sheet')
             || (clonedDoc.body.querySelector('*') as HTMLElement);
 
           if (clonedSheet) {
+            clonedSheet.classList.add('pdf-export');
+            if (clonedSheet instanceof HTMLElement) {
+              clonedSheet.style.minHeight = 'auto';
+              clonedSheet.style.height = 'auto';
+              clonedSheet.style.boxShadow = 'none';
+            }
             // Remove html2canvas-copied stylesheets that still contain oklch()
             stripClonedDocStyles(clonedDoc);
             injectSanitizedStyles(clonedDoc);
+
+            // Safety: strip any oklch that survived in injected styles
+            clonedDoc.querySelectorAll('style').forEach((el) => {
+              if (el.textContent && /oklch|oklab|color-mix/i.test(el.textContent)) {
+                el.textContent = sanitizeCssOklch(el.textContent);
+              }
+            });
 
             try {
               const fontLinks = document.querySelectorAll('link[href*="fonts.googleapis.com"], link[href*="fonts.gstatic.com"]');
@@ -571,19 +914,37 @@ export class PdfService {
             }
 
             // Copy resolved colors + layout from live DOM (handles SVG currentColor → oklch classes)
-            syncStylesFromSource(sheetElement, clonedSheet, window);
+            finalizePdfClone(clonedSheet, sheetElement, window);
             if (clonedDoc.defaultView) {
               inlineAllResolvedColors(clonedSheet, clonedDoc.defaultView);
+              deepSanitizeColorsForTree(sheetElement, clonedSheet, window);
             }
-            sanitizeInlineStyles(clonedSheet);
-            prepareSkillChipsForPdf(clonedSheet, sheetElement);
-            prepareFlexIconRows(clonedSheet, sheetElement);
 
             const style = clonedDoc.createElement('style');
             style.textContent = `
               body {
                 margin: 0 !important;
                 padding: 0 !important;
+              }
+              .pdf-sheet.pdf-export,
+              .pdf-export {
+                min-height: auto !important;
+                box-shadow: none !important;
+              }
+              .pdf-export::before,
+              .pdf-export::after,
+              .pdf-sheet.pdf-export::before,
+              .pdf-sheet.pdf-export::after {
+                display: none !important;
+                content: none !important;
+              }
+              .pdf-export header {
+                margin-top: 0 !important;
+              }
+              .pdf-export .pdf-keep,
+              .pdf-export .group\\/logo {
+                align-self: flex-start !important;
+                flex-shrink: 0 !important;
               }
               * {
                 font-variant-ligatures: none !important;

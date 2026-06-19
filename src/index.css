@@ -228,6 +228,30 @@ body {
     content: none !important;
   }
 
+  /* Strip the gray placeholder background from the avatar container */
+  .group\/avatar > div,
+  .pdf-sheet .bg-slate-100 {
+    background-color: transparent !important;
+  }
+
+  /* Preserve border-radius clipping so the circle photo stays circular */
+  .pdf-sheet .rounded-full,
+  .pdf-sheet .rounded-lg,
+  .pdf-sheet .rounded-md,
+  .pdf-sheet .rounded {
+    overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Make sure the actual photo image fills its container */
+  .pdf-sheet .group\/avatar img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
   [contenteditable="true"] {
     outline: none !important;
     border: none !important;
