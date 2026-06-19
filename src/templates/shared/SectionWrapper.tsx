@@ -179,8 +179,10 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
                     {[
-                      { key: 'showExperienceLogo', label: 'Show Company Logo' },
+                      { key: 'showExperienceDates', label: 'Show Dates' },
+                      { key: 'showExperienceCompany', label: 'Show Company' },
                       { key: 'showExperienceLocation', label: 'Show Location' },
+                      { key: 'showExperienceLogo', label: 'Show Company Logo' },
                     ].map(({ key, label }) => (
                       <label key={key} className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
                         <input type="checkbox"
@@ -198,8 +200,10 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
                     {[
-                      { key: 'showEducationLogo', label: 'Show School Logo' },
+                      { key: 'showEducationDates', label: 'Show Dates' },
+                      { key: 'showEducationLocation', label: 'Show Location' },
                       { key: 'showEducationGpa', label: 'Show GPA Badge' },
+                      { key: 'showEducationLogo', label: 'Show School Logo' },
                     ].map(({ key, label }) => (
                       <label key={key} className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
                         <input type="checkbox"
@@ -218,8 +222,8 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
                     <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
                       <input type="checkbox"
-                        checked={layoutSettings.showProjectIcon ?? true}
-                        onChange={(e) => onLayoutSettingsChange({ showProjectIcon: e.target.checked })}
+                        checked={layoutSettings.showProjectIcons ?? true}
+                        onChange={(e) => onLayoutSettingsChange({ showProjectIcons: e.target.checked })}
                         className="rounded"
                       />
                       Show Project Icons
@@ -253,6 +257,20 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
                         className="rounded"
                       />
                       Show Description
+                    </label>
+                  </div>
+                )}
+
+                {layoutSettings && onLayoutSettingsChange && id === 'languages' && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">Visibility</span>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
+                      <input type="checkbox"
+                        checked={layoutSettings.showLanguageLevel ?? true}
+                        onChange={(e) => onLayoutSettingsChange({ showLanguageLevel: e.target.checked })}
+                        className="rounded"
+                      />
+                      Show Proficiency Level
                     </label>
                   </div>
                 )}

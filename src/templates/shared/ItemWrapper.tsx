@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { ArrowUp, ArrowDown, Settings, Trash2 } from 'lucide-react';
+import { ArrowUp, ArrowDown, Settings, Trash2, Copy, CopyPlus } from 'lucide-react';
 import { ActiveSectionContext } from './ActiveSectionContext';
-import { ItemLogo } from './ItemLogo';
 
 export interface ItemWrapperProps {
   sectionId: string;
@@ -11,28 +10,38 @@ export interface ItemWrapperProps {
   onDelete: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
+  onDuplicate?: () => void;
+  onAddSimilar?: () => void;
   children: React.ReactNode;
+  settingsPanel?: React.ReactNode | ((onClose: () => void) => React.ReactNode);
+  /** @deprecated Logo upload lives in entry settings panels; kept for backward compatibility */
   logo?: string;
+  /** @deprecated */
   onLogoChange?: (logo: string) => void;
+  /** @deprecated */
   showLogo?: boolean;
+  /** @deprecated */
   placeholderIcon?: React.ReactNode;
   brandColor?: string;
 }
 
 export const ItemWrapper: React.FC<ItemWrapperProps> = ({
-  sectionId, index, totalItems, isEditable, onDelete, onMoveUp, onMoveDown, children,
-  logo, onLogoChange, showLogo, placeholderIcon, brandColor = '#314855',
+  sectionId, index, totalItems, isEditable, onDelete, onMoveUp, onMoveDown,
+  onDuplicate, onAddSimilar, children, settingsPanel,
 }) => {
   const context = useContext(ActiveSectionContext);
   const [showSettings, setShowSettings] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
   const itemId = `${sectionId}-${index}`;
   const isItemActive = context?.activeItemId === itemId;
+  const hasSettings = Boolean(settingsPanel);
 
   useEffect(() => {
     if (!showSettings) return;
     const handleOutside = (e: MouseEvent) => {
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setShowSettings(false);
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setShowSettings(false);
+      }
     };
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
@@ -48,6 +57,11 @@ export const ItemWrapper: React.FC<ItemWrapperProps> = ({
     context?.setActiveSectionId(sectionId);
     context?.setActiveItemId(itemId);
   };
+
+  const closeSettings = () => setShowSettings(false);
+  const panelContent = settingsPanel
+    ? (typeof settingsPanel === 'function' ? settingsPanel(closeSettings) : settingsPanel)
+    : null;
 
   return (
     <div
@@ -78,7 +92,29 @@ export const ItemWrapper: React.FC<ItemWrapperProps> = ({
           </button>
         )}
 
-        {showLogo && onLogoChange && (
+        {onDuplicate && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+            className="p-0.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded cursor-pointer transition"
+            title="Duplicate"
+          >
+            <Copy className="w-3 h-3" />
+          </button>
+        )}
+
+        {onAddSimilar && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onAddSimilar(); }}
+            className="p-0.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded cursor-pointer transition"
+            title="Add Similar"
+          >
+            <CopyPlus className="w-3 h-3" />
+          </button>
+        )}
+
+        {hasSettings && (
           <div className="relative" ref={settingsRef}>
             <button
               type="button"
@@ -88,16 +124,9 @@ export const ItemWrapper: React.FC<ItemWrapperProps> = ({
             >
               <Settings className="w-3 h-3" />
             </button>
-            {showSettings && (
-              <div className="absolute right-0 top-5 z-50 bg-white border border-slate-200 shadow-xl rounded-lg p-3 w-64 flex flex-col gap-2.5 edit-only">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Logo</p>
-                <ItemLogo
-                  logo={logo}
-                  brandColor={brandColor}
-                  isEditable={true}
-                  onLogoChange={onLogoChange}
-                  placeholderIcon={placeholderIcon}
-                />
+            {showSettings && panelContent && (
+              <div className="absolute right-0 top-5 z-50">
+                {panelContent}
               </div>
             )}
           </div>

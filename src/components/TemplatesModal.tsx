@@ -15,8 +15,8 @@ interface TemplatesModalProps {
   documentState: ResumeState | CoverLetterState;
 }
 
-export const TemplatesModal: React.FC<TemplatesModalProps> = ({
-  isOpen,
+/** Inner body unmounts when modal closes — draft selection resets on each open (Cancel-safe). */
+const TemplatesModalBody: React.FC<Omit<TemplatesModalProps, 'isOpen'>> = ({
   onClose,
   currentTemplate,
   onSelectTemplate,
@@ -27,13 +27,15 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
 
   const currentTemplateObj = TEMPLATE_CATALOG.find(t => t.id === selectedTemplateId) || TEMPLATE_CATALOG[0];
 
+  // Live A4 preview: renders the full ResumeTemplateRenderer with real documentState
+  // (EnhanceCV uses static thumbnails — this gives an accurate layout preview).
   const previewState = {
     ...documentState,
     layoutSettings: {
       ...documentState.layoutSettings,
       template: selectedTemplateId,
       brandColor: currentTemplateObj.accent,
-    }
+    },
   };
 
   const handleApply = () => {
@@ -42,14 +44,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      maxWidth="max-w-6xl"
-      noPadding
-      panelClassName="overflow-hidden h-[90vh]"
-      overlayClassName="bg-editor/85 overflow-hidden"
-    >
+    <>
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border-color/60 flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -127,9 +122,9 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
           >
             <div className="origin-top-left scale-[0.55] w-[794px] h-[1123px]">
               {docType === 'resume' ? (
-                <ResumeTemplateRenderer state={previewState} />
+                <ResumeTemplateRenderer state={previewState} isEditable={false} />
               ) : (
-                <CoverLetterTemplateRenderer state={previewState} />
+                <CoverLetterTemplateRenderer state={previewState} isEditable={false} />
               )}
             </div>
           </div>
@@ -153,6 +148,35 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
           Apply Template
         </button>
       </div>
-    </Modal>
+    </>
   );
 };
+
+export const TemplatesModal: React.FC<TemplatesModalProps> = ({
+  isOpen,
+  onClose,
+  currentTemplate,
+  onSelectTemplate,
+  docType,
+  documentState,
+}) => (
+  <Modal
+    isOpen={isOpen}
+    onClose={onClose}
+    maxWidth="max-w-6xl"
+    noPadding
+    panelClassName="overflow-hidden h-[90vh]"
+    overlayClassName="bg-editor/85 overflow-hidden"
+  >
+    {isOpen && (
+      <TemplatesModalBody
+        key={currentTemplate}
+        onClose={onClose}
+        currentTemplate={currentTemplate}
+        onSelectTemplate={onSelectTemplate}
+        docType={docType}
+        documentState={documentState}
+      />
+    )}
+  </Modal>
+);

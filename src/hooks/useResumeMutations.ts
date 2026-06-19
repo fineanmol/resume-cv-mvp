@@ -7,7 +7,24 @@ import type {
   AchievementItem,
   LanguageItem,
   ResumeLayoutSettings,
+  EntrySection,
 } from '../types';
+
+const ENTRY_ARRAY_KEYS: Record<EntrySection, keyof ResumeState> = {
+  experience: 'resumeExperience',
+  education: 'resumeEducation',
+  certs: 'resumeCerts',
+  achievements: 'resumeAchievements',
+  languages: 'resumeLanguages',
+};
+
+function cloneEntry<T>(item: T): T {
+  const copy = { ...item } as T & { visibility?: Record<string, boolean> };
+  if (copy.visibility) {
+    copy.visibility = { ...copy.visibility };
+  }
+  return copy;
+}
 
 export type ResumeSet = (
   newState: ResumeState | ((prev: ResumeState) => ResumeState),
@@ -199,6 +216,135 @@ export function useResumeMutations(set: ResumeSet) {
     [set]
   );
 
+  const onEntryVisibilityChange = useCallback(
+    (section: EntrySection, index: number, field: string, value: boolean) => {
+      set(prev => {
+        const key = ENTRY_ARRAY_KEYS[section];
+        const items = [...(prev[key] as Array<{ visibility?: Record<string, boolean> }>)];
+        const item = { ...items[index] };
+        item.visibility = { ...item.visibility, [field]: value };
+        items[index] = item;
+        return { ...prev, [key]: items };
+      });
+    },
+    [set]
+  );
+
+  const onDuplicateExperience = useCallback(
+    (index: number) => {
+      set(prev => {
+        const updated = [...prev.resumeExperience];
+        updated.splice(index + 1, 0, cloneEntry(prev.resumeExperience[index]));
+        return { ...prev, resumeExperience: updated };
+      });
+    },
+    [set]
+  );
+
+  const onAddSimilarExperience = useCallback(
+    (index: number) => {
+      set(prev => {
+        const source = prev.resumeExperience[index];
+        const copy = cloneEntry(source);
+        copy.title = `${source.title} (Copy)`;
+        return { ...prev, resumeExperience: [...prev.resumeExperience, copy] };
+      });
+    },
+    [set]
+  );
+
+  const onDuplicateEducation = useCallback(
+    (index: number) => {
+      set(prev => {
+        const updated = [...prev.resumeEducation];
+        updated.splice(index + 1, 0, cloneEntry(prev.resumeEducation[index]));
+        return { ...prev, resumeEducation: updated };
+      });
+    },
+    [set]
+  );
+
+  const onAddSimilarEducation = useCallback(
+    (index: number) => {
+      set(prev => {
+        const source = prev.resumeEducation[index];
+        const copy = cloneEntry(source);
+        copy.degree = `${source.degree} (Copy)`;
+        return { ...prev, resumeEducation: [...prev.resumeEducation, copy] };
+      });
+    },
+    [set]
+  );
+
+  const onDuplicateCert = useCallback(
+    (index: number) => {
+      set(prev => {
+        const updated = [...prev.resumeCerts];
+        updated.splice(index + 1, 0, cloneEntry(prev.resumeCerts[index]));
+        return { ...prev, resumeCerts: updated };
+      });
+    },
+    [set]
+  );
+
+  const onAddSimilarCert = useCallback(
+    (index: number) => {
+      set(prev => {
+        const source = prev.resumeCerts[index];
+        const copy = cloneEntry(source);
+        copy.title = `${source.title} (Copy)`;
+        return { ...prev, resumeCerts: [...prev.resumeCerts, copy] };
+      });
+    },
+    [set]
+  );
+
+  const onDuplicateAchievement = useCallback(
+    (index: number) => {
+      set(prev => {
+        const updated = [...prev.resumeAchievements];
+        updated.splice(index + 1, 0, cloneEntry(prev.resumeAchievements[index]));
+        return { ...prev, resumeAchievements: updated };
+      });
+    },
+    [set]
+  );
+
+  const onAddSimilarAchievement = useCallback(
+    (index: number) => {
+      set(prev => {
+        const source = prev.resumeAchievements[index];
+        const copy = cloneEntry(source);
+        copy.title = `${source.title} (Copy)`;
+        return { ...prev, resumeAchievements: [...prev.resumeAchievements, copy] };
+      });
+    },
+    [set]
+  );
+
+  const onDuplicateLanguage = useCallback(
+    (index: number) => {
+      set(prev => {
+        const updated = [...prev.resumeLanguages];
+        updated.splice(index + 1, 0, cloneEntry(prev.resumeLanguages[index]));
+        return { ...prev, resumeLanguages: updated };
+      });
+    },
+    [set]
+  );
+
+  const onAddSimilarLanguage = useCallback(
+    (index: number) => {
+      set(prev => {
+        const source = prev.resumeLanguages[index];
+        const copy = cloneEntry(source);
+        copy.name = `${source.name} (Copy)`;
+        return { ...prev, resumeLanguages: [...prev.resumeLanguages, copy] };
+      });
+    },
+    [set]
+  );
+
   return {
     onFieldChange,
     onExperienceChange,
@@ -217,5 +363,16 @@ export function useResumeMutations(set: ResumeSet) {
     onAddLanguage,
     onDeleteLanguage,
     onLayoutSettingsChange,
+    onEntryVisibilityChange,
+    onDuplicateExperience,
+    onAddSimilarExperience,
+    onDuplicateEducation,
+    onAddSimilarEducation,
+    onDuplicateCert,
+    onAddSimilarCert,
+    onDuplicateAchievement,
+    onAddSimilarAchievement,
+    onDuplicateLanguage,
+    onAddSimilarLanguage,
   };
 }

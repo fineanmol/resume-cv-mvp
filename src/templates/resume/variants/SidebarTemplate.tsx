@@ -4,6 +4,7 @@ import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
 import { SkillsEditor } from '../../shared/SkillsEditor';
 import { formatLinkedinUrl } from '../../../utils/linkedin';
+import { AvatarCircleEditable } from '../../TemplateHeader';
 import { useTemplateRenderContext } from '../useTemplateSetup';
 import {
   ItemLogo,
@@ -21,26 +22,37 @@ export const SidebarTemplate: React.FC = () => {
     resumeCerts, resumeAchievements, resumeLanguages, layoutSettings,
     brandColor, accentColor2, bulletStyle, skillsStyle, summaryAlign,
     experienceAlign, educationAlign, certsAlign, achievementsAlign,
-    showAvatar, bodyFontCss, headingFontCss, lineHeight, badgeStyle,
+    showPhoto, bodyFontCss, headingFontCss, lineHeight, badgeStyle,
     onLayoutSettingsChange, onAddExperience, onDeleteExperience,
     onExperienceChange, onAddEducation, onDeleteEducation, onEducationChange,
-    onCertChange, onAchievementChange, onLanguageChange,
+    onCertChange, onAchievementChange, onLanguageChange, onFieldChange,
   } = useTemplateRenderContext();
 
   const SH = 'text-xs font-bold uppercase tracking-wider text-slate-900 border-b pb-1 mb-2';
-  const hasPhone = !!(phone && phone.trim());
-  const hasEmail = !!(email && email.trim());
-  const hasLocation = !!(location && location.trim());
-  const hasLinkedin = !!(linkedin && linkedin.trim());
+  const showTitle = layoutSettings?.showTitle ?? true;
+  const uppercaseName = layoutSettings?.uppercaseName ?? false;
+  const hasPhone = (layoutSettings?.showPhone ?? true) && !!(phone && phone.trim());
+  const hasEmail = (layoutSettings?.showEmail ?? true) && !!(email && email.trim());
+  const hasLocation = (layoutSettings?.showLocation ?? true) && !!(location && location.trim());
+  const hasLinkedin = (layoutSettings?.showLinkedin ?? true) && !!(linkedin && linkedin.trim());
   const hasContact = hasPhone || hasEmail || hasLocation || hasLinkedin;
 
   return (
     <div className={`pdf-sheet p-0 text-slate-800 flex flex-row ${sheetActiveClass}`} style={{ ...sheetStyle, padding: 0 }} id="resume-sheet"
       onClick={(e) => { if (e.target === e.currentTarget && isEditable) clearActive(); }}>
       <aside className="w-[220px] flex-shrink-0 flex flex-col gap-5 p-5" style={{ background: brandColor + '15', borderRight: `3px solid ${brandColor}` }}>
-        {showAvatar && (
-          <div className="w-20 h-20 rounded-full overflow-hidden mx-auto border-2" style={{ borderColor: brandColor }}>
-            <img src={avatar} alt={name} className="w-full h-full object-cover" />
+        {(layoutSettings?.showPhoto ?? showPhoto) && (
+          <div className="mx-auto">
+            <AvatarCircleEditable
+              src={avatar}
+              name={name}
+              size="w-20 h-20"
+              border={brandColor}
+              isEditable={isEditable}
+              onAvatarChange={(url) => onFieldChange?.('avatar', url)}
+              layoutSettings={layoutSettings}
+              onLayoutSettingsChange={onLayoutSettingsChange}
+            />
           </div>
         )}
         {hasContact && (
@@ -122,9 +134,12 @@ export const SidebarTemplate: React.FC = () => {
       <main className="flex-1 p-6" style={{ lineHeight, fontFamily: bodyFontCss }}>
         <header className="mb-4 pb-3 border-b-2" style={{ borderColor: brandColor }}>
           <E tag="h1" value={name} isEditable={isEditable} editableClass={ec}
-            className="text-3xl font-extrabold tracking-tight" style={{ color: brandColor, fontFamily: headingFontCss }} onSave={ef('name')} />
-          <E tag="p" value={subtitle} isEditable={isEditable} editableClass={ec}
-            className="text-sm font-medium text-slate-500 uppercase mt-1 tracking-wide" onSave={ef('subtitle')} />
+            className={`text-3xl font-extrabold tracking-tight ${uppercaseName ? 'uppercase' : ''}`}
+            style={{ color: brandColor, fontFamily: headingFontCss }} onSave={ef('name')} />
+          {showTitle && (
+            <E tag="p" value={subtitle} isEditable={isEditable} editableClass={ec}
+              className="text-sm font-medium text-slate-500 uppercase mt-1 tracking-wide" onSave={ef('subtitle')} />
+          )}
         </header>
 
         {(resumeSummary || isEditable) && (
@@ -172,7 +187,7 @@ export const SidebarTemplate: React.FC = () => {
                       </div>
                       <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
                         onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
-                        bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
+                        bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} prefixId={`exp-${idx}`} />
                     </div>
                   </ItemWrapper>
                 ))}

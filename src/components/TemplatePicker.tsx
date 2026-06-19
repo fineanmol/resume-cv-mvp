@@ -51,6 +51,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
 
   const tpl = TEMPLATE_CATALOG[idx];
 
+  // Live scaled A4 preview (EnhanceCV carousel uses static thumbnails; this renders the real template).
   const previewResume = {
     ...DEFAULT_RESUME_STATE,
     layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template: tpl.id, brandColor: tpl.accent },
@@ -136,8 +137,8 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
                 >
                   <div className="origin-top-left scale-[0.5] w-[794px] h-[1123px]">
                     {docType === 'resume'
-                      ? <ResumeTemplateRenderer state={previewResume} />
-                      : <CoverLetterTemplateRenderer state={previewCL} />
+                      ? <ResumeTemplateRenderer state={previewResume} isEditable={false} />
+                      : <CoverLetterTemplateRenderer state={previewCL} isEditable={false} />
                     }
                   </div>
                 </div>

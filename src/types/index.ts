@@ -77,6 +77,41 @@ export interface ResumeLayoutSettings extends LayoutSettings {
   columnGap: number;
 }
 
+export interface ExperienceEntryVisibility {
+  dates?: boolean;
+  location?: boolean;
+  company?: boolean;
+  logo?: boolean;
+  bullets?: boolean;
+  link?: boolean;
+}
+
+export interface EducationEntryVisibility {
+  gpa?: boolean;
+  location?: boolean;
+  dates?: boolean;
+  bullets?: boolean;
+  logo?: boolean;
+}
+
+export interface CertEntryVisibility {
+  desc?: boolean;
+  link?: boolean;
+  icon?: boolean;
+}
+
+export interface AchievementEntryVisibility {
+  desc?: boolean;
+  icon?: boolean;
+}
+
+export interface LanguageEntryVisibility {
+  level?: boolean;
+  slider?: boolean;
+}
+
+export type EntrySection = 'experience' | 'education' | 'certs' | 'achievements' | 'languages';
+
 export interface ExperienceItem {
   title: string;
   company: string;
@@ -85,6 +120,7 @@ export interface ExperienceItem {
   bullets: string;
   url?: string;
   logo?: string;
+  visibility?: ExperienceEntryVisibility;
 }
 
 export interface EducationItem {
@@ -94,6 +130,7 @@ export interface EducationItem {
   location: string;
   bullets: string;
   logo?: string;
+  visibility?: EducationEntryVisibility;
 }
 
 export interface CertItem {
@@ -101,17 +138,20 @@ export interface CertItem {
   desc: string;
   url?: string;
   icon?: string;
+  visibility?: CertEntryVisibility;
 }
 
 export interface AchievementItem {
   title: string;
   desc: string;
   icon: 'star' | 'award' | 'flag' | 'check' | 'trophy' | 'target' | 'terminal';
+  visibility?: AchievementEntryVisibility;
 }
 
 export interface LanguageItem {
   name: string;
   level: string;
+  visibility?: LanguageEntryVisibility;
 }
 
 export interface ResumeState {

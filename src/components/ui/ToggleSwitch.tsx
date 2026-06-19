@@ -5,9 +5,17 @@ interface ToggleSwitchProps {
   onChange: (checked: boolean) => void;
   label?: string;
   id?: string;
+  variant?: 'default' | 'teal';
 }
 
-export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ checked, onChange, label, id }) => {
+export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
+  checked,
+  onChange,
+  label,
+  id,
+  variant = 'default',
+}) => {
+  const checkedClass = variant === 'teal' ? 'bg-teal-500' : 'bg-brand-accent';
   const switchEl = (
     <button
       type="button"
@@ -16,7 +24,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ checked, onChange, l
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative w-9 h-5 rounded-full transition cursor-pointer ${
-        checked ? 'bg-brand-accent' : 'bg-border-color'
+        checked ? checkedClass : 'bg-border-color'
       }`}
     >
       <span

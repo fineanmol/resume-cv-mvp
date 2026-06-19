@@ -57,13 +57,15 @@ export const DesignerTemplate: React.FC = () => {
     designerLeftSections, designerRightSections, showLayoutBounds,
     onLayoutSettingsChange, onAddExperience, onDeleteExperience,
     onExperienceChange, onAddEducation, onDeleteEducation, onEducationChange,
-    onCertChange, onAchievementChange, onLanguageChange,
+    onCertChange, onAchievementChange, onLanguageChange, onFieldChange,
   } = useTemplateRenderContext();
 
-  const showPhone = !!phone;
-  const showEmail = !!email;
-  const showLinkedin = !!linkedin;
-  const showLocation = !!location;
+  const showTitle = layoutSettings?.showTitle ?? true;
+  const uppercaseName = layoutSettings?.uppercaseName ?? false;
+  const hasPhone = (layoutSettings?.showPhone ?? true) && !!(phone && phone.trim());
+  const hasEmail = (layoutSettings?.showEmail ?? true) && !!(email && email.trim());
+  const hasLocation = (layoutSettings?.showLocation ?? true) && !!(location && location.trim());
+  const hasLinkedin = (layoutSettings?.showLinkedin ?? true) && !!(linkedin && linkedin.trim());
 
   const renderSectionById = (secId: string) => {
     switch (secId) {
@@ -139,7 +141,7 @@ export const DesignerTemplate: React.FC = () => {
                         </div>
                         <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
                           onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700 leading-relaxed"
-                          bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
+                          bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} prefixId={`exp-${idx}`} />
                       </div>
                     </ItemWrapper>
                   ))}
@@ -304,30 +306,33 @@ export const DesignerTemplate: React.FC = () => {
       <header className="flex justify-between items-start border-b pb-4 mb-4" style={{ borderColor: `${brandColor}40` }}>
         <div className="flex-1">
           <E tag="h1" value={name} isEditable={isEditable} editableClass={ec}
-            className="text-3xl font-extrabold tracking-tight" style={{ color: brandColor, fontFamily: headingFontCss }} onSave={ef('name')} />
-          <E tag="p" value={subtitle} isEditable={isEditable} editableClass={ec}
-            className="text-xs font-semibold uppercase mt-1.5 tracking-wider" style={{ color: accentColor2 || brandColor }} onSave={ef('subtitle')} />
+            className={`text-3xl font-extrabold tracking-tight ${uppercaseName ? 'uppercase' : ''}`}
+            style={{ color: brandColor, fontFamily: headingFontCss }} onSave={ef('name')} />
+          {showTitle && (
+            <E tag="p" value={subtitle} isEditable={isEditable} editableClass={ec}
+              className="text-xs font-semibold uppercase mt-1.5 tracking-wider" style={{ color: accentColor2 || brandColor }} onSave={ef('subtitle')} />
+          )}
 
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3.5 text-[10px] text-slate-500 font-medium">
-            {showPhone && (
+            {hasPhone && (
               <span className="flex items-center gap-1.5">
                 <Phone className="w-3 h-3 text-slate-400" />
                 <E value={phone} isEditable={isEditable} editableClass={ec} onSave={ef('phone')} />
               </span>
             )}
-            {showEmail && (
+            {hasEmail && (
               <span className="flex items-center gap-1.5">
                 <Mail className="w-3 h-3 text-slate-400" />
                 <E value={email} isEditable={isEditable} editableClass={ec} onSave={ef('email')} />
               </span>
             )}
-            {showLinkedin && (
+            {hasLinkedin && (
               <span className="flex items-center gap-1.5">
                 <span className="text-slate-400 flex items-center justify-center w-3 h-3"><LI /></span>
                 <E value={linkedin} isEditable={isEditable} editableClass={ec} href={formatLinkedinUrl(linkedin)} onSave={ef('linkedin')} />
               </span>
             )}
-            {showLocation && (
+            {hasLocation && (
               <span className="flex items-center gap-1.5">
                 <MapPin className="w-3 h-3 text-slate-400" />
                 <E value={location} isEditable={isEditable} editableClass={ec} onSave={ef('location')} />
@@ -335,8 +340,17 @@ export const DesignerTemplate: React.FC = () => {
             )}
           </div>
         </div>
-        {showPhoto && avatar && (
-          <ProfilePhotoWithWaves avatar={avatar} brandColor={brandColor} accentColor2={accentColor2} />
+        {showPhoto && (
+          <ProfilePhotoWithWaves
+            avatar={avatar}
+            name={name}
+            brandColor={brandColor}
+            accentColor2={accentColor2}
+            isEditable={isEditable}
+            onAvatarChange={(url) => onFieldChange?.('avatar', url)}
+            layoutSettings={layoutSettings}
+            onLayoutSettingsChange={onLayoutSettingsChange}
+          />
         )}
       </header>
 

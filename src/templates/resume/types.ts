@@ -6,6 +6,7 @@ import type {
   CertItem,
   AchievementItem,
   LanguageItem,
+  EntrySection,
 } from '../../types';
 
 export interface ResumeTemplateProps {
@@ -19,13 +20,24 @@ export interface ResumeTemplateProps {
   onLanguageChange?: (index: number, field: keyof LanguageItem, value: string) => void;
   onAddExperience?: () => void;
   onDeleteExperience?: (index: number) => void;
+  onDuplicateExperience?: (index: number) => void;
+  onAddSimilarExperience?: (index: number) => void;
   onAddEducation?: () => void;
   onDeleteEducation?: (index: number) => void;
+  onDuplicateEducation?: (index: number) => void;
+  onAddSimilarEducation?: (index: number) => void;
   onAddCert?: () => void;
   onDeleteCert?: (index: number) => void;
+  onDuplicateCert?: (index: number) => void;
+  onAddSimilarCert?: (index: number) => void;
   onAddAchievement?: () => void;
   onDeleteAchievement?: (index: number) => void;
+  onDuplicateAchievement?: (index: number) => void;
+  onAddSimilarAchievement?: (index: number) => void;
   onAddLanguage?: () => void;
   onDeleteLanguage?: (index: number) => void;
+  onDuplicateLanguage?: (index: number) => void;
+  onAddSimilarLanguage?: (index: number) => void;
+  onEntryVisibilityChange?: (section: EntrySection, index: number, field: string, value: boolean) => void;
   onLayoutSettingsChange?: (patch: Partial<ResumeLayoutSettings>) => void;
 }

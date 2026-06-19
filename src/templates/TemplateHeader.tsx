@@ -12,6 +12,36 @@ const LI: React.FC = () => (
   </svg>
 );
 
+/** Visual circle/square photo shape picker — matches EnhanceCV header settings UX */
+const PhotoShapeSelector: React.FC<{
+  roundPhoto: boolean;
+  onChange: (round: boolean) => void;
+  onClick?: (e: React.MouseEvent) => void;
+}> = ({ roundPhoto, onChange, onClick }) => (
+  <div className="flex items-center space-x-2">
+    <button
+      type="button"
+      aria-label="Circle photo"
+      onClick={(e) => { onClick?.(e); e.stopPropagation(); onChange(true); }}
+      className={`w-6 h-6 rounded-full border flex items-center justify-center cursor-pointer transition ${
+        roundPhoto ? 'border-teal-500 bg-teal-50' : 'border-slate-300 hover:border-slate-400'
+      }`}
+    >
+      {roundPhoto && <div className="w-4 h-4 bg-teal-500 rounded-full" />}
+    </button>
+    <button
+      type="button"
+      aria-label="Square photo"
+      onClick={(e) => { onClick?.(e); e.stopPropagation(); onChange(false); }}
+      className={`w-6 h-6 rounded-md border flex items-center justify-center cursor-pointer transition ${
+        !roundPhoto ? 'border-teal-500 bg-teal-50' : 'border-slate-300 hover:border-slate-400'
+      }`}
+    >
+      {!roundPhoto && <div className="w-4 h-4 bg-teal-500 rounded-sm" />}
+    </button>
+  </div>
+);
+
 interface EditField {
   value: string;
   onSave: (v: string) => void;
@@ -52,6 +82,7 @@ export const AvatarCircleEditable: React.FC<{
   const fileInputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [showPopover, setShowPopover] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     if (!showPopover) return;
@@ -98,30 +129,62 @@ export const AvatarCircleEditable: React.FC<{
     }
   };
 
+  const triggerUpload = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
+
   return (
-    <div className="relative group/avatar flex-shrink-0">
+    <div
+      className="relative group/avatar flex-shrink-0"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => { setIsHovered(false); }}
+    >
       <div
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowPopover(!showPopover);
-        }}
+        onClick={triggerUpload}
         className={`${size} ${shapeClass} overflow-hidden border-2 bg-slate-100 flex items-center justify-center cursor-pointer relative hover:border-teal-500 transition-all shadow-sm`}
         style={border ? { borderColor: border } : { borderColor: 'rgba(200,200,200,0.4)' }}
       >
         {src ? (
           <>
-            <img src={src} alt={name} className="w-full h-full object-cover group-hover/avatar:opacity-60 transition-opacity" />
-            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity edit-only">
-              <Settings className="w-4 h-4 text-white drop-shadow" />
+            <img src={src} alt={name} className={`w-full h-full object-cover transition-opacity ${isHovered ? 'opacity-60' : ''}`} />
+            <div className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity edit-only ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+              <Camera className="w-5 h-5 text-white drop-shadow" />
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center text-slate-400 p-1">
-            <Camera className="w-4 h-4 mb-0.5" />
-            <span className="text-[8px] text-center font-bold">PHOTO</span>
-          </div>
+          <>
+            <div className="flex flex-col items-center justify-center text-slate-400 p-1">
+              <Camera className="w-4 h-4 mb-0.5" />
+              <span className="text-[8px] text-center font-bold">PHOTO</span>
+            </div>
+            <div className={`absolute inset-0 bg-black/20 flex items-center justify-center transition-opacity edit-only ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+              <Camera className="w-5 h-5 text-white drop-shadow" />
+            </div>
+          </>
         )}
       </div>
+
+      {isHovered && (
+        <div className="absolute -top-1 -right-1 flex space-x-0.5 z-20 edit-only">
+          <button
+            type="button"
+            onClick={triggerUpload}
+            className="h-6 w-6 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-600 hover:text-teal-600 cursor-pointer transition"
+            title="Upload photo"
+          >
+            <Camera className="w-3 h-3" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setShowPopover(!showPopover); }}
+            className="h-6 w-6 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-600 hover:text-teal-600 cursor-pointer transition"
+            title="Photo settings"
+          >
+            <Settings className="w-3 h-3" />
+          </button>
+        </div>
+      )}
       
       {/* Hidden file input */}
       <input
@@ -185,30 +248,12 @@ export const AvatarCircleEditable: React.FC<{
           </div>
 
           {/* Photo Shape Style Selector */}
-          <div className="space-y-1">
-            <span className="text-slate-500 font-semibold text-[10px] uppercase tracking-wider block">Shape Style</span>
-            <div className="flex gap-1.5 pt-0.5">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleToggleRoundPhoto(true); }}
-                className={`flex-1 py-1 rounded border text-[10px] font-medium transition cursor-pointer flex items-center justify-center gap-1 ${
-                  roundPhoto ? 'bg-teal-50 border-teal-500 text-teal-600' : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                }`}
-              >
-                <div className="w-2 h-2 rounded-full bg-current" />
-                Circle
-              </button>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleToggleRoundPhoto(false); }}
-                className={`flex-1 py-1 rounded border text-[10px] font-medium transition cursor-pointer flex items-center justify-center gap-1 ${
-                  !roundPhoto ? 'bg-teal-50 border-teal-500 text-teal-600' : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                }`}
-              >
-                <div className="w-2 h-2 rounded bg-current" />
-                Square
-              </button>
-            </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-slate-600 font-medium">Photo Style</span>
+            <PhotoShapeSelector
+              roundPhoto={roundPhoto}
+              onChange={handleToggleRoundPhoto}
+            />
           </div>
 
           {/* Upload / Delete Action Buttons */}
@@ -489,26 +534,10 @@ export const TemplateHeader: React.FC<TemplateHeaderProps> = (p) => {
             {/* Photo Style Shape Selector */}
             <div className="flex items-center justify-between">
               <span>Photo Style</span>
-              <div className="flex items-center space-x-1">
-                <button
-                  type="button"
-                  onClick={() => handleSettingsChange({ roundPhoto: true })}
-                  className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer ${
-                    (p.layoutSettings.roundPhoto ?? true) ? 'bg-teal-50 border-teal-500 text-teal-600' : 'border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  Circle
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSettingsChange({ roundPhoto: false })}
-                  className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer ${
-                    !(p.layoutSettings.roundPhoto ?? true) ? 'bg-teal-50 border-teal-500 text-teal-600' : 'border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  Square
-                </button>
-              </div>
+              <PhotoShapeSelector
+                roundPhoto={p.layoutSettings.roundPhoto ?? true}
+                onChange={(round) => handleSettingsChange({ roundPhoto: round })}
+              />
             </div>
           </div>
         </div>

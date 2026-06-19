@@ -89,7 +89,7 @@ export const TechTemplate: React.FC = () => {
                     <E value={exp.location} isEditable={isEditable} editableClass={ec} className="text-[11px] font-mono text-slate-500 italic mb-1.5 block" onSave={v => onExperienceChange?.(idx, 'location', v)} />
                     <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
                       onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
-                      bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
+                      bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} prefixId={`exp-${idx}`} />
                   </div>
                 </ItemWrapper>
               ))}

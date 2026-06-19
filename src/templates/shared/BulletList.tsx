@@ -1,16 +1,32 @@
+import {
+  createContentEditableBulletKeyDownHandler,
+  parseEditableBullets,
+} from '../../hooks/useBulletKeyboard';
 import { splitIntoBullets } from '../../utils/bullets';
 import { formatMarkdownBold } from '../../utils/markdown';
 
 export function BulletList({
-  bullets, isEditable, editableClass, onBulletChange, className = '', bulletStyle = 'disc', brandColor, align = 'left',
+  bullets,
+  isEditable,
+  editableClass,
+  onBulletChange,
+  className = '',
+  bulletStyle = 'disc',
+  brandColor,
+  align = 'left',
+  prefixId = 'bullet',
 }: {
-  bullets: string; isEditable: boolean; editableClass: string;
-  onBulletChange: (updated: string) => void; className?: string;
+  bullets: string;
+  isEditable: boolean;
+  editableClass: string;
+  onBulletChange: (updated: string) => void;
+  className?: string;
   bulletStyle?: 'disc' | 'circle' | 'square' | 'dash' | 'arrow' | 'number' | 'none';
   brandColor?: string;
   align?: 'left' | 'center' | 'right' | 'justify';
+  prefixId?: string;
 }) {
-  const lines = splitIntoBullets(bullets);
+  const lines = isEditable ? parseEditableBullets(bullets) : splitIntoBullets(bullets);
   if (!lines.length) return null;
 
   const getMarker = (index: number) => {
@@ -46,6 +62,7 @@ export function BulletList({
           )}
           {isEditable ? (
             <span
+              data-bullet-id={`${prefixId}-${bIdx}`}
               className={`flex-1 min-w-0 text-${align} ${editableClass}`}
               contentEditable={true}
               suppressContentEditableWarning={true}
@@ -54,6 +71,12 @@ export function BulletList({
                 updated[bIdx] = e.currentTarget.textContent || '';
                 onBulletChange(updated.join('\n'));
               }}
+              onKeyDown={createContentEditableBulletKeyDownHandler({
+                bullets: lines,
+                bIdx,
+                prefixId,
+                onChange: onBulletChange,
+              })}
             >
               {bullet}
             </span>

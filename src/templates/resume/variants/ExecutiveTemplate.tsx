@@ -69,7 +69,7 @@ export const ExecutiveTemplate: React.FC = () => {
                 </div>
                 <BulletList bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
                   onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)} className="text-slate-700"
-                  bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} />
+                  bulletStyle={bulletStyle} brandColor={brandColor} align={experienceAlign} prefixId={`exp-${idx}`} />
               </div>
             ))}
           </div>

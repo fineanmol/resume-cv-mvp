@@ -92,21 +92,21 @@ describe('ResumeTemplates — brandColor appears in DOM for all templates', () =
 // ─────────────────────────────────────────────────────────────────────────────
 describe('ResumeTemplates — showPhoto toggle', () => {
   const withPhoto = { ...DEFAULT_RESUME_STATE, avatar: '/profile_picture.jpg' };
-  const photoTemplates: TemplateId[] = ['sidebar', 'executive'];
+  const photoTemplates: TemplateId[] = ['sidebar', 'executive', 'designer'];
 
   photoTemplates.forEach(template => {
-    it(`${template}: img present when showPhoto=true`, () => {
+    it(`${template}: profile img present when showPhoto=true`, () => {
       const { container } = render(
         <ResumeTemplateRenderer state={{ ...withPhoto, layoutSettings: { ...withPhoto.layoutSettings, template, showPhoto: true } }} />
       );
-      expect(container.querySelector('img')).toBeTruthy();
+      expect(container.querySelector('img[alt="Jonathan Doe"]')).toBeTruthy();
     });
 
-    it(`${template}: img absent when showPhoto=false`, () => {
+    it(`${template}: profile img absent when showPhoto=false`, () => {
       const { container } = render(
         <ResumeTemplateRenderer state={{ ...withPhoto, layoutSettings: { ...withPhoto.layoutSettings, template, showPhoto: false } }} />
       );
-      expect(container.querySelector('img')).toBeNull();
+      expect(container.querySelector('img[alt="Jonathan Doe"]')).toBeNull();
     });
   });
 
@@ -123,6 +123,44 @@ describe('ResumeTemplates — showPhoto toggle', () => {
       <ResumeTemplateRenderer state={{ ...withPhoto, layoutSettings: { ...withPhoto.layoutSettings, template: 'navy', headerStyle: 'banner', showPhoto: false } }} />
     );
     expect(container.querySelector('img')).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESUME — layoutSettings contact visibility (sidebar / designer)
+// ─────────────────────────────────────────────────────────────────────────────
+describe('ResumeTemplates — contact field visibility via layoutSettings', () => {
+  const contactState: ResumeState = {
+    ...DEFAULT_RESUME_STATE,
+    phone: '+1 555-0100',
+    email: 'jon@example.com',
+    location: 'San Francisco, CA',
+    linkedin: 'linkedin.com/in/jondoe',
+  };
+
+  (['sidebar', 'designer'] as const).forEach(template => {
+    it(`${template}: hides phone when showPhone=false`, () => {
+      const { queryByText } = render(
+        <ResumeTemplateRenderer state={{
+          ...contactState,
+          layoutSettings: { ...contactState.layoutSettings, template, showPhone: false },
+        }} />
+      );
+      expect(queryByText('+1 555-0100')).toBeNull();
+      expect(queryByText('jon@example.com')).toBeTruthy();
+    });
+
+    it(`${template}: hides title when showTitle=false`, () => {
+      const uniqueSubtitle = 'Unique Header Title XYZ';
+      const { queryByText } = render(
+        <ResumeTemplateRenderer state={{
+          ...contactState,
+          subtitle: uniqueSubtitle,
+          layoutSettings: { ...contactState.layoutSettings, template, showTitle: false },
+        }} />
+      );
+      expect(queryByText(uniqueSubtitle)).toBeNull();
+    });
   });
 });
 
