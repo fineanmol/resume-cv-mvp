@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import type { EditableFieldKey } from '../../config/fieldPlaceholders';
 import { getFieldPlaceholder } from '../../config/fieldPlaceholders';
 import { clearEditableIfEmpty, isEditableEmpty, normalizeEditableText } from '../../utils/editableText';
+import { formatMarkdownBold } from '../../utils/markdown';
 
 export interface EditableTextProps {
   value: string;
@@ -70,5 +71,5 @@ export const EditableText = React.memo<EditableTextProps>(function EditableText(
   if (dangerousInnerHtml !== undefined) {
     return <Tag className={className} style={style} dangerouslySetInnerHTML={{ __html: dangerousInnerHtml }} />;
   }
-  return <Tag className={className} style={style}>{value}</Tag>;
+  return <Tag className={className} style={style} dangerouslySetInnerHTML={{ __html: formatMarkdownBold(value ?? '') }} />;
 });

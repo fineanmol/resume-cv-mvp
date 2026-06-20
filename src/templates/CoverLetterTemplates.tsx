@@ -110,7 +110,6 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
       isEditable={isEditable}
       editableClass={editableClass}
       onSave={(val) => onFieldChange?.(field, val)}
-      dangerousInnerHtml={formatMarkdownBold(text)}
     />
   );
 
@@ -512,7 +511,6 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
               isEditable={isEditable}
               editableClass={editableClass}
               onSave={(val) => onFieldChange?.((['p1', 'p2', 'p3', 'p4'] as const)[i], val)}
-              dangerousInnerHtml={formatMarkdownBold(interpolate(para))}
             />
           ) : null
         ))}

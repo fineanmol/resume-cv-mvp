@@ -1,7 +1,6 @@
 import React from 'react';
 import { EditableText as E } from './EditableText';
 import { BulletList } from './BulletList';
-import { formatMarkdownBold } from '../../utils/markdown';
 
 type BulletStyle = 'disc' | 'circle' | 'square' | 'dash' | 'arrow' | 'number' | 'none';
 
@@ -54,7 +53,6 @@ export const SummaryContent: React.FC<SummaryContentProps> = ({
       editableClass={editableClass}
       className={className}
       onSave={onSave}
-      dangerousInnerHtml={isEditable ? undefined : formatMarkdownBold(paragraphValue)}
     />
   );
 };

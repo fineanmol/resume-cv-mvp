@@ -6,7 +6,6 @@ import { SummaryContent } from '../../shared/SummaryContent';
 import { SkillsEditor } from '../../shared/SkillsEditor';
 import { EducationDescription } from '../../shared/EducationDescription';
 import { HeaderWrapper } from '../../shared/HeaderWrapper';
-import { formatMarkdownBold } from '../../../utils/markdown';
 import { formatLinkedinUrl } from '../../../utils/linkedin';
 import { AvatarCircleEditable } from '../../TemplateHeader';
 import { useTemplateRenderContext } from '../useTemplateSetup';
@@ -133,7 +132,7 @@ export const SidebarTemplate: React.FC = () => {
                         <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="block text-slate-900 font-bold" onSave={v => onCertChange?.(idx, 'title', v)} />
                         <WorkLink url={cert.url} brandColor={brandColor} />
                       </span>
-                      <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[10px] text-${certsAlign}`} onSave={v => onCertChange?.(idx, 'desc', v)} dangerousInnerHtml={isEditable ? undefined : formatMarkdownBold(cert.desc)} />
+                      <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[10px] text-${certsAlign}`} onSave={v => onCertChange?.(idx, 'desc', v)} />
                     </li>
                   </ItemWrapper>
                 ))}
@@ -185,7 +184,7 @@ export const SidebarTemplate: React.FC = () => {
                   >
                     <li className={`text-${achievementsAlign}`}>
                       <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className={`block text-slate-900 text-${achievementsAlign}`} onSave={v => onAchievementChange?.(idx, 'title', v)} />
-                      <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[10px] text-${achievementsAlign}`} onSave={v => onAchievementChange?.(idx, 'desc', v)} dangerousInnerHtml={isEditable ? undefined : formatMarkdownBold(ach.desc)} />
+                      <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[10px] text-${achievementsAlign}`} onSave={v => onAchievementChange?.(idx, 'desc', v)} />
                     </li>
                   </ItemWrapper>
                 ))}

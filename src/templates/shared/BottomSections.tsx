@@ -1,5 +1,4 @@
 import React from 'react';
-import { formatMarkdownBold } from '../../utils/markdown';
 import type {
   ResumeState,
   CertItem,
@@ -115,7 +114,6 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
         editableClass={ec}
         className={`text-slate-500 text-[11px] mt-0.5 text-${certsAlign}`}
         onSave={(v) => onCertChange?.(idx, 'desc', v)}
-        dangerousInnerHtml={isEditable ? undefined : formatMarkdownBold(cert.desc)}
       />
     );
   };
@@ -253,8 +251,7 @@ export const BottomSections: React.FC<BottomSectionsProps> = ({
                             />
                           ) : (
                           <E tag="p" field="achievements.description" value={ach.desc} isEditable={isEditable} editableClass={ec} className="text-slate-500 text-[11px]"
-                              onSave={(v) => onAchievementChange?.(idx, 'desc', v)}
-                              dangerousInnerHtml={isEditable ? undefined : formatMarkdownBold(ach.desc)} />
+                              onSave={(v) => onAchievementChange?.(idx, 'desc', v)} />
                           )
                         )}
                       </div>

@@ -1,5 +1,4 @@
 import React from 'react';
-import { formatMarkdownBold } from '../../../../utils/markdown';
 import { EditableText as E } from '../../../shared/EditableText';
 import { BulletList } from '../../../shared/BulletList';
 import { EntryIconPicker } from '../../../shared/EntryIconPicker';
@@ -134,8 +133,7 @@ export const DesignerAchievementsSection: React.FC<DesignerAchievementsSectionPr
                           <E tag="p" field="achievements.description" value={ach.desc || ''} isEditable={isEditable} editableClass={ec}
                             className={`mt-0.5 leading-snug text-${achievementsAlign}`}
                             style={FG.body}
-                            onSave={(v) => onAchievementChange?.(idx, 'desc', v)}
-                            dangerousInnerHtml={isEditable ? undefined : formatMarkdownBold(ach.desc || '')} />
+                            onSave={(v) => onAchievementChange?.(idx, 'desc', v)} />
                         )
                       )}
                   </div>

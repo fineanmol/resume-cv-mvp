@@ -144,8 +144,7 @@ export const DesignerProjectsSection: React.FC<DesignerProjectsSectionProps> = (
                           <E tag="p" field="projects.description" value={cleanDesc} isEditable={isEditable} editableClass={ec}
                             className={`mt-0.5 leading-snug text-${certsAlign}`}
                             style={FG.body}
-                            onSave={(v) => onCertChange?.(idx, 'desc', techStack ? `${v}\n${techStack}` : v)}
-                            dangerousInnerHtml={isEditable ? undefined : formatMarkdownBold(cleanDesc)} />
+                            onSave={(v) => onCertChange?.(idx, 'desc', techStack ? `${v}\n${techStack}` : v)} />
                           )
                         )}
                         {showProjectDesc && techStack && (
