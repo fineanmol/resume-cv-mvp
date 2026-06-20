@@ -5,7 +5,7 @@ import {
   parseEditableBullets,
 } from '../../hooks/useBulletKeyboard';
 import { splitIntoBullets } from '../../utils/bullets';
-import { formatMarkdownBold } from '../../utils/markdown';
+import { formatMarkdownInline } from '../../utils/markdown';
 import type { EditableFieldKey } from '../../config/fieldPlaceholders';
 import { getFieldPlaceholder } from '../../config/fieldPlaceholders';
 import { clearEditableIfEmpty } from '../../utils/editableText';
@@ -178,7 +178,7 @@ export function BulletList({
             ) : (
               <span
                 className={`min-w-0 flex-1 text-${align}`}
-                dangerouslySetInnerHTML={{ __html: formatMarkdownBold(bullet) }}
+                dangerouslySetInnerHTML={{ __html: formatMarkdownInline(bullet) }}
               />
             )}
           </li>

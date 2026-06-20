@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import type { EditableFieldKey } from '../../config/fieldPlaceholders';
 import { getFieldPlaceholder } from '../../config/fieldPlaceholders';
 import { clearEditableIfEmpty, isEditableEmpty, normalizeEditableText } from '../../utils/editableText';
-import { formatMarkdownBold } from '../../utils/markdown';
+import { formatMarkdownInline } from '../../utils/markdown';
 
 export interface EditableTextProps {
   value: string;
@@ -24,6 +24,7 @@ export const EditableText = React.memo<EditableTextProps>(function EditableText(
 }) {
   const resolvedPlaceholder = placeholder ?? (field ? getFieldPlaceholder(field) : undefined);
   const [isEmpty, setIsEmpty] = useState(() => isEditableEmpty(value));
+  const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
     setIsEmpty(isEditableEmpty(value));
@@ -31,6 +32,20 @@ export const EditableText = React.memo<EditableTextProps>(function EditableText(
 
   const Tag = tag;
   if (isEditable) {
+    if (!isFocused) {
+      return (
+        <Tag
+          data-href={href}
+          data-placeholder={resolvedPlaceholder}
+          data-empty={isEmpty ? 'true' : undefined}
+          className={`${className || ''} ${editableClass}`}
+          style={style}
+          dangerouslySetInnerHTML={{ __html: formatMarkdownInline(value ?? '') }}
+          onClick={() => setIsFocused(true)}
+        />
+      );
+    }
+
     return (
       <Tag
         data-href={href}
@@ -40,6 +55,8 @@ export const EditableText = React.memo<EditableTextProps>(function EditableText(
         style={style}
         contentEditable={true}
         suppressContentEditableWarning={true}
+        // eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus
         onFocus={(e) => {
           const empty = clearEditableIfEmpty(e.currentTarget);
           setIsEmpty(empty);
@@ -54,6 +71,7 @@ export const EditableText = React.memo<EditableTextProps>(function EditableText(
             e.currentTarget.innerHTML = '';
           }
           setIsEmpty(empty);
+          setIsFocused(false);
           if (txt !== value) onSave(txt);
         }}
       >
@@ -71,5 +89,5 @@ export const EditableText = React.memo<EditableTextProps>(function EditableText(
   if (dangerousInnerHtml !== undefined) {
     return <Tag className={className} style={style} dangerouslySetInnerHTML={{ __html: dangerousInnerHtml }} />;
   }
-  return <Tag className={className} style={style} dangerouslySetInnerHTML={{ __html: formatMarkdownBold(value ?? '') }} />;
+  return <Tag className={className} style={style} dangerouslySetInnerHTML={{ __html: formatMarkdownInline(value ?? '') }} />;
 });

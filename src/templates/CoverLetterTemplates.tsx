@@ -4,7 +4,7 @@ import { Mail, Phone, MapPin } from 'lucide-react';
 import { FONT_CSS } from '../config/fonts';
 import { TemplateHeader } from './TemplateHeader';
 import { formatLinkedinUrl } from '../utils/linkedin';
-import { formatMarkdownBold } from '../utils/markdown';
+import { formatMarkdownInline } from '../utils/markdown';
 import { EditableText } from './shared/EditableText';
 
 interface CoverLetterTemplateProps {
@@ -124,7 +124,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
       {text}
     </span>
   ) : (
-    <span className={className} dangerouslySetInnerHTML={{ __html: formatMarkdownBold(text) }} />
+    <span className={className} dangerouslySetInnerHTML={{ __html: formatMarkdownInline(text) }} />
   );
 
   // -------------------------------------------------------------

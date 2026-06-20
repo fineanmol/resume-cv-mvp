@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatMarkdownBold } from '../../../../utils/markdown';
+import { formatMarkdownInline } from '../../../../utils/markdown';
 import { EditableText as E } from '../../../shared/EditableText';
 import { BulletList } from '../../../shared/BulletList';
 import { EntryIconPicker } from '../../../shared/EntryIconPicker';
@@ -149,7 +149,7 @@ export const DesignerProjectsSection: React.FC<DesignerProjectsSectionProps> = (
                         )}
                         {showProjectDesc && techStack && (
                           <div className={`italic mt-0.5 text-${certsAlign}`} style={FG.meta}
-                            dangerouslySetInnerHTML={{ __html: formatMarkdownBold(techStack) }}
+                            dangerouslySetInnerHTML={{ __html: formatMarkdownInline(techStack) }}
                           />
                         )}
                     </div>
