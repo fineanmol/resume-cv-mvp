@@ -63,15 +63,15 @@ describe('DesignPanel — template and style controls', () => {
     const onChange = vi.fn();
     render(<DesignPanel layout={layout} onChange={onChange} docType="resume" />);
     openSection('Header Style');
-    fireEvent.click(screen.getByText('Full Banner'));
-    expect(onChange).toHaveBeenCalledWith({ headerStyle: 'banner' });
+    fireEvent.click(screen.getByText('Photo Right'));
+    expect(onChange).toHaveBeenCalledWith({ headerStyle: 'left' });
   });
 
   it('skills style chips calls onChange with skillsStyle', () => {
     const onChange = vi.fn();
     render(<DesignPanel layout={layout} onChange={onChange} docType="resume" />);
     openSection('Skills Style');
-    fireEvent.click(screen.getByText('Normal Text'));
+    fireEvent.click(screen.getByText('Plain Text'));
     expect(onChange).toHaveBeenCalledWith({ skillsStyle: 'normal' });
   });
 

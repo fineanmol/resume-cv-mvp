@@ -13,6 +13,9 @@ import { SettingsDropdown } from './SettingsDropdown';
 import type { ResumeState, CoverLetterState } from '../../types';
 import type { useResumeMutations } from '../../hooks/useResumeMutations';
 import type { useCoverLetterMutations } from '../../hooks/useCoverLetterMutations';
+import { usePdfSheet } from '../../hooks/usePdfSheet';
+import { usePreviewPageBreaks } from '../../hooks/usePreviewPageBreaks';
+import { useScaledSheetHeight } from '../../hooks/useScaledSheetHeight';
 
 const ResumeTemplateRenderer = lazy(() =>
   import('../../templates/ResumeTemplates').then(m => ({ default: m.ResumeTemplateRenderer }))
@@ -22,137 +25,6 @@ const CoverLetterTemplateRenderer = lazy(() =>
 );
 
 const PAGE_HEIGHT_PX = 1123;
-
-/** Wait for lazy-loaded `.pdf-sheet` to mount inside the preview wrapper. */
-function usePdfSheet(sheetRef: RefObject<HTMLDivElement | null>): HTMLElement | null {
-  const [sheet, setSheet] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const root = sheetRef.current;
-    if (!root) return;
-
-    const sync = () => {
-      const next = root.querySelector('.pdf-sheet') as HTMLElement | null;
-      setSheet((prev) => (prev === next ? prev : next));
-    };
-
-    sync();
-    const observer = new MutationObserver(sync);
-    observer.observe(root, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [sheetRef]);
-
-  return sheet;
-}
-
-/**
- * Simulates CSS `break-inside: avoid` in the live editor preview.
- *
- * After every content change it scans every `.group/item` inside the sheet,
- * identifies items that would be sliced by a page boundary, and pushes them
- * down so they start at the top of the next page — exactly as the browser's
- * print engine would do when the user downloads the PDF.
- *
- * Loop-prevention: a 150 ms cooldown prevents the ResizeObserver from
- * triggering a re-run caused by our own `marginTop` adjustments.
- *
- * Adjustments are stored in `data-pb-push` / `data-pb-orig` attributes so
- * the PDF clone can reset them before generating the actual PDF.
- */
-function usePreviewPageBreaks(
-  sheet: HTMLElement | null,
-  zoomScale: number,
-): void {
-  const zoomRef = useRef(zoomScale);
-  useEffect(() => { zoomRef.current = zoomScale; }, [zoomScale]);
-
-  useEffect(() => {
-    if (!sheet) return;
-
-    let lastApply = 0;
-    let rafId: number | null = null;
-
-    const resetAll = () => {
-      sheet.querySelectorAll<HTMLElement>('[data-pb-push]').forEach(el => {
-        el.style.marginTop = el.getAttribute('data-pb-orig') ?? '';
-        el.removeAttribute('data-pb-push');
-        el.removeAttribute('data-pb-orig');
-      });
-    };
-
-    const applyBreaks = () => {
-      lastApply = Date.now();
-      resetAll();
-
-      const sheetRect = sheet.getBoundingClientRect();
-      const scale = zoomRef.current;
-
-      const items = Array.from(
-        sheet.querySelectorAll<HTMLElement>('.group\\/item'),
-      ).filter(el => !el.closest('[data-pdf-hide]'));
-
-      for (const el of items) {
-        const rect = el.getBoundingClientRect();
-        const top    = (rect.top    - sheetRect.top) / scale;
-        const bottom = (rect.bottom - sheetRect.top) / scale;
-        const boundary = Math.ceil((top + 1) / PAGE_HEIGHT_PX) * PAGE_HEIGHT_PX;
-
-        if (top < boundary && bottom > boundary) {
-          const push = boundary - top + 16;
-          const currentMT = parseFloat(window.getComputedStyle(el).marginTop) || 0;
-          el.setAttribute('data-pb-orig', el.style.marginTop);
-          el.setAttribute('data-pb-push', 'true');
-          el.style.marginTop = `${currentMT + push}px`;
-        }
-      }
-    };
-
-    const schedule = () => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        if (Date.now() - lastApply < 150) return;
-        applyBreaks();
-      });
-    };
-
-    const obs = new ResizeObserver(schedule);
-    obs.observe(sheet);
-    const initTimer = setTimeout(applyBreaks, 200);
-    const fontTimer = setTimeout(applyBreaks, 700);
-
-    return () => {
-      obs.disconnect();
-      clearTimeout(initTimer);
-      clearTimeout(fontTimer);
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      resetAll();
-    };
-  }, [sheet, zoomScale]);
-}
-
-/** Reserve scroll height when the sheet is CSS-scaled so page 2+ stays visible in preview. */
-function useScaledSheetHeight(
-  sheet: HTMLElement | null,
-  zoomScale: number,
-): number | undefined {
-  const [height, setHeight] = useState<number | undefined>(undefined);
-
-  useEffect(() => {
-    if (!sheet) return;
-
-    const update = () => {
-      setHeight(Math.ceil(sheet.scrollHeight * zoomScale));
-    };
-
-    const obs = new ResizeObserver(update);
-    obs.observe(sheet);
-    update();
-    return () => obs.disconnect();
-  }, [sheet, zoomScale]);
-
-  return height;
-}
 
 /**
  * Renders a visual "page gap" at every 1123 px boundary inside .pdf-sheet —

@@ -167,6 +167,111 @@ describe('PdfService.downloadPdf', () => {
   });
 });
 
+// ── downloadPdf — designer layout clone ──────────────────────────────────────
+
+describe('PdfService.downloadPdf — designer layout clone', () => {
+  let printSpy: ReturnType<typeof vi.fn>;
+  let iframeWriteSpy: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    printSpy = vi.fn();
+    iframeWriteSpy = vi.fn();
+
+    const realCreate = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string, ...args) => {
+      const el = realCreate(tag, ...args as [ElementCreationOptions?]);
+      if (tag === 'iframe') {
+        Object.defineProperty(el, 'contentDocument', {
+          get: () => ({
+            open: vi.fn(),
+            write: iframeWriteSpy,
+            close: vi.fn(),
+          }),
+          configurable: true,
+        });
+        Object.defineProperty(el, 'contentWindow', {
+          get: () => ({
+            print: printSpy,
+            focus: vi.fn(),
+            document: {
+              open: vi.fn(),
+              write: iframeWriteSpy,
+              close: vi.fn(),
+            },
+            addEventListener: (ev: string, cb: () => void) => {
+              if (ev === 'load') setTimeout(cb, 0);
+            },
+          }),
+          configurable: true,
+        });
+      }
+      return el;
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.querySelectorAll('.pdf-sheet').forEach(el => el.remove());
+  });
+
+  it('transforms designer two-column grid to float layout', async () => {
+    const sheet = makeSheet(`
+      <div data-testid="designer-column-grid" class="grid" style="gap: 20px">
+        <div class="designer-column flex flex-col">Section A</div>
+        <div class="designer-column flex flex-col">Section B</div>
+      </div>
+    `);
+    await PdfService.downloadPdf(sheet, 'test.pdf');
+    const written = (iframeWriteSpy.mock.calls[0]?.[0] ?? '') as string;
+
+    expect(written).toMatch(/float:\s*left/);
+
+    const gridTag = written.match(/<div[^>]*data-testid="designer-column-grid"[^>]*>/)?.[0] ?? '';
+    expect(gridTag).not.toMatch(/display:\s*grid/);
+    expect(gridTag).toMatch(/display:\s*block/);
+    expect(gridTag).not.toMatch(/gap:\s*20px/);
+  });
+
+  it('preserves column gap as marginRight on the left designer column', async () => {
+    const sheet = makeSheet(`
+      <div data-testid="designer-column-grid" class="grid" style="gap: 20px">
+        <div class="designer-column flex flex-col">Section A</div>
+        <div class="designer-column flex flex-col">Section B</div>
+      </div>
+    `);
+    await PdfService.downloadPdf(sheet, 'test.pdf');
+    const written = (iframeWriteSpy.mock.calls[0]?.[0] ?? '') as string;
+
+    const columnTags = written.match(/<div[^>]*class="[^"]*designer-column[^"]*"[^>]*>/g) ?? [];
+    expect(columnTags[0]).toMatch(/margin-right:\s*20px/);
+  });
+
+  it('strips background-color and box-shadow from avatar container', async () => {
+    const sheet = makeSheet(`
+      <div class="group/avatar">
+        <div class="bg-slate-100 shadow-sm" style="">Avatar</div>
+      </div>
+    `);
+    await PdfService.downloadPdf(sheet, 'test.pdf');
+    const written = (iframeWriteSpy.mock.calls[0]?.[0] ?? '') as string;
+
+    const avatarInnerTag = written.match(/<div class="group\/avatar">\s*(<div[^>]*>)/)?.[1] ?? '';
+    expect(avatarInnerTag).toMatch(/background-color:\s*transparent/);
+    expect(avatarInnerTag).toMatch(/box-shadow:\s*none/);
+    expect(avatarInnerTag).not.toMatch(/bg-slate-100/);
+  });
+
+  it('includes --section-gap variable in PDF HTML when set on sheet', async () => {
+    const sheet = makeSheet('<p>content</p>');
+    sheet.style.setProperty('--section-gap', '12px');
+    await PdfService.downloadPdf(sheet, 'test.pdf');
+    const written = (iframeWriteSpy.mock.calls[0]?.[0] ?? '') as string;
+
+    expect(written).toContain('--section-gap');
+    expect(written).toContain('12px');
+  });
+});
+
 // ── extractFirstPhoto (unchanged) ────────────────────────────────────────────
 
 describe('PdfService.extractFirstPhoto', () => {

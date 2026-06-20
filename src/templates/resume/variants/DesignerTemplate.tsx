@@ -1,33 +1,23 @@
 import React from 'react';
 import {
   Phone, Mail, MapPin,
-  Building2, GraduationCap,
 } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
-import { BulletList } from '../../shared/BulletList';
-import { SummaryContent } from '../../shared/SummaryContent';
-import { SkillsEditor } from '../../shared/SkillsEditor';
-import { EntryIconPicker } from '../../shared/EntryIconPicker';
-import { DateRangePicker } from '../../shared/DateRangePicker';
-import { getDynamicAchievementIcon, getDynamicProjectIcon } from '../../shared/templateIconHelpers';
 import { formatLinkedinUrl } from '../../../utils/linkedin';
-import { EducationDescription } from '../../shared/EducationDescription';
 import { HeaderWrapper } from '../../shared/HeaderWrapper';
-import { parseEducationGrade, mergeProjectDescription } from '../../shared/parseEducationGrade';
-import { getLanguageBubbleCount, getLanguageLevelFromBubbleCount } from '../../../utils/languageLevel';
+import { isEntryFieldVisible } from '../../../utils/entryVisibility';
 import { useTemplateRenderContext } from '../useTemplateSetup';
 import {
-  DraggableSection,
-  ItemLogo,
-  ItemWrapper,
   LI,
-  LanguageBubbles,
   ProfilePhotoWithWaves,
-  SectionWrapper,
-  WorkLink,
 } from '../shared';
-import { ExperienceEntrySettings, EducationEntrySettings, CertEntrySettings, AchievementEntrySettings, LanguageEntrySettings } from '../../shared/entrySettings';
-import { isEntryFieldVisible } from '../../../utils/entryVisibility';
+import { DesignerSummarySection } from './designer/DesignerSummarySection';
+import { DesignerSkillsSection } from './designer/DesignerSkillsSection';
+import { DesignerExperienceSection } from './designer/DesignerExperienceSection';
+import { DesignerEducationSection } from './designer/DesignerEducationSection';
+import { DesignerProjectsSection } from './designer/DesignerProjectsSection';
+import { DesignerAchievementsSection } from './designer/DesignerAchievementsSection';
+import { DesignerLanguagesSection } from './designer/DesignerLanguagesSection';
 
 export const DesignerTemplate: React.FC = () => {
   const {
@@ -107,515 +97,167 @@ export const DesignerTemplate: React.FC = () => {
     onFieldChange?.('resumeSkills', [...list, 'New Skill'].join(', '));
   };
 
-  const renderSectionById = (secId: string) => {
+  const sectionGap = layoutSettings?.sectionSpacing ?? 8;
+  // Column flex gap drives section spacing — clear sec's marginBottom to avoid doubling
+  const dsec: React.CSSProperties = {};
+
+  const sectionStyleProps = { H, FG, C_HEAD, C_TITLE, C_COMPANY, dsec };
+
+  const renderSectionById = (secId: string): React.ReactNode => {
     switch (secId) {
       case 'summary':
-        if (!resumeSummary && !isEditable) return null;
         return (
-          <DraggableSection key="summary" id="summary" {...dragProps}>
-            <SectionWrapper
-              id="summary" title="Summary" isEditable={isEditable}
-              align={summaryAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ summaryAlign: a })}
-              layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
-            >
-              <section style={dsec}>
-                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Summary</h3>
-                <div style={FG.body}>
-                  <SummaryContent
-                    value={resumeSummary || ''}
-                    isEditable={isEditable}
-                    editableClass={ec}
-                    onSave={ef('resumeSummary')}
-                    className={`leading-relaxed text-${summaryAlign}`}
-                    bulletStyle={bulletStyle}
-                    align={summaryAlign}
-                    showBullets={showSummaryBullets}
-                  />
-                </div>
-              </section>
-            </SectionWrapper>
-          </DraggableSection>
+          <DesignerSummarySection
+            key="summary"
+            resumeSummary={resumeSummary}
+            isEditable={isEditable}
+            dragProps={dragProps}
+            summaryAlign={summaryAlign}
+            onLayoutSettingsChange={onLayoutSettingsChange}
+            layoutSettings={layoutSettings}
+            ec={ec}
+            ef={ef}
+            bulletStyle={bulletStyle}
+            showSummaryBullets={showSummaryBullets}
+            {...sectionStyleProps}
+          />
         );
       case 'skills':
-        if (!resumeSkills && !isEditable) return null;
         return (
-          <DraggableSection key="skills" id="skills" {...dragProps}>
-            <SectionWrapper
-              id="skills" title="Skills" isEditable={isEditable}
-              align={undefined}
-              skillsStyle={skillsStyle}
-              onSkillsStyleChange={(s) => onLayoutSettingsChange?.({ skillsStyle: s })}
-              onSkillsValueChange={ef('resumeSkills')}
-              onAddEntry={handleAddSkill}
-            >
-              <section style={dsec}>
-                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Skills</h3>
-                <SkillsEditor
-                  value={resumeSkills}
-                  isEditable={isEditable}
-                  ec={ec}
-                  onSave={ef('resumeSkills')}
-                  badgeStyle={badgeStyle}
-                  skillsStyle={skillsStyle}
-                  fontScale={scale}
-                  gridFontFamily={_OS}
-                  gridTextColor={C_BODY}
-                  chipFontFamily={_OS}
-                  chipTextColor={C_BODY}
-                />
-              </section>
-            </SectionWrapper>
-          </DraggableSection>
+          <DesignerSkillsSection
+            key="skills"
+            resumeSkills={resumeSkills}
+            isEditable={isEditable}
+            dragProps={dragProps}
+            skillsStyle={skillsStyle}
+            onLayoutSettingsChange={onLayoutSettingsChange}
+            ec={ec}
+            ef={ef}
+            onAddSkill={handleAddSkill}
+            badgeStyle={badgeStyle}
+            scale={scale}
+            bodyFontFamily={_OS}
+            C_BODY={C_BODY}
+            {...sectionStyleProps}
+          />
         );
       case 'experience':
-        if (!resumeExperience || (resumeExperience.length === 0 && !isEditable)) return null;
         return (
-          <DraggableSection key="experience" id="experience" {...dragProps}>
-            <SectionWrapper
-              id="experience" title="Experience" isEditable={isEditable}
-              align={experienceAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ experienceAlign: a })}
-              onAddEntry={onAddExperience}
-              layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
-            >
-              <section style={dsec}>
-                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Experience</h3>
-                <div className="flex flex-col" style={{ gap: `${entrySpacing}px` }}>
-                  {resumeExperience.map((exp, idx) => {
-                    const showLogo = (layoutSettings?.showExperienceLogo ?? true) && showExp(exp, 'logo');
-                    const showDates = (layoutSettings?.showExperienceDates ?? true) && showExp(exp, 'dates');
-                    const showLocation = (layoutSettings?.showExperienceLocation ?? true) && showExp(exp, 'location');
-                    const showCompany = (layoutSettings?.showExperienceCompany ?? true) && showExp(exp, 'company');
-                    const showBullets = showExp(exp, 'bullets');
-                    const showLink = showExp(exp, 'link');
-
-                    return (
-                      <ItemWrapper
-                        key={idx} sectionId="experience" index={idx} totalItems={resumeExperience.length}
-                        isEditable={isEditable} onDelete={() => onDeleteExperience?.(idx)}
-                        onDuplicate={() => onDuplicateExperience?.(idx)}
-                        onAddSimilar={() => onAddSimilarExperience?.(idx)}
-                        settingsPanel={(onClose) => (
-                          <ExperienceEntrySettings
-                            item={exp}
-                            onToggle={(field, value) => onEntryVisibilityChange?.('experience', idx, field, value)}
-                            onClose={onClose}
-                            logo={exp.logo}
-                            onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
-                            placeholderIconName="building-2"
-                            brandColor={brandColor}
-                            onUrlChange={(url) => onExperienceChange?.(idx, 'url', url)}
-                          />
-                        )}
-                      >
-                        <div style={FG.body}>
-                          <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1.5 flex-1 min-w-0">
-                              {showLogo && (
-                                <ItemLogo
-                                  logo={exp.logo}
-                                  brandColor={C_COMPANY}
-                                  placeholderIconName="building-2"
-                                  isEditable={isEditable}
-                                  onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
-                                />
-                              )}
-                              <E field="experience.title" value={exp.title} isEditable={isEditable} editableClass={ec} className="min-w-0 break-words leading-snug" style={{ ...FG.entry, color: C_TITLE }} onSave={v => onExperienceChange?.(idx, 'title', v)} />
-                            </span>
-                            {showDates && (
-                              <DateRangePicker
-                                value={exp.dates}
-                                isEditable={isEditable}
-                                onSave={v => onExperienceChange?.(idx, 'dates', v)}
-                                style={FG.meta}
-                                className="text-right"
-                              />
-                            )}
-                          </div>
-                          {(showCompany || showLocation || (showLink && exp.url)) && (
-                            <div className="flex items-start justify-between gap-2 mb-0.5">
-                              <span className="flex items-center gap-1 flex-1 min-w-0">
-                                {showCompany && (
-                                  <E field="experience.company" value={exp.company} isEditable={isEditable} editableClass={ec} className="min-w-0 break-words" style={{ ...FG.company, color: C_COMPANY }} onSave={v => onExperienceChange?.(idx, 'company', v)} />
-                                )}
-                                {showLink && <WorkLink url={exp.url} brandColor={C_COMPANY} />}
-                              </span>
-                              {showLocation && (
-                                <E field="experience.location" value={exp.location} isEditable={isEditable} editableClass={ec} className="shrink-0 text-right whitespace-nowrap" style={FG.meta} onSave={v => onExperienceChange?.(idx, 'location', v)} />
-                              )}
-                            </div>
-                          )}
-                          {showBullets && (
-                            <BulletList field="experience.bullets" bullets={exp.bullets} isEditable={isEditable} editableClass={ec}
-                              onBulletChange={v => onExperienceChange?.(idx, 'bullets', v)}
-                              className={`leading-snug${showLogo ? ' [&_li>span:first-child]:!w-3' : ''}`}
-                              bulletStyle={bulletStyle} align={experienceAlign} prefixId={`exp-${idx}`} />
-                          )}
-                        </div>
-                      </ItemWrapper>
-                    );
-                  })}
-                </div>
-              </section>
-            </SectionWrapper>
-          </DraggableSection>
+          <DesignerExperienceSection
+            key="experience"
+            resumeExperience={resumeExperience}
+            isEditable={isEditable}
+            dragProps={dragProps}
+            experienceAlign={experienceAlign}
+            onLayoutSettingsChange={onLayoutSettingsChange}
+            layoutSettings={layoutSettings}
+            onAddExperience={onAddExperience}
+            ec={ec}
+            entrySpacing={entrySpacing}
+            brandColor={brandColor}
+            bulletStyle={bulletStyle}
+            showExp={showExp}
+            onDeleteExperience={onDeleteExperience}
+            onDuplicateExperience={onDuplicateExperience}
+            onAddSimilarExperience={onAddSimilarExperience}
+            onEntryVisibilityChange={onEntryVisibilityChange}
+            onExperienceChange={onExperienceChange}
+            {...sectionStyleProps}
+          />
         );
       case 'education':
-        if (!resumeEducation || (resumeEducation.length === 0 && !isEditable)) return null;
         return (
-          <DraggableSection key="education" id="education" {...dragProps}>
-            <SectionWrapper
-              id="education" title="Education" isEditable={isEditable}
-              align={educationAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ educationAlign: a })}
-              onAddEntry={onAddEducation}
-              layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
-            >
-              <section style={dsec}>
-                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Education</h3>
-                <div className="flex flex-col" style={{ gap: `${entrySpacing}px` }}>
-                  {resumeEducation.map((edu, idx) => {
-                    const { gradeText } = parseEducationGrade(edu.bullets);
-                    const showLogo = (layoutSettings?.showEducationLogo ?? true) && showEdu(edu, 'logo');
-                    const showDates = (layoutSettings?.showEducationDates ?? true) && showEdu(edu, 'dates');
-                    const showLocation = (layoutSettings?.showEducationLocation ?? true) && showEdu(edu, 'location');
-                    const showGpa = (layoutSettings?.showEducationGpa ?? true) && showEdu(edu, 'gpa');
-                    const showBullets = showEdu(edu, 'bullets');
-
-                    return (
-                      <ItemWrapper
-                        key={idx} sectionId="education" index={idx} totalItems={resumeEducation.length}
-                        isEditable={isEditable} onDelete={() => onDeleteEducation?.(idx)}
-                        onDuplicate={() => onDuplicateEducation?.(idx)}
-                        onAddSimilar={() => onAddSimilarEducation?.(idx)}
-                        settingsPanel={(onClose) => (
-                          <EducationEntrySettings
-                            item={edu}
-                            onToggle={(field, value) => onEntryVisibilityChange?.('education', idx, field, value)}
-                            onClose={onClose}
-                            logo={edu.logo}
-                            onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
-                            placeholderIconName="graduation-cap"
-                            brandColor={brandColor}
-                          />
-                        )}
-                      >
-                        <div className="flex gap-3 justify-between items-start" style={FG.body}>
-                          <div className="flex-1 space-y-0.5">
-                            <div className="flex items-center gap-1.5 leading-snug">
-                              {showLogo && (
-                                <ItemLogo
-                                  logo={edu.logo}
-                                  brandColor={C_COMPANY}
-                                  placeholderIconName="graduation-cap"
-                                  isEditable={isEditable}
-                                  onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
-                                />
-                              )}
-                              <E field="education.degree" value={edu.degree} isEditable={isEditable} editableClass={ec} className="break-words" style={{ ...FG.entry, color: C_TITLE }} onSave={v => onEducationChange?.(idx, 'degree', v)} />
-                            </div>
-                            {(edu.school || isEditable) && (
-                              <div className="flex justify-between leading-snug">
-                                <E field="education.school" value={edu.school} isEditable={isEditable} editableClass={ec} style={{ ...FG.company, color: C_COMPANY }} onSave={v => onEducationChange?.(idx, 'school', v)} />
-                              </div>
-                            )}
-                            {(showDates || showLocation) && (
-                              <div className="flex justify-between leading-snug" style={FG.meta}>
-                                {showDates && (
-                                  <DateRangePicker
-                                    value={edu.dates}
-                                    isEditable={isEditable}
-                                    onSave={v => onEducationChange?.(idx, 'dates', v)}
-                                    style={FG.meta}
-                                  />
-                                )}
-                                {showLocation && (
-                                  <E field="education.location" value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
-                                )}
-                              </div>
-                            )}
-                            <EducationDescription
-                              bullets={edu.bullets}
-                              isEditable={isEditable}
-                              editableClass={ec}
-                              onBulletChange={(v) => onEducationChange?.(idx, 'bullets', v)}
-                              className={`leading-snug text-${educationAlign}`}
-                              bulletStyle={bulletStyle}
-                              align={educationAlign}
-                              prefixId={`edu-${idx}`}
-                              showBullets={showBullets || isEditable}
-                              splitGpa
-                            />
-                          </div>
-                          {showGpa && gradeText && (
-                            <div className="flex items-center gap-2 h-full flex-shrink-0 self-stretch mt-1">
-                              <div className="w-[1px] bg-slate-300 self-stretch min-h-[30px]" />
-                              <div className="text-center whitespace-pre-line leading-tight px-1 min-w-[60px]" style={{ ...FG.company, color: C_COMPANY }}>
-                                {gradeText}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </ItemWrapper>
-                    );
-                  })}
-                </div>
-              </section>
-            </SectionWrapper>
-          </DraggableSection>
+          <DesignerEducationSection
+            key="education"
+            resumeEducation={resumeEducation}
+            isEditable={isEditable}
+            dragProps={dragProps}
+            educationAlign={educationAlign}
+            onLayoutSettingsChange={onLayoutSettingsChange}
+            layoutSettings={layoutSettings}
+            onAddEducation={onAddEducation}
+            ec={ec}
+            entrySpacing={entrySpacing}
+            brandColor={brandColor}
+            bulletStyle={bulletStyle}
+            showEdu={showEdu}
+            onDeleteEducation={onDeleteEducation}
+            onDuplicateEducation={onDuplicateEducation}
+            onAddSimilarEducation={onAddSimilarEducation}
+            onEntryVisibilityChange={onEntryVisibilityChange}
+            onEducationChange={onEducationChange}
+            {...sectionStyleProps}
+          />
         );
       case 'certs':
-        if ((!resumeCerts || resumeCerts.length === 0) && !isEditable) return null;
         return (
-          <DraggableSection key="certs" id="certs" {...dragProps}>
-            <SectionWrapper
-              id="certs" title="Projects" isEditable={isEditable}
-              align={certsAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ certsAlign: a })}
-              onAddEntry={onAddCert}
-              layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
-            >
-              <section style={dsec}>
-                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Projects</h3>
-                <ul className="flex flex-col" style={{ ...FG.body, gap: `${entrySpacing - 4}px` }}>
-                  {(resumeCerts ?? []).map((cert, idx) => {
-                    const desc = cert.desc || '';
-                    const isTechIdx = desc.toLowerCase().indexOf('tech:');
-                    let cleanDesc = desc;
-                    let techStack = '';
-                    if (isTechIdx !== -1) {
-                      cleanDesc = desc.substring(0, isTechIdx).trim();
-                      techStack = desc.substring(isTechIdx).trim();
-                    }
-                    return (
-                      <ItemWrapper
-                        key={idx} sectionId="certs" index={idx} totalItems={(resumeCerts ?? []).length}
-                        isEditable={isEditable} onDelete={() => onDeleteCert?.(idx)}
-                        settingsPanel={(onClose) => (
-                          <CertEntrySettings
-                            item={cert}
-                            onToggle={(field, value) => onEntryVisibilityChange?.('certs', idx, field, value)}
-                            onClose={onClose}
-                            onUrlChange={(url) => onCertChange?.(idx, 'url', url)}
-                          />
-                        )}
-                      >
-                        <li className={`text-${certsAlign}`}>
-                          <div className="flex-1 min-w-0">
-                            <div className={`flex items-center gap-1.5 leading-snug ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
-                              {showProjectIcons && (
-                                isEditable ? (
-                                  <EntryIconPicker
-                                    variant="project"
-                                    currentIcon={cert.icon || 'briefcase'}
-                                    onChange={(icon) => onCertChange?.(idx, 'icon', icon)}
-                                    isEditable={isEditable}
-                                    accentColor={C_TITLE}
-                                    accentColor2={C_COMPANY}
-                                    index={idx}
-                                    title={cert.title}
-                                    iconClassName="w-3 h-3 shrink-0"
-                                    wrapperClassName="shrink-0"
-                                  />
-                                ) : (
-                                  getDynamicProjectIcon(idx, cert.title, cert.icon, C_TITLE, 'w-3 h-3 shrink-0', C_COMPANY)
-                                )
-                              )}
-                              <div className={`flex items-center gap-1 min-w-0 flex-1 ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
-                                <E tag="strong" field="projects.title" value={cert.title} isEditable={isEditable} editableClass={ec}
-                                  style={{ ...FG.entryTitle, color: C_TITLE }}
-                                  onSave={v => onCertChange?.(idx, 'title', v)} />
-                                {showCert(cert, 'link') && <WorkLink url={cert.url} brandColor={C_COMPANY} />}
-                              </div>
-                            </div>
-                              {showProjectDesc && (cleanDesc || isEditable) && (
-                                showProjectBullets ? (
-                                  <BulletList
-                                    field="projects.description"
-                                    bullets={cleanDesc}
-                                    isEditable={isEditable}
-                                    editableClass={ec}
-                                    onBulletChange={(v) => {
-                                      onCertChange?.(idx, 'desc', mergeProjectDescription(v, techStack));
-                                    }}
-                                    className={`mt-0.5 leading-snug text-${certsAlign}`}
-                                    bulletStyle={bulletStyle}
-                                    align={certsAlign}
-                                    prefixId={`cert-${idx}`}
-                                  />
-                                ) : (
-                                <E tag="p" field="projects.description" value={cleanDesc} isEditable={isEditable} editableClass={ec}
-                                  className={`mt-0.5 leading-snug text-${certsAlign}`}
-                                  style={FG.body}
-                                  onSave={(v) => onCertChange?.(idx, 'desc', techStack ? `${v}\n${techStack}` : v)} />
-                                )
-                              )}
-                              {showProjectDesc && techStack && (
-                                <div className={`italic mt-0.5 text-${certsAlign}`} style={FG.meta}>
-                                  {techStack}
-                                </div>
-                              )}
-                          </div>
-                        </li>
-                      </ItemWrapper>
-                    );
-                  })}
-                </ul>
-              </section>
-            </SectionWrapper>
-          </DraggableSection>
+          <DesignerProjectsSection
+            key="certs"
+            resumeCerts={resumeCerts}
+            isEditable={isEditable}
+            dragProps={dragProps}
+            certsAlign={certsAlign}
+            onLayoutSettingsChange={onLayoutSettingsChange}
+            layoutSettings={layoutSettings}
+            onAddCert={onAddCert}
+            ec={ec}
+            entrySpacing={entrySpacing}
+            bulletStyle={bulletStyle}
+            showCert={showCert}
+            showProjectIcons={showProjectIcons}
+            showProjectDesc={showProjectDesc}
+            showProjectBullets={showProjectBullets}
+            onDeleteCert={onDeleteCert}
+            onEntryVisibilityChange={onEntryVisibilityChange}
+            onCertChange={onCertChange}
+            {...sectionStyleProps}
+          />
         );
       case 'achievements':
-        if ((!resumeAchievements || resumeAchievements.length === 0) && !isEditable) return null;
         return (
-          <DraggableSection key="achievements" id="achievements" {...dragProps}>
-            <SectionWrapper
-              id="achievements" title="Key Achievements" isEditable={isEditable}
-              align={layoutSettings?.achievementsAlign ?? 'left'}
-              onAlignChange={(a) => onLayoutSettingsChange?.({ achievementsAlign: a })}
-              onAddEntry={onAddAchievement}
-              layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
-            >
-              <section style={dsec}>
-                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Key Achievements</h3>
-                <ul className="flex flex-col" style={{ ...FG.body, gap: `${entrySpacing - 4}px` }}>
-                  {(resumeAchievements ?? []).map((ach, idx) => {
-                    const showLink = showAch(ach, 'link');
-                    return (
-                    <ItemWrapper
-                      key={idx} sectionId="achievements" index={idx} totalItems={(resumeAchievements ?? []).length}
-                      isEditable={isEditable} onDelete={() => onDeleteAchievement?.(idx)}
-                      settingsPanel={(onClose) => (
-                        <AchievementEntrySettings
-                          item={ach}
-                          onToggle={(field, value) => onEntryVisibilityChange?.('achievements', idx, field, value)}
-                          onClose={onClose}
-                          onUrlChange={(url) => onAchievementChange?.(idx, 'url', url)}
-                        />
-                      )}
-                    >
-                      <li className={`text-${layoutSettings?.achievementsAlign ?? 'left'}`}>
-                        <div className="flex-1 min-w-0">
-                          <div className={`flex items-center gap-1.5 leading-snug ${(layoutSettings?.achievementsAlign ?? 'left') === 'center' ? 'justify-center' : (layoutSettings?.achievementsAlign ?? 'left') === 'right' ? 'justify-end' : ''}`}>
-                            {showAchievementIcons && (
-                              isEditable ? (
-                                <EntryIconPicker
-                                  variant="achievement"
-                                  currentIcon={ach.icon || 'star'}
-                                  onChange={(icon) => onAchievementChange?.(idx, 'icon', icon)}
-                                  isEditable={isEditable}
-                                  accentColor={C_TITLE}
-                                  accentColor2={C_COMPANY}
-                                  index={idx}
-                                  title={ach.title}
-                                  iconClassName="w-3 h-3 shrink-0"
-                                  wrapperClassName="shrink-0"
-                                />
-                              ) : (
-                                getDynamicAchievementIcon(idx, ach.title, ach.icon, C_TITLE, 'w-3 h-3 shrink-0', C_COMPANY)
-                              )
-                            )}
-                            <div className={`flex items-center gap-1 min-w-0 flex-1 ${(layoutSettings?.achievementsAlign ?? 'left') === 'center' ? 'justify-center' : (layoutSettings?.achievementsAlign ?? 'left') === 'right' ? 'justify-end' : ''}`}>
-                              <E tag="strong" field="achievements.title" value={ach.title} isEditable={isEditable} editableClass={ec}
-                                style={{ ...FG.entryTitle, color: C_TITLE }}
-                                onSave={v => onAchievementChange?.(idx, 'title', v)} />
-                              {showLink && <WorkLink url={ach.url} brandColor={C_COMPANY} />}
-                            </div>
-                          </div>
-                            {showAchievementDesc && (ach.desc || isEditable) && (
-                              showAchievementBullets ? (
-                                <BulletList
-                                  field="achievements.description"
-                                  bullets={ach.desc || ''}
-                                  isEditable={isEditable}
-                                  editableClass={ec}
-                                  onBulletChange={(v) => onAchievementChange?.(idx, 'desc', v)}
-                                  className={`mt-0.5 leading-snug text-${layoutSettings?.achievementsAlign ?? 'left'}`}
-                                  bulletStyle={bulletStyle}
-                                  align={layoutSettings?.achievementsAlign ?? 'left'}
-                                  prefixId={`ach-${idx}`}
-                                />
-                              ) : (
-                                <E tag="p" field="achievements.description" value={ach.desc || ''} isEditable={isEditable} editableClass={ec}
-                                  className={`mt-0.5 leading-snug text-${layoutSettings?.achievementsAlign ?? 'left'}`}
-                                  style={FG.body}
-                                  onSave={(v) => onAchievementChange?.(idx, 'desc', v)} />
-                              )
-                            )}
-                        </div>
-                      </li>
-                    </ItemWrapper>
-                    );
-                  })}
-                </ul>
-              </section>
-            </SectionWrapper>
-          </DraggableSection>
+          <DesignerAchievementsSection
+            key="achievements"
+            resumeAchievements={resumeAchievements}
+            isEditable={isEditable}
+            dragProps={dragProps}
+            onLayoutSettingsChange={onLayoutSettingsChange}
+            layoutSettings={layoutSettings}
+            onAddAchievement={onAddAchievement}
+            ec={ec}
+            entrySpacing={entrySpacing}
+            bulletStyle={bulletStyle}
+            showAch={showAch}
+            showAchievementIcons={showAchievementIcons}
+            showAchievementDesc={showAchievementDesc}
+            showAchievementBullets={showAchievementBullets}
+            onDeleteAchievement={onDeleteAchievement}
+            onEntryVisibilityChange={onEntryVisibilityChange}
+            onAchievementChange={onAchievementChange}
+            {...sectionStyleProps}
+          />
         );
       case 'languages':
-        if ((!resumeLanguages || resumeLanguages.length === 0) && !isEditable) return null;
         return (
-          <DraggableSection key="languages" id="languages" {...dragProps}>
-            <SectionWrapper
-              id="languages" title="Languages" isEditable={isEditable}
-              align={undefined}
-              onAddEntry={onAddLanguage}
-              layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
-            >
-              <section style={dsec}>
-                <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Languages</h3>
-                <div className="grid grid-cols-2 gap-x-3 items-start" style={{ rowGap: `${entrySpacing - 4}px` }}>
-                  {(resumeLanguages ?? []).map((lang, idx) => {
-                    const bubbles = getLanguageBubbleCount(lang.level);
-                    const showLevel = (layoutSettings?.showLanguageLevel ?? true) && isEntryFieldVisible(lang.visibility, 'level');
-                    const showSlider = isEntryFieldVisible(lang.visibility, 'slider') !== false;
-                    return (
-                      <ItemWrapper
-                        key={idx} sectionId="languages" index={idx} totalItems={(resumeLanguages ?? []).length}
-                        isEditable={isEditable} onDelete={() => onDeleteLanguage?.(idx)}
-                        settingsPanel={(onClose) => (
-                          <LanguageEntrySettings
-                            item={lang}
-                            onToggle={(field, value) => onEntryVisibilityChange?.('languages', idx, field, value)}
-                            onClose={onClose}
-                          />
-                        )}
-                      >
-                        <div className="flex justify-between items-start gap-1">
-                          <div>
-                            <E tag="p" field="languages.name" value={lang.name} isEditable={isEditable} editableClass={ec}
-                              style={{ ...FG.entry, color: C_TITLE }}
-                              onSave={v => onLanguageChange?.(idx, 'name', v)} />
-                            {showLevel && (
-                              <E tag="p" field="languages.level" value={lang.level} isEditable={isEditable} editableClass={ec}
-                                style={FG.meta}
-                                onSave={v => onLanguageChange?.(idx, 'level', v)} />
-                            )}
-                          </div>
-                          {showSlider && (
-                            <LanguageBubbles
-                              count={bubbles}
-                              activeColor={C_TITLE}
-                              isEditable={isEditable}
-                              onCountChange={(bubbleCount) =>
-                                onLanguageChange?.(idx, 'level', getLanguageLevelFromBubbleCount(bubbleCount))
-                              }
-                            />
-                          )}
-                        </div>
-                      </ItemWrapper>
-                    );
-                  })}
-                </div>
-              </section>
-            </SectionWrapper>
-          </DraggableSection>
+          <DesignerLanguagesSection
+            key="languages"
+            resumeLanguages={resumeLanguages}
+            isEditable={isEditable}
+            dragProps={dragProps}
+            onLayoutSettingsChange={onLayoutSettingsChange}
+            layoutSettings={layoutSettings}
+            onAddLanguage={onAddLanguage}
+            ec={ec}
+            entrySpacing={entrySpacing}
+            onDeleteLanguage={onDeleteLanguage}
+            onEntryVisibilityChange={onEntryVisibilityChange}
+            onLanguageChange={onLanguageChange}
+            {...sectionStyleProps}
+          />
         );
       default:
         return null;
     }
   };
-
-  const sectionGap = layoutSettings?.sectionSpacing ?? 8;
-  // Column flex gap drives section spacing — clear sec's marginBottom to avoid doubling
-  const dsec: React.CSSProperties = {};
 
   return (
     <div className={`pdf-sheet text-slate-800 font-sans ${sheetActiveClass}`}

@@ -488,7 +488,11 @@ describe('ResumeTemplates — editable integration', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe('ResumeTemplates — header settings toolbar', () => {
   it('designer template shows header settings gear when editable', async () => {
-    const { container } = await renderResumeTemplate({ state: resumeWith({ template: 'designer' }), isEditable: true });
+    const { container } = await renderResumeTemplate({
+      state: resumeWith({ template: 'designer' }),
+      isEditable: true,
+      onLayoutSettingsChange: () => {},
+    });
     expect(container.querySelector('header [title="Header Settings"]')).toBeTruthy();
   });
 
