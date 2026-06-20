@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatMarkdownBold } from '../../../../utils/markdown';
 import { EditableText as E } from '../../../shared/EditableText';
 import { BulletList } from '../../../shared/BulletList';
 import { EntryIconPicker } from '../../../shared/EntryIconPicker';
@@ -143,13 +144,14 @@ export const DesignerProjectsSection: React.FC<DesignerProjectsSectionProps> = (
                           <E tag="p" field="projects.description" value={cleanDesc} isEditable={isEditable} editableClass={ec}
                             className={`mt-0.5 leading-snug text-${certsAlign}`}
                             style={FG.body}
-                            onSave={(v) => onCertChange?.(idx, 'desc', techStack ? `${v}\n${techStack}` : v)} />
+                            onSave={(v) => onCertChange?.(idx, 'desc', techStack ? `${v}\n${techStack}` : v)}
+                            dangerousInnerHtml={isEditable ? undefined : formatMarkdownBold(cleanDesc)} />
                           )
                         )}
                         {showProjectDesc && techStack && (
-                          <div className={`italic mt-0.5 text-${certsAlign}`} style={FG.meta}>
-                            {techStack}
-                          </div>
+                          <div className={`italic mt-0.5 text-${certsAlign}`} style={FG.meta}
+                            dangerouslySetInnerHTML={{ __html: formatMarkdownBold(techStack) }}
+                          />
                         )}
                     </div>
                   </li>

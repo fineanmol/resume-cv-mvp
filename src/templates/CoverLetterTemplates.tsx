@@ -114,6 +114,20 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
     />
   );
 
+  /** Renders a highlight's `.text` field — bold-aware in preview/PDF, plain text in editor. */
+  const hlText = (text: string, idx: number, className: string) => isEditable ? (
+    <span
+      className={`${className} ${editableClass}`}
+      contentEditable={true}
+      suppressContentEditableWarning={true}
+      onBlur={(e) => onHighlightChange?.(idx, 'text', e.currentTarget.textContent || '')}
+    >
+      {text}
+    </span>
+  ) : (
+    <span className={className} dangerouslySetInnerHTML={{ __html: formatMarkdownBold(text) }} />
+  );
+
   // -------------------------------------------------------------
   // 1. NAVY TEMPLATE (Navy Elegant)
   // -------------------------------------------------------------
@@ -150,14 +164,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
                     >
                       {item.category}
                     </strong>
-                    <span
-                      className={`text-[10px] leading-relaxed block ${editableClass}`}
-                      contentEditable={isEditable}
-                      suppressContentEditableWarning={true}
-                      onBlur={(e) => onHighlightChange?.(idx, 'text', e.currentTarget.textContent || '')}
-                    >
-                      {item.text}
-                    </span>
+                    {hlText(item.text, idx, 'text-[10px] leading-relaxed block')}
                   </li>
                 ))}
               </ul>
@@ -219,14 +226,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
                       {item.category}
                     </strong>
                     <span>: </span>
-                    <span
-                      className={editableClass}
-                      contentEditable={isEditable}
-                      suppressContentEditableWarning={true}
-                      onBlur={(e) => onHighlightChange?.(idx, 'text', e.currentTarget.textContent || '')}
-                    >
-                      {item.text}
-                    </span>
+                    {hlText(item.text, idx, '')}
                   </li>
                 ))}
               </ul>
@@ -350,14 +350,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
                     >
                       {item.category}
                     </strong>
-                    <span
-                      className={`text-slate-500 block leading-normal ${editableClass}`}
-                      contentEditable={isEditable}
-                      suppressContentEditableWarning={true}
-                      onBlur={(e) => onHighlightChange?.(idx, 'text', e.currentTarget.textContent || '')}
-                    >
-                      {item.text}
-                    </span>
+                    {hlText(item.text, idx, 'text-slate-500 block leading-normal')}
                   </li>
                 ))}
               </ul>
@@ -455,14 +448,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
                     >
                       {item.category}
                     </strong>
-                    <span
-                      className={`text-slate-600 ${editableClass}`}
-                      contentEditable={isEditable}
-                      suppressContentEditableWarning={true}
-                      onBlur={(e) => onHighlightChange?.(idx, 'text', e.currentTarget.textContent || '')}
-                    >
-                      {item.text}
-                    </span>
+                    {hlText(item.text, idx, 'text-slate-600')}
                   </div>
                 </li>
               ))}
@@ -544,10 +530,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
                       onBlur={e => onHighlightChange?.(idx, 'category', e.currentTarget.textContent || '')}
                     >{item.category}</strong>
                     {': '}
-                    <span
-                      className={editableClass} contentEditable={isEditable} suppressContentEditableWarning
-                      onBlur={e => onHighlightChange?.(idx, 'text', e.currentTarget.textContent || '')}
-                    >{item.text}</span>
+                    {hlText(item.text, idx, '')}
                   </span>
                 </li>
               ))}
@@ -596,11 +579,7 @@ export const CoverLetterTemplateRenderer: React.FC<CoverLetterTemplateProps> = (
                   contentEditable={isEditable} suppressContentEditableWarning
                   onBlur={e => onHighlightChange?.(idx, 'category', e.currentTarget.textContent || '')}
                 >{item.category}</span>
-                <span
-                  className={`text-slate-600 flex-1 ${editableClass}`}
-                  contentEditable={isEditable} suppressContentEditableWarning
-                  onBlur={e => onHighlightChange?.(idx, 'text', e.currentTarget.textContent || '')}
-                >{item.text}</span>
+                {hlText(item.text, idx, 'text-slate-600 flex-1')}
               </div>
             ))}
           </div>
