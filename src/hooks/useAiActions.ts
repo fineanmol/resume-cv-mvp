@@ -80,8 +80,8 @@ export function useAiActions({
         const result = await GeminiService.injectKeywordIntoResume(geminiKey, resumeState, kw);
         setResumeState(prev => ({
           ...prev,
-          resumeSummary: result.resumeSummary || prev.resumeSummary,
-          resumeSkills: result.resumeSkills || prev.resumeSkills,
+          resumeSummary: result.resumeSummary ? stripMarkdownBold(result.resumeSummary) : prev.resumeSummary,
+          resumeSkills: result.resumeSkills ? stripMarkdownBold(result.resumeSkills) : prev.resumeSkills,
           resumeExperience: prev.resumeExperience.map((exp, idx) => ({
             ...exp,
             bullets: result.resumeExperience?.[idx]?.bullets
@@ -93,14 +93,18 @@ export function useAiActions({
         const result = await GeminiService.injectKeywordIntoCoverLetter(geminiKey, clState, kw);
         setClState(prev => ({
           ...prev,
-          p1: result.p1 || prev.p1,
-          p2: result.p2 || prev.p2,
-          p3: result.p3 || prev.p3,
-          p4: result.p4 || prev.p4,
+          p1: result.p1 ? stripMarkdownBold(result.p1) : prev.p1,
+          p2: result.p2 ? stripMarkdownBold(result.p2) : prev.p2,
+          p3: result.p3 ? stripMarkdownBold(result.p3) : prev.p3,
+          p4: result.p4 ? stripMarkdownBold(result.p4) : prev.p4,
           highlights: prev.highlights.map((hl, idx) => ({
             ...hl,
-            category: result.highlights?.[idx]?.category || hl.category,
-            text: result.highlights?.[idx]?.text || hl.text,
+            category: result.highlights?.[idx]?.category
+              ? stripMarkdownBold(result.highlights[idx].category)
+              : hl.category,
+            text: result.highlights?.[idx]?.text
+              ? stripMarkdownBold(result.highlights[idx].text)
+              : hl.text,
           })),
         }));
       }

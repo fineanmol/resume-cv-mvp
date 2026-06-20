@@ -260,6 +260,86 @@ describe('useAiActions — injectKeyword (cover letter)', () => {
 
     expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('"Go"'));
   });
+
+  it('strips markdown bold from injected cover letter paragraphs and highlights', async () => {
+    vi.mocked(GeminiService.injectKeywordIntoCoverLetter).mockResolvedValue({
+      p1: 'Experienced in **cross-functional** collaboration.',
+      p2: 'Led **agile** teams across 3 time zones.',
+      highlights: [
+        { category: '**Leadership**', text: 'Managed a team of **10 engineers**.' },
+      ],
+    });
+
+    const { result } = renderHook(() => {
+      const [resumeState, setResumeState] = useState<ResumeState>(DEFAULT_RESUME_STATE);
+      const [clState, setClState] = useState<CoverLetterState>(DEFAULT_CL_STATE);
+      const actions = useAiActions({
+        geminiKey: 'test-api-key',
+        activeDocType: 'coverletter',
+        resumeState,
+        clState,
+        jobDescription: '',
+        setResumeState,
+        setClState,
+        onNeedKey: vi.fn(),
+        toast: mockToast,
+      });
+      return { clState, ...actions };
+    });
+
+    await act(async () => {
+      await result.current.injectKeyword('cross-functional');
+    });
+
+    expect(result.current.clState.p1).not.toContain('**');
+    expect(result.current.clState.p1).toContain('cross-functional');
+    expect(result.current.clState.p2).not.toContain('**');
+    expect(result.current.clState.p2).toContain('agile');
+    expect(result.current.clState.highlights[0].category).not.toContain('**');
+    expect(result.current.clState.highlights[0].category).toContain('Leadership');
+    expect(result.current.clState.highlights[0].text).not.toContain('**');
+    expect(result.current.clState.highlights[0].text).toContain('10 engineers');
+  });
+});
+
+describe('useAiActions — injectKeyword (resume)', () => {
+  it('strips markdown bold from injected resumeSummary and resumeSkills', async () => {
+    vi.mocked(GeminiService.injectKeywordIntoResume).mockResolvedValue({
+      resumeSummary: 'Passionate engineer with expertise in **Kubernetes** orchestration.',
+      resumeSkills: 'React, Node.js, **Kubernetes**, Docker',
+      resumeExperience: [
+        { bullets: 'Deployed **Kubernetes** clusters reducing downtime by 30%.', company: '', title: '', dates: '', location: '' },
+      ],
+    });
+
+    const { result } = renderHook(() => {
+      const [resumeState, setResumeState] = useState<ResumeState>(DEFAULT_RESUME_STATE);
+      const [clState, setClState] = useState<CoverLetterState>(DEFAULT_CL_STATE);
+      const actions = useAiActions({
+        geminiKey: 'test-api-key',
+        activeDocType: 'resume',
+        resumeState,
+        clState,
+        jobDescription: '',
+        setResumeState,
+        setClState,
+        onNeedKey: vi.fn(),
+        toast: mockToast,
+      });
+      return { resumeState, ...actions };
+    });
+
+    await act(async () => {
+      await result.current.injectKeyword('Kubernetes');
+    });
+
+    expect(result.current.resumeState.resumeSummary).not.toContain('**');
+    expect(result.current.resumeState.resumeSummary).toContain('Kubernetes');
+    expect(result.current.resumeState.resumeSkills).not.toContain('**');
+    expect(result.current.resumeState.resumeSkills).toContain('Kubernetes');
+    expect(result.current.resumeState.resumeExperience[0].bullets).not.toContain('**');
+    expect(result.current.resumeState.resumeExperience[0].bullets).toContain('Kubernetes');
+  });
 });
 
 describe('useAiActions — missing API key', () => {

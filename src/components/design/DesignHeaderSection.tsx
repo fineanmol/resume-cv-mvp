@@ -1,11 +1,12 @@
 import React from 'react';
 import { Layout, Image, List, Tag } from 'lucide-react';
-import { AccordionSection } from '../ui';
+import { AccordionSection, ToggleSwitch } from '../ui';
 import { HEADER_STYLES, BULLET_STYLES } from '../../config/designOptions';
 import type { LayoutSettings } from '../../types';
+import { PHOTO_SHAPES, resolvePhotoShape, photoShapePatch } from '../../utils/photoShape';
 
 interface Props {
-  layout: Pick<LayoutSettings, 'template' | 'headerStyle' | 'bulletStyle' | 'brandColor' | 'skillsStyle'>;
+  layout: Pick<LayoutSettings, 'template' | 'headerStyle' | 'bulletStyle' | 'brandColor' | 'skillsStyle' | 'showPhoto' | 'photoShape' | 'roundPhoto'>;
   onChange: (patch: Partial<LayoutSettings>) => void;
   docType: 'resume' | 'coverletter';
   openSection: string;
@@ -140,11 +141,36 @@ const DesignHeaderSection: React.FC<Props> = ({ layout, onChange, docType, openS
         openSection={openSection}
         onToggle={onToggle}
         variant="design"
-        bodyClassName="p-3 border-t border-border-color/40"
+        bodyClassName="p-3 border-t border-border-color/40 space-y-3"
       >
-        <p className="text-[10px] text-text-muted leading-relaxed">
-          Show or hide the profile photo and pick its shape using the gear icon on the document header in the canvas preview.
-        </p>
+        <ToggleSwitch
+          label="Show photo"
+          checked={layout.showPhoto ?? true}
+          onChange={v => onChange({ showPhoto: v })}
+        />
+        {(layout.showPhoto ?? true) && (
+          <div className="space-y-1.5">
+            <span className="block text-[10px] text-text-muted uppercase font-bold tracking-wider">Shape</span>
+            <div className="flex items-center gap-2">
+              {PHOTO_SHAPES.map(({ id, label, previewClass }) => (
+                <button
+                  key={id}
+                  type="button"
+                  title={label}
+                  onClick={() => onChange(photoShapePatch(id))}
+                  className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg border transition cursor-pointer flex-1 ${
+                    resolvePhotoShape(layout) === id
+                      ? 'border-brand-accent bg-brand-accent/8 text-brand-accent'
+                      : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                  }`}
+                >
+                  <div className={`w-4 h-4 bg-current opacity-60 ${previewClass}`} />
+                  <span className="text-[8px] font-semibold leading-none">{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </AccordionSection>
     </>
   );
