@@ -171,37 +171,46 @@ export function EditorRoute({
 
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <EditorLayout
-            isResume={isResume}
-            resumeState={resume.state}
-            resumeSet={resume.set}
-            resumeCommitHistory={resume.commitHistory}
-            clState={cl.state}
-            clSet={cl.set}
-            clCommitHistory={cl.commitHistory}
-            resumeMutations={resumeMutations}
-            clMutations={clMutations}
-            sidebarOpen={sidebarOpen}
-            zoomScale={zoomScale}
-            sheetRef={sheetRef}
-            sheetOverflow={sheetOverflow}
-            rightTab={rightTab}
-            setRightTab={setRightTab}
-            rightPanelOpen={rightPanelOpen}
-            setRightPanelOpen={setRightPanelOpen}
-            designFocusSection={designFocusSection}
-            onDesignFocusHandled={() => setDesignFocusSection(null)}
-            showSettings={showSettings}
-            geminiKey={geminiKey}
-            onGeminiKeyChange={setGeminiKey}
-            onSaveGeminiKey={handleSaveGeminiKey}
-            isOnline={isOnline}
-            onImproveBullet={ai.improveBullet}
-            aiLoading={ai.aiLoading}
-            jobDescription={jobDescription}
-            onJdChange={handleJdChange}
-            docText={getDocumentText()}
-            onInjectKeyword={ai.injectKeyword}
-            onAiTailor={ai.tailorDocument}
+            doc={{
+              isResume,
+              resumeState: resume.state,
+              resumeSet: resume.set,
+              resumeCommitHistory: resume.commitHistory,
+              clState: cl.state,
+              clSet: cl.set,
+              clCommitHistory: cl.commitHistory,
+            }}
+            mutations={{ resumeMutations, clMutations }}
+            panel={{
+              sidebarOpen,
+              zoomScale,
+              rightTab,
+              setRightTab,
+              rightPanelOpen,
+              setRightPanelOpen,
+            }}
+            sheet={{
+              sheetRef,
+              sheetOverflow,
+              designFocusSection,
+              onDesignFocusHandled: () => setDesignFocusSection(null),
+              showSettings,
+            }}
+            aiConfig={{
+              geminiKey,
+              onGeminiKeyChange: setGeminiKey,
+              onSaveGeminiKey: handleSaveGeminiKey,
+              isOnline,
+              aiLoading: ai.aiLoading,
+            }}
+            aiActions={{
+              onImproveBullet: ai.improveBullet,
+              jobDescription,
+              onJdChange: handleJdChange,
+              docText: getDocumentText(),
+              onInjectKeyword: ai.injectKeyword,
+              onAiTailor: ai.tailorDocument,
+            }}
           />
         </div>
       </motion.div>

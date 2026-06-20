@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 
-const PAGE_HEIGHT_PX = 1123;
+import { PAGE_HEIGHT_PX } from '../constants/page';
 
 /**
  * Simulates CSS `break-inside: avoid` in the live editor preview.

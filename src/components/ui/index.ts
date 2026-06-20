@@ -5,3 +5,6 @@ export { BulletEditor } from './BulletEditor';
 export { ImageUploadField } from './ImageUploadField';
 export { ItemActionBar } from './ItemActionBar';
 export { Modal, ModalHeader, ModalFooter } from './Modal';
+export { default as Slider } from './Slider';
+export { default as ColorPicker } from './ColorPicker';
+export { default as FontPicker } from './FontPicker';

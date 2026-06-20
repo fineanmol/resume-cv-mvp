@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { RefObject } from 'react';
 
-const A4_HEIGHT_PX = 1123;
+import { PAGE_HEIGHT_PX as A4_HEIGHT_PX } from '../constants/page';
 
 export function useSheetOverflow(sheetRef: RefObject<HTMLDivElement | null>, deps: unknown[]) {
   const [overflow, setOverflow] = useState(false);

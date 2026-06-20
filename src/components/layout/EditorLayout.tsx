@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect, lazy, Suspense, type RefObject } from 'react';
+import React, { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -10,12 +10,12 @@ import { DESIGNER_STYLE_DEFAULTS } from '../../config/designerDefaults';
 import { JDPanel } from '../JDPanel';
 import { SettingsDropdown } from './SettingsDropdown';
 
-import type { ResumeState, CoverLetterState } from '../../types';
-import type { useResumeMutations } from '../../hooks/useResumeMutations';
-import type { useCoverLetterMutations } from '../../hooks/useCoverLetterMutations';
 import { usePdfSheet } from '../../hooks/usePdfSheet';
 import { usePreviewPageBreaks } from '../../hooks/usePreviewPageBreaks';
 import { useScaledSheetHeight } from '../../hooks/useScaledSheetHeight';
+import { PAGE_WIDTH_PX, PAGE_HEIGHT_PX } from '../../constants/page';
+
+import type { DocContext, DocumentMutations, PanelState, SheetRefs, AiConfig, AiActions } from '../../types/editor';
 
 const ResumeTemplateRenderer = lazy(() =>
   import('../../templates/ResumeTemplates').then(m => ({ default: m.ResumeTemplateRenderer }))
@@ -23,8 +23,6 @@ const ResumeTemplateRenderer = lazy(() =>
 const CoverLetterTemplateRenderer = lazy(() =>
   import('../../templates/CoverLetterTemplates').then(m => ({ default: m.CoverLetterTemplateRenderer }))
 );
-
-const PAGE_HEIGHT_PX = 1123;
 
 /**
  * Renders a visual "page gap" at every 1123 px boundary inside .pdf-sheet —
@@ -98,76 +96,54 @@ const PageBreakLabels: React.FC<{ sheet: HTMLElement | null }> = ({ sheet }) => 
   );
 };
 
-type ResumeMutations = ReturnType<typeof useResumeMutations>;
-type CoverLetterMutations = ReturnType<typeof useCoverLetterMutations>;
+// ── Grouped prop interface ────────────────────────────────────────────────────
 
-interface EditorLayoutProps {
-  isResume: boolean;
-  resumeState: ResumeState;
-  resumeSet: (updater: ResumeState | ((prev: ResumeState) => ResumeState), skipHistory?: boolean) => void;
-  resumeCommitHistory: () => void;
-  clState: CoverLetterState;
-  clSet: (updater: CoverLetterState | ((prev: CoverLetterState) => CoverLetterState), skipHistory?: boolean) => void;
-  clCommitHistory: () => void;
-  resumeMutations: ResumeMutations;
-  clMutations: CoverLetterMutations;
-  sidebarOpen: boolean;
-  zoomScale: number;
-  sheetRef: RefObject<HTMLDivElement | null>;
-  sheetOverflow: boolean;
-  rightTab: 'design' | 'ats';
-  setRightTab: (tab: 'design' | 'ats') => void;
-  rightPanelOpen: boolean;
-  setRightPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  designFocusSection: string | null;
-  onDesignFocusHandled: () => void;
-  showSettings: boolean;
-  geminiKey: string;
-  onGeminiKeyChange: (v: string) => void;
-  onSaveGeminiKey: (e: React.FormEvent) => void;
-  isOnline: boolean;
-  onImproveBullet: (idx: number, currentText: string) => Promise<void>;
-  aiLoading: boolean;
-  jobDescription: string;
-  onJdChange: (text: string) => void;
-  docText: string;
-  onInjectKeyword: (kw: string) => Promise<void>;
-  onAiTailor: () => void;
+export interface EditorLayoutProps {
+  doc: DocContext;
+  mutations: DocumentMutations;
+  panel: PanelState;
+  sheet: SheetRefs;
+  aiConfig: AiConfig;
+  aiActions: AiActions;
 }
 
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export const EditorLayout: React.FC<EditorLayoutProps> = ({
-  isResume,
-  resumeState,
-  resumeSet,
-  resumeCommitHistory,
-  clState,
-  clSet,
-  clCommitHistory,
-  resumeMutations,
-  clMutations,
-  sidebarOpen,
-  zoomScale,
-  sheetRef,
-  sheetOverflow,
-  rightTab,
-  setRightTab,
-  rightPanelOpen,
-  setRightPanelOpen,
-  designFocusSection,
-  onDesignFocusHandled,
-  showSettings,
-  geminiKey,
-  onGeminiKeyChange,
-  onSaveGeminiKey,
-  isOnline,
-  onImproveBullet,
-  aiLoading,
-  jobDescription,
-  onJdChange,
-  docText,
-  onInjectKeyword,
-  onAiTailor,
+  doc,
+  mutations,
+  panel,
+  sheet: sheetProps,
+  aiConfig,
+  aiActions,
 }) => {
+  const {
+    isResume,
+    resumeState,
+    resumeSet,
+    resumeCommitHistory,
+    clState,
+    clSet,
+    clCommitHistory,
+  } = doc;
+
+  const { resumeMutations, clMutations } = mutations;
+
+  const { sidebarOpen, zoomScale, rightTab, setRightTab, rightPanelOpen, setRightPanelOpen } = panel;
+
+  const {
+    sheetRef,
+    sheetOverflow,
+    designFocusSection,
+    onDesignFocusHandled,
+    showSettings,
+  } = sheetProps;
+
+  const { geminiKey, onGeminiKeyChange, onSaveGeminiKey, isOnline, aiLoading } = aiConfig;
+
+  const { onImproveBullet, jobDescription, onJdChange, docText, onInjectKeyword, onAiTailor } =
+    aiActions;
+
   const [leftWidth, setLeftWidth] = useState(380);
   const [rightWidth, setRightWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
@@ -287,7 +263,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
               style={{ transform: `scale(${zoomScale})`, transformOrigin: 'top center', transition: 'transform 0.25s ease-out' }}
               className={`flex justify-center${sheetOverflow ? ' sheet-overflow-active' : ''}`}
             >
-              <Suspense fallback={<div className="w-[794px] h-[1123px] bg-white animate-pulse rounded shadow-xl" />}>
+              <Suspense fallback={<div style={{ width: PAGE_WIDTH_PX, height: PAGE_HEIGHT_PX }} className="bg-white animate-pulse rounded shadow-xl" />}>
                 {isResume ? (
                   <ResumeTemplateRenderer
                     state={resumeState}

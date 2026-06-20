@@ -1,46 +1,52 @@
 export type FontFamily = 'inter' | 'outfit' | 'plus-jakarta' | 'poppins' | 'playfair' | 'eb-garamond' | 'lora' | 'jetbrains-mono' | 'raleway' | 'open-sans';
 export type HeaderStyle = 'centered' | 'left' | 'banner' | 'minimal' | 'enhancv';
 
-export interface LayoutSettings {
+// ── Phase 1b sub-types ────────────────────────────────────────────────────────
+
+export interface TypographySettings {
   fontSize: number;
-  paddingTopBottom: number;
-  paddingLeftRight: number;
-  sectionSpacing: number;
   lineHeight: number;
-  /** Gap between individual entries within a section (px) */
-  entrySpacing?: number;
-  /** Gap between designer template left/right columns (px) */
-  columnGap?: number;
-  template?: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer';
-  brandColor?: string;        // primary accent (headers, borders, bullets)
-  accentColor2?: string;      // secondary accent (badges, highlights)
   fontFamily?: FontFamily;    // body font
   headingFont?: FontFamily;   // heading / name font (can differ from body)
   /** Title font — entry titles like job role, degree, project title (Designer template) */
   titleFont?: FontFamily;
   /** Accent font — company/school names, subtitle (Designer template) */
   accentFont?: FontFamily;
-  headerStyle?: HeaderStyle;  // layout variant for the name/contact block
+  brandColor?: string;        // primary accent (headers, borders, bullets)
+  accentColor2?: string;      // secondary accent (badges, highlights)
+  /** Entry title color – job role, degree, project/achievement title (Designer template) */
+  titleColor?: string;
+  /** Body / description text color (default #3E3E3E for Designer template) */
+  bodyTextColor?: string;
+}
+
+export interface PageSpacingSettings {
+  paddingTopBottom: number;
+  paddingLeftRight: number;
+  sectionSpacing: number;
+  /** Gap between individual entries within a section (px) */
+  entrySpacing?: number;
+  /** Gap between designer template left/right columns (px) */
+  columnGap?: number;
+}
+
+export interface SectionVisibilitySettings {
   showPhoto?: boolean;        // whether to display avatar in templates that support it
-  bulletStyle?: 'disc' | 'circle' | 'square' | 'dash' | 'arrow' | 'number' | 'none';
-  skillsStyle?: 'chips' | 'normal' | 'grid';
-  summaryAlign?: 'left' | 'center' | 'right' | 'justify';
-  experienceAlign?: 'left' | 'center' | 'right' | 'justify';
-  educationAlign?: 'left' | 'center' | 'right' | 'justify';
-  certsAlign?: 'left' | 'center' | 'right' | 'justify';
-  achievementsAlign?: 'left' | 'center' | 'right' | 'justify';
   showLayoutBounds?: boolean;
-  designerLeftSections?: string[];
-  designerRightSections?: string[];
   roundPhoto?: boolean;
   /** Profile photo clip shape (designer + header). Falls back to roundPhoto when unset. */
   photoShape?: 'circle' | 'rounded' | 'square' | 'squircle';
   showPhone?: boolean;
   showEmail?: boolean;
-    showLocation?: boolean;
+  showLocation?: boolean;
   showLinkedin?: boolean;
   showTitle?: boolean;
   uppercaseName?: boolean;
+  summaryAlign?: 'left' | 'center' | 'right' | 'justify';
+  experienceAlign?: 'left' | 'center' | 'right' | 'justify';
+  educationAlign?: 'left' | 'center' | 'right' | 'justify';
+  certsAlign?: 'left' | 'center' | 'right' | 'justify';
+  achievementsAlign?: 'left' | 'center' | 'right' | 'justify';
   // Category-specific layout options
   showAchievementIcons?: boolean;
   showAchievementDesc?: boolean;
@@ -58,18 +64,28 @@ export interface LayoutSettings {
   showEducationGpa?: boolean;
   showEducationLogo?: boolean;
   showLanguageLevel?: boolean;
-  /** Entry title color – job role, degree, project/achievement title (Designer template) */
-  titleColor?: string;
-  /** Body / description text color (default #3E3E3E for Designer template) */
-  bodyTextColor?: string;
 }
+
+export interface DesignerLayoutSettings {
+  template?: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer';
+  headerStyle?: HeaderStyle;  // layout variant for the name/contact block
+  bulletStyle?: 'disc' | 'circle' | 'square' | 'dash' | 'arrow' | 'number' | 'none';
+  skillsStyle?: 'chips' | 'normal' | 'grid';
+  designerLeftSections?: string[];
+  designerRightSections?: string[];
+}
+
+/** Composed settings object used by all document types. */
+export interface LayoutSettings extends TypographySettings, PageSpacingSettings, SectionVisibilitySettings, DesignerLayoutSettings {}
 
 export interface HighlightItem {
   category: string;
   text: string;
 }
 
-export interface CoverLetterState {
+// ── Phase 1c: shared document identity fields ─────────────────────────────────
+
+export interface DocumentBase {
   id?: string;
   title?: string;
   name: string;
@@ -79,6 +95,9 @@ export interface CoverLetterState {
   linkedin: string;
   location: string;
   avatar: string;
+}
+
+export interface CoverLetterState extends DocumentBase {
   companyName: string;
   jobTitle: string;
   salutation: string;
@@ -175,16 +194,7 @@ export interface LanguageItem {
   visibility?: LanguageEntryVisibility;
 }
 
-export interface ResumeState {
-  id?: string;
-  title?: string;
-  name: string;
-  subtitle: string;
-  phone: string;
-  email: string;
-  linkedin: string;
-  location: string;
-  avatar: string;
+export interface ResumeState extends DocumentBase {
   resumeSummary: string;
   resumeSkills: string;
   resumeExperience: ExperienceItem[];

@@ -14,6 +14,7 @@ import {
   stripEditOnlyFromClone,
 } from './cloneSheet';
 import { getLegacyExportStyleBlock, getPrintStyleBlock } from './printStyles';
+import { PAGE_WIDTH_PX } from '../../constants/page';
 
 interface PdfImage {
   width: number;
@@ -223,7 +224,7 @@ export class PdfService {
       'position: absolute',
       'left: 0',
       'top: 0',
-      'width: 794px',
+      `width: ${PAGE_WIDTH_PX}px`,
       'height: auto',
       'z-index: -9999',
       'pointer-events: none',
@@ -306,7 +307,7 @@ export class PdfService {
     clone.style.left = '0px';
     clone.style.top = '0px';
     clone.style.zIndex = '9999';
-    clone.style.width = '794px';
+    clone.style.width = `${PAGE_WIDTH_PX}px`;
     
     const contentHeight = prepareSheetForExport(clone, sheetElement);
 
@@ -334,7 +335,7 @@ export class PdfService {
         logging: false,
         scrollX: 0,
         scrollY: 0,
-        windowWidth: 794,
+        windowWidth: PAGE_WIDTH_PX,
         height: captureHeight,
         windowHeight: captureHeight,
         onclone: (clonedDoc: Document) => {

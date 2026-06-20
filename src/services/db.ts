@@ -8,6 +8,7 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 import type { ResumeState, CoverLetterState, DocumentMetadata } from '../types';
+import type { IDocumentStore } from './interfaces';
 
 export const dbService = {
   async listDrafts(userId: string): Promise<DocumentMetadata[]> {
@@ -195,4 +196,4 @@ export const dbService = {
     }
     localStorage.setItem(`LOCAL_META_${userId}`, JSON.stringify(list));
   }
-};
+} satisfies IDocumentStore;
