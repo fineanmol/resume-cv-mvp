@@ -108,7 +108,7 @@ const ProfessionalCLTemplate: React.FC<CoverLetterTemplateProps> = ({
             <ul className="space-y-1.5 text-xs text-slate-700">
               {highlights.map((item, idx) => (
                 <li key={idx} className="flex gap-1.5">
-                  <span className="text-slate-500 flex-shrink-0">•</span>
+                  <span className="text-slate-500 shrink-0">•</span>
                   <span>
                     <strong
                       className={editableClass}

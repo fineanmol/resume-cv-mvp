@@ -97,7 +97,7 @@ export function makeParagraphEl(
     text: string,
     field: 'p1' | 'p2' | 'p3' | 'p4',
     className?: string,
-  ): React.ReactElement {
+  ): JSX.Element {
     return (
       <EditableText
         tag="p"
@@ -120,7 +120,7 @@ export function makeHlText(
   editableClass: string,
   onHighlightChange: CoverLetterTemplateProps['onHighlightChange'],
 ) {
-  return function hlText(text: string, idx: number, className: string): React.ReactElement {
+  return function hlText(text: string, idx: number, className: string): JSX.Element {
     if (isEditable) {
       return (
         <span
