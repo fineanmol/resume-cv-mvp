@@ -341,6 +341,10 @@ body {
   .pdf-sheet section > ul > li + li {
     margin-top: var(--entry-gap, 8px);
   }
+  /* Projects/achievements use ul > div.group/item (not ul > li) with gap = entrySpacing-4 */
+  .pdf-sheet section > ul > .group\/item + .group\/item {
+    margin-top: calc(var(--entry-gap, 8px) - 4px);
+  }
   /* Designer columns use flex gap in preview; display:block in print drops it */
   .pdf-sheet .designer-column > .group\/draggable:not(:last-child) {
     margin-bottom: var(--section-gap, 8px);

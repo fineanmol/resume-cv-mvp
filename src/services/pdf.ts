@@ -860,6 +860,10 @@ export class PdfService {
     section > ul > li + li {
       margin-top: var(--entry-gap, 8px);
     }
+    /* Projects/achievements: container is ul > div.group/item (not ul > li), gap = entrySpacing-4 */
+    section > ul > .group\\/item + .group\\/item {
+      margin-top: calc(var(--entry-gap, 8px) - 4px);
+    }
     /* Designer columns use flex gap in preview; display:block in print drops it */
     .designer-column > .group\\/draggable:not(:last-child) {
       margin-bottom: var(--section-gap, 8px);
