@@ -186,17 +186,24 @@ export class PdfService {
         }
 
         let printed = false;
+        const prevTitle = document.title;
         const triggerPrint = () => {
           if (printed) return;
           printed = true;
+          // Temporarily set the parent document title to the desired filename so
+          // Chrome uses it as the suggested PDF save name in the print dialog.
+          document.title = filename.replace(/\.pdf$/i, '');
           try {
             win.focus();
             win.print();
           } catch (err) {
+            document.title = prevTitle;
             cleanup();
             reject(err);
             return;
           }
+          // Restore title after a short delay (print dialog is open by then)
+          setTimeout(() => { document.title = prevTitle; }, 1000);
           // Give the print dialog time to open before removing the iframe
           setTimeout(cleanup, 3000);
           resolve();

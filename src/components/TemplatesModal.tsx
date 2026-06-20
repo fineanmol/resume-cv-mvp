@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { X, Sparkles, CheckCircle2 } from 'lucide-react';
 import type { TemplateId, ResumeState, CoverLetterState } from '../types';
-import { TEMPLATE_CATALOG } from '../config/templates';
+import { getTemplatesForDocType } from '../config/templates';
 import { Modal } from './ui/Modal';
 import { TemplateLayoutPreview } from './TemplateLayoutPreview';
 
@@ -21,11 +21,20 @@ const TemplatesModalBody: React.FC<Omit<TemplatesModalProps, 'isOpen'>> = ({
   onSelectTemplate,
   docType,
 }) => {
-  const [selectedTemplateId, setSelectedTemplateId] = useState<TemplateId>(currentTemplate);
+  const catalog = useMemo(() => getTemplatesForDocType(docType), [docType]);
+
+  // If the current template isn't valid for this docType, start selection at the first available one.
+  const initialTemplate = useMemo(
+    () => catalog.find(t => t.id === currentTemplate) ? currentTemplate : catalog[0]?.id ?? currentTemplate,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const [selectedTemplateId, setSelectedTemplateId] = useState<TemplateId>(initialTemplate);
 
   const currentTemplateObj = useMemo(
-    () => TEMPLATE_CATALOG.find((t) => t.id === selectedTemplateId) ?? TEMPLATE_CATALOG[0],
-    [selectedTemplateId],
+    () => catalog.find((t) => t.id === selectedTemplateId) ?? catalog[0],
+    [catalog, selectedTemplateId],
   );
 
   const handleSelect = useCallback((id: TemplateId) => {
@@ -62,7 +71,7 @@ const TemplatesModalBody: React.FC<Omit<TemplatesModalProps, 'isOpen'>> = ({
           <h3 className="text-sm font-bold text-text-main mb-4">Available Layouts</h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {TEMPLATE_CATALOG.map((t) => {
+            {catalog.map((t) => {
               const isActive = selectedTemplateId === t.id;
               return (
                 <div

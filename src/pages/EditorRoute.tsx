@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { EditorHeader } from '../components/EditorHeader';
@@ -64,6 +64,10 @@ export function EditorRoute({
   const sheetRef = useRef<HTMLDivElement>(null);
   const sheetOverflow = useSheetOverflow(sheetRef, [activeDocId, activeDocType]);
 
+  useEffect(() => {
+    document.title = activeDocType === 'resume' ? 'Resume Builder' : 'Cover Letter Builder';
+  }, [activeDocType]);
+
   useAutoSave({
     user,
     activeDocId,
@@ -104,14 +108,28 @@ export function EditorRoute({
   const handleDownloadPdf = async () => {
     if (!sheetRef.current) return;
     dispatchClearEditorFocus();
+
+    const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '/');
+    const clCompany = cl.state.companyName?.trim();
+    const clCompanySlug = clCompany ? clCompany.replace(/\s+/g, '_') : '';
+
     const filename = activeDocType === 'resume'
       ? `${resume.state.name.replace(/\s+/g, '_')}_Resume.pdf`
-      : `${cl.state.name.replace(/\s+/g, '_')}_Cover_Letter.pdf`;
+      : clCompanySlug
+        ? `${cl.state.name.replace(/\s+/g, '_')}_${clCompanySlug}_Cover_Letter.pdf`
+        : `${cl.state.name.replace(/\s+/g, '_')}_Cover_Letter.pdf`;
+
     toast.info('Opening print dialog — choose "Save as PDF", set Margins to None, and uncheck Headers & footers.');
     try {
       const { PdfService } = await import('../services/pdf');
       await PdfService.downloadPdf(sheetRef.current, filename);
       toast.success('Print dialog opened. Select "Save as PDF" → Margins: None → uncheck Headers & footers → Save.');
+
+      // Rename the cover letter document title to reflect the company after first download
+      if (activeDocType === 'coverletter' && clCompany) {
+        const newTitle = `${clCompany} Cover Letter (${today})`;
+        cl.set(prev => ({ ...prev, title: newTitle }), true);
+      }
     } catch {
       toast.error('PDF download failed. Please try again.');
     }

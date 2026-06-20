@@ -105,8 +105,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
       {/* Toolbar Controls */}
       <div className="flex items-center gap-3">
-        {/* Document Modals (Resume specific) */}
-        {isResume && (
+        {/* Document toolbar: Templates is available for all doc types; Add Section / Rearrange / Design are resume-only */}
+        {onOpenTemplates && (
           <div className="flex items-center border border-border-color/50 rounded-lg p-0.5 bg-input-bg">
             <button
               onClick={onOpenTemplates}
@@ -116,34 +116,38 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
               <Layout className="w-3.5 h-3.5" />
               <span>Templates</span>
             </button>
-            <button
-              onClick={onOpenAddSection}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-text-muted hover:text-brand-accent hover:bg-card rounded-md transition text-xs font-semibold cursor-pointer"
-              title="Add a new Section"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Section</span>
-            </button>
-            <button
-              onClick={onOpenRearrange}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-text-muted hover:text-brand-accent hover:bg-card rounded-md transition text-xs font-semibold cursor-pointer"
-              title="Rearrange Sections"
-            >
-              <ArrowUpDown className="w-3.5 h-3.5" />
-              <span>Rearrange</span>
-            </button>
-            <button
-              onClick={onOpenDesign}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition text-xs font-semibold cursor-pointer ${
-                designPanelActive
-                  ? 'bg-brand-accent/15 text-brand-accent ring-1 ring-brand-accent/30'
-                  : 'text-text-muted hover:text-brand-accent hover:bg-card'
-              }`}
-              title="Page Design Settings"
-            >
-              <Palette className="w-3.5 h-3.5" />
-              <span>Design</span>
-            </button>
+            {isResume && (
+              <>
+                <button
+                  onClick={onOpenAddSection}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-text-muted hover:text-brand-accent hover:bg-card rounded-md transition text-xs font-semibold cursor-pointer"
+                  title="Add a new Section"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Section</span>
+                </button>
+                <button
+                  onClick={onOpenRearrange}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-text-muted hover:text-brand-accent hover:bg-card rounded-md transition text-xs font-semibold cursor-pointer"
+                  title="Rearrange Sections"
+                >
+                  <ArrowUpDown className="w-3.5 h-3.5" />
+                  <span>Rearrange</span>
+                </button>
+                <button
+                  onClick={onOpenDesign}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition text-xs font-semibold cursor-pointer ${
+                    designPanelActive
+                      ? 'bg-brand-accent/15 text-brand-accent ring-1 ring-brand-accent/30'
+                      : 'text-text-muted hover:text-brand-accent hover:bg-card'
+                  }`}
+                  title="Page Design Settings"
+                >
+                  <Palette className="w-3.5 h-3.5" />
+                  <span>Design</span>
+                </button>
+              </>
+            )}
           </div>
         )}
 

@@ -1,18 +1,25 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Layout } from 'lucide-react';
 import { AccordionSection } from '../ui';
-import { TEMPLATES_FOR_DESIGN } from '../../config/templates';
-import type { LayoutSettings } from '../../types';
+import { getTemplatesForDocType } from '../../config/templates';
+import type { DocType, LayoutSettings } from '../../types';
 
 interface Props {
   layout: Pick<LayoutSettings, 'template'>;
   onChange: (patch: Partial<LayoutSettings>) => void;
   openSection: string;
   onToggle: (id: string) => void;
+  docType?: DocType;
 }
 
-const DesignTemplateSection: React.FC<Props> = ({ layout, onChange, openSection, onToggle }) => (
+const DesignTemplateSection: React.FC<Props> = ({ layout, onChange, openSection, onToggle, docType = 'resume' }) => {
+  const templates = useMemo(() => {
+    const all = getTemplatesForDocType(docType);
+    return all.map(({ id, name, accent, designBadge, badge }) => ({ id, name, accent, badge: designBadge ?? badge }));
+  }, [docType]);
+
+  return (
   <AccordionSection
     id="template"
     icon={Layout}
@@ -22,7 +29,7 @@ const DesignTemplateSection: React.FC<Props> = ({ layout, onChange, openSection,
     variant="design"
     bodyClassName="p-3 border-t border-border-color/40 grid grid-cols-2 gap-2"
   >
-    {TEMPLATES_FOR_DESIGN.map(t => {
+    {templates.map(t => {
       const isActive = (layout.template ?? 'navy') === t.id;
       return (
         <motion.button
@@ -50,6 +57,7 @@ const DesignTemplateSection: React.FC<Props> = ({ layout, onChange, openSection,
       );
     })}
   </AccordionSection>
-);
+  );
+};
 
 export default DesignTemplateSection;

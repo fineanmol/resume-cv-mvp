@@ -1,4 +1,4 @@
-import type { TemplateId } from '../types';
+import type { DocType, TemplateId } from '../types';
 
 export interface TemplateCatalogEntry {
   id: TemplateId;
@@ -12,6 +12,8 @@ export interface TemplateCatalogEntry {
   designBadge?: string;
   /** Short label for carousel chip strip */
   chipName: string;
+  /** Document types this template supports. Omit to support all types. */
+  docTypes?: DocType[];
 }
 
 export const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
@@ -76,6 +78,7 @@ export const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
     badge: 'Interactive',
     designBadge: 'New',
     desc: 'Interactive two-column layout with wave details, custom photo shape options, and draggable sections.',
+    docTypes: ['resume'],
   },
 ];
 
@@ -83,6 +86,11 @@ export const TEMPLATE_IDS = TEMPLATE_CATALOG.map(t => t.id);
 
 export function getTemplateById(id: TemplateId): TemplateCatalogEntry {
   return TEMPLATE_CATALOG.find(t => t.id === id) ?? TEMPLATE_CATALOG[0];
+}
+
+/** Returns templates that support the given document type. */
+export function getTemplatesForDocType(docType: DocType): TemplateCatalogEntry[] {
+  return TEMPLATE_CATALOG.filter(t => !t.docTypes || t.docTypes.includes(docType));
 }
 
 /** Design panel grid — name, accent, compact badge */
