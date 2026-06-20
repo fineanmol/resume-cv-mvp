@@ -128,7 +128,7 @@ export function BulletList({
             {hasCustomMarker && !showMarker && isEditable && isEmpty && (
               <span contentEditable={false} className="shrink-0 w-4" />
             )}
-            {isEditable ? (
+            {isEditable && focusedBullet === bIdx ? (
               <span
                 data-bullet-id={`${prefixId}-${bIdx}`}
                 data-placeholder={resolvedPlaceholder}
@@ -136,6 +136,8 @@ export function BulletList({
                 className={`min-w-0 flex-1 text-${align} ${editableClass}`}
                 contentEditable={true}
                 suppressContentEditableWarning={true}
+                // eslint-disable-next-line jsx-a11y/no-autofocus
+                autoFocus
                 onFocus={(e) => {
                   clearEditableIfEmpty(e.currentTarget);
                   setFocusedBullet(bIdx);
@@ -175,6 +177,15 @@ export function BulletList({
               >
                 {showPlaceholder ? '' : (bullet || '\u200B')}
               </span>
+            ) : isEditable ? (
+              <span
+                data-bullet-id={`${prefixId}-${bIdx}`}
+                data-placeholder={resolvedPlaceholder}
+                data-empty={isEmpty ? 'true' : undefined}
+                className={`min-w-0 flex-1 text-${align} ${editableClass}`}
+                dangerouslySetInnerHTML={{ __html: formatMarkdownInline(bullet) }}
+                onClick={() => setFocusedBullet(bIdx)}
+              />
             ) : (
               <span
                 className={`min-w-0 flex-1 text-${align}`}

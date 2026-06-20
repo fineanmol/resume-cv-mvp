@@ -56,7 +56,10 @@ describe('EducationDescription', () => {
       />,
     );
     const bullet = document.querySelector('[data-bullet-id="edu-0-0"]') as HTMLElement;
-    fireEvent.keyDown(bullet, { key: 'Enter' });
+    // Click to enter edit mode, then fire keyDown on the contentEditable element
+    fireEvent.click(bullet);
+    const editableBullet = document.querySelector('[data-bullet-id="edu-0-0"]') as HTMLElement;
+    fireEvent.keyDown(editableBullet, { key: 'Enter' });
     expect(onBulletChange).toHaveBeenCalledTimes(1);
     const merged = onBulletChange.mock.calls[0][0] as string;
     expect(merged.startsWith('GPA: 3.8')).toBe(true);
@@ -87,9 +90,12 @@ describe('ResumeTemplates — education canvas uses BulletList enter handling', 
 
     const bullet = document.querySelector('[data-bullet-id="edu-0-0"]') as HTMLElement;
     expect(bullet).toBeTruthy();
-    expect(bullet.getAttribute('contenteditable')).toBe('true');
+    // Click to enter edit mode before checking contenteditable and firing keyDown
+    fireEvent.click(bullet);
+    const editableBullet = document.querySelector('[data-bullet-id="edu-0-0"]') as HTMLElement;
+    expect(editableBullet.getAttribute('contenteditable')).toBe('true');
 
-    fireEvent.keyDown(bullet, { key: 'Enter', preventDefault: vi.fn() });
+    fireEvent.keyDown(editableBullet, { key: 'Enter', preventDefault: vi.fn() });
     expect(onEducationChange).toHaveBeenCalledWith(0, 'bullets', 'Graduated with Honors\n');
   });
 });

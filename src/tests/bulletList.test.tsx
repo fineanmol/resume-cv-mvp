@@ -18,8 +18,11 @@ describe('BulletList', () => {
     const bullet = document.querySelector('[data-bullet-id="ach-0-0"]') as HTMLElement;
     expect(bullet).toBeTruthy();
 
-    fireEvent.keyDown(bullet, { key: 'Enter' });
-    fireEvent.blur(bullet);
+    // Click to enter edit mode, then interact with the contentEditable element
+    fireEvent.click(bullet);
+    const editableBullet = document.querySelector('[data-bullet-id="ach-0-0"]') as HTMLElement;
+    fireEvent.keyDown(editableBullet, { key: 'Enter' });
+    fireEvent.blur(editableBullet);
 
     expect(onBulletChange).toHaveBeenCalled();
     const lastCall = onBulletChange.mock.calls[onBulletChange.mock.calls.length - 1][0] as string;
@@ -44,8 +47,11 @@ describe('BulletList', () => {
     );
 
     const first = document.querySelector('[data-bullet-id="ach-0-0"]') as HTMLElement;
-    first.focus();
-    fireEvent.keyDown(first, { key: 'Enter' });
+    // Click to enter edit mode, then interact with the contentEditable element
+    fireEvent.click(first);
+    const editableFirst = document.querySelector('[data-bullet-id="ach-0-0"]') as HTMLElement;
+    editableFirst.focus();
+    fireEvent.keyDown(editableFirst, { key: 'Enter' });
 
     expect(onBulletChange).toHaveBeenCalled();
     const saved = onBulletChange.mock.calls[0][0] as string;
@@ -85,9 +91,13 @@ describe('BulletList', () => {
     expect(bullet).toBeTruthy();
     expect(bullet.getAttribute('data-placeholder')).toBe('Impact / scale (e.g. Increased revenue by 30%)');
     expect(bullet.getAttribute('data-empty')).toBe('true');
-    expect(bullet.textContent).toBe('\u200B');
-
-    fireEvent.focus(bullet);
+    // Non-focused view renders formatted HTML — empty string for an empty bullet
     expect(bullet.textContent).toBe('');
+
+    // Click to enter edit mode; autoFocus + onFocus clear any ZWS via clearEditableIfEmpty
+    fireEvent.click(bullet);
+    const editableBullet = document.querySelector('[data-bullet-id="ach-0-0"]') as HTMLElement;
+    expect(editableBullet.getAttribute('contenteditable')).toBe('true');
+    expect(editableBullet.textContent).toBe('');
   });
 });
