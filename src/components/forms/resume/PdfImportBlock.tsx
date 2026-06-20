@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 import { Upload, Loader } from 'lucide-react';
 import type { ResumeState } from '../../../types';
-import type { UndoRedoSetter } from '../../../hooks/useUndoRedo';
 import { PdfService } from '../../../services/pdf';
 import { GeminiService } from '../../../services/gemini';
 import { splitIntoBullets } from '../../../utils/bullets';
 
 interface PdfImportBlockProps {
-  onChange: UndoRedoSetter<ResumeState>;
+  /** Called after parsing with the extracted data and the extracted avatar (may be empty string). */
+  onImport: (data: Partial<ResumeState>, avatar: string) => void;
   geminiKey: string;
+  /** Label shown on the file-picker button and the heading */
+  label?: string;
+  /** Description text beneath the heading */
+  description?: string;
 }
 
-export const PdfImportBlock: React.FC<PdfImportBlockProps> = ({ onChange, geminiKey }) => {
+export const PdfImportBlock: React.FC<PdfImportBlockProps> = ({
+  onImport,
+  geminiKey,
+  label = 'Import Resume PDF',
+  description = 'Upload your PDF to auto-extract details, skills, experience & photo via Gemini AI.',
+}) => {
   const [parsing, setParsing] = useState(false);
 
   const handlePdfImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,8 +54,8 @@ export const PdfImportBlock: React.FC<PdfImportBlockProps> = ({ onChange, gemini
           bullets: splitIntoBullets(edu.bullets || '').join('\n'),
         }));
       }
-      onChange((prev) => ({ ...prev, avatar: avatar || prev.avatar || '', ...parsed }) as ResumeState);
-      alert('PDF Resume imported successfully!');
+      onImport(parsed, avatar);
+      alert('PDF imported successfully!');
     } catch (err) {
       alert(`PDF parsing failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
@@ -59,11 +68,9 @@ export const PdfImportBlock: React.FC<PdfImportBlockProps> = ({ onChange, gemini
     <div className="bg-card/20 border border-border-color/60 rounded-xl p-4 space-y-2.5">
       <div className="text-xs font-bold text-text-main flex items-center gap-1.5 uppercase tracking-wider">
         <Upload className="w-4 h-4 text-brand-accent" />
-        Import Resume PDF
+        {label}
       </div>
-      <p className="text-[11px] text-text-muted leading-relaxed">
-        Upload your PDF to auto-extract details, skills, experience &amp; photo via Gemini AI.
-      </p>
+      <p className="text-[11px] text-text-muted leading-relaxed">{description}</p>
       <label className="flex items-center justify-center gap-2 px-3 py-2 bg-sidebar border border-border-color hover:border-brand-accent/50 rounded-lg text-xs font-semibold text-text-main hover:text-brand-accent transition cursor-pointer">
         {parsing ? (
           <>
@@ -73,7 +80,7 @@ export const PdfImportBlock: React.FC<PdfImportBlockProps> = ({ onChange, gemini
         ) : (
           <>
             <Upload className="w-3.5 h-3.5" />
-            Choose Resume PDF
+            Choose PDF
           </>
         )}
         <input

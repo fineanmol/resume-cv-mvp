@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { CoverLetterState } from '../types';
 import type { UndoRedoSetter } from '../hooks/useUndoRedo';
@@ -10,13 +10,18 @@ import {
   Briefcase, FileText, AlignLeft, GripVertical,
 } from 'lucide-react';
 
+const PdfImportBlock = lazy(() =>
+  import('./forms/resume/PdfImportBlock').then(m => ({ default: m.PdfImportBlock }))
+);
+
 interface CoverLetterFormProps {
   state: CoverLetterState;
   onChange: UndoRedoSetter<CoverLetterState>;
   onCommit: () => void;
+  geminiKey: string;
 }
 
-export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChange, onCommit }) => {
+export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChange, onCommit, geminiKey }) => {
   const [openSection, setOpenSection] = useState<string>('target');
 
   const toggle = (s: string) => setOpenSection(p => p === s ? '' : s);
@@ -53,6 +58,25 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
 
   return (
     <div className="w-full min-h-0 flex-1 flex flex-col overflow-y-auto overscroll-contain p-5 space-y-5">
+      <Suspense fallback={<div className="h-24 rounded-xl bg-card/50 animate-pulse border border-border-color/40" aria-hidden />}>
+        <PdfImportBlock
+          geminiKey={geminiKey}
+          label="Import Resume PDF"
+          description="Upload your resume PDF to auto-fill your contact details (name, email, phone, location, LinkedIn) via Gemini AI."
+          onImport={(parsed) =>
+            handleChange((prev) => ({
+              ...prev,
+              ...(parsed.name !== undefined && { name: parsed.name }),
+              ...(parsed.subtitle !== undefined && { subtitle: parsed.subtitle }),
+              ...(parsed.email !== undefined && { email: parsed.email }),
+              ...(parsed.phone !== undefined && { phone: parsed.phone }),
+              ...(parsed.linkedin !== undefined && { linkedin: parsed.linkedin }),
+              ...(parsed.location !== undefined && { location: parsed.location }),
+              ...(parsed.avatar !== undefined && parsed.avatar && { avatar: parsed.avatar }),
+            }))
+          }
+        />
+      </Suspense>
 
       <div className="space-y-3">
 

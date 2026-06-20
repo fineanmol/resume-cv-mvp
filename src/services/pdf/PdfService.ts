@@ -111,7 +111,7 @@ export class PdfService {
    * This is the approach used by Resume.io, Zety, Novoresume, and most SaaS resume builders.
    * html2canvas is fundamentally unreliable for complex CSS (flexbox, oklch, SVG icons, etc.).
    */
-  public static downloadPdf(element: HTMLElement, _filename: string): Promise<void> {
+  public static downloadPdf(element: HTMLElement, filename: string): Promise<void> {
     const sheetElement = (element.querySelector('.pdf-sheet') || element) as HTMLElement;
 
     // Collect all styles from the parent document
@@ -145,7 +145,7 @@ export class PdfService {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title></title>
+  <title>${filename.replace(/\.pdf$/i, '')}</title>
   ${fontLinks}
   <style>
     ${allStyles}

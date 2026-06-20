@@ -242,6 +242,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
               state={clState}
               onChange={clSet}
               onCommit={clCommitHistory}
+              geminiKey={geminiKey}
             />
           )}
         </aside>

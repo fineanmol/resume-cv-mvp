@@ -43,7 +43,12 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
   return (
     <div className="w-full min-h-0 flex-1 flex flex-col overflow-y-auto overscroll-contain p-5 space-y-5">
       <Suspense fallback={<div className="h-24 rounded-xl bg-card/50 animate-pulse border border-border-color/40" aria-hidden />}>
-        <PdfImportBlock onChange={handleChange} geminiKey={geminiKey} />
+        <PdfImportBlock
+          geminiKey={geminiKey}
+          onImport={(parsed, avatar) =>
+            handleChange((prev) => ({ ...prev, avatar: avatar || prev.avatar || '', ...parsed }) as ResumeState)
+          }
+        />
       </Suspense>
 
       <div className="space-y-3">
