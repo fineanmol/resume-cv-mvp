@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { GeminiService } from '../services/gemini';
 import type { ResumeState, CoverLetterState, DocType } from '../types';
 import type { ToastAPI } from './useToast';
-import { splitIntoBullets } from '../utils/bullets';
+import { splitIntoBullets, stripMarkdownBold } from '../utils/bullets';
 
 interface Options {
   geminiKey: string;
@@ -42,7 +42,9 @@ export function useAiActions({
           resumeSkills: result.resumeSkills || prev.resumeSkills,
           resumeExperience: prev.resumeExperience.map((exp, idx) => ({
             ...exp,
-            bullets: result.resumeExperience?.[idx]?.bullets ? splitIntoBullets(result.resumeExperience[idx].bullets).join('\n') : exp.bullets,
+            bullets: result.resumeExperience?.[idx]?.bullets
+              ? splitIntoBullets(stripMarkdownBold(result.resumeExperience[idx].bullets)).join('\n')
+              : exp.bullets,
           })),
         }));
       } else {
@@ -82,7 +84,9 @@ export function useAiActions({
           resumeSkills: result.resumeSkills || prev.resumeSkills,
           resumeExperience: prev.resumeExperience.map((exp, idx) => ({
             ...exp,
-            bullets: result.resumeExperience?.[idx]?.bullets ? splitIntoBullets(result.resumeExperience[idx].bullets).join('\n') : exp.bullets,
+            bullets: result.resumeExperience?.[idx]?.bullets
+              ? splitIntoBullets(stripMarkdownBold(result.resumeExperience[idx].bullets)).join('\n')
+              : exp.bullets,
           })),
         }));
       } else {

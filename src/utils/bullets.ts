@@ -40,3 +40,11 @@ export function splitIntoBullets(bullets: string): string[] {
 export function cleanLeadingBullet(text: string): string {
   return text.trim().replace(/^[•●▪◦\u2022\u25cf\u25aa\u25e6\u2043\u25a0✦■⁃]\s*|^[-*]\s+/, '');
 }
+
+/**
+ * Strips markdown bold syntax (**text**) from a string, leaving plain text.
+ * Used as a defense-in-depth sanitiser on AI-generated bullet content.
+ */
+export function stripMarkdownBold(text: string): string {
+  return text.replace(/\*\*([^*\n]+)\*\*/g, '$1');
+}

@@ -85,7 +85,7 @@ const TAILOR_RESUME_SCHEMA = {
       items: {
         type: 'OBJECT',
         properties: {
-          bullets: { type: 'STRING', description: 'Tailored experience bullets separated by newlines.' },
+          bullets: { type: 'STRING', description: 'Tailored experience bullets separated by newlines. Must contain at least as many newline-delimited lines as the input bulletCount. Plain text only — no markdown.' },
         },
         required: ['bullets'],
       },
@@ -103,15 +103,15 @@ CRITICAL INSTRUCTIONS:
    - Do NOT lie or invent facts to match the Job Description. E.g. if the JD asks for "10+ years of experience" and the candidate has "3 years", do NOT write that they have "10+ years".
    - Keep all details consistent with the original resume/profile dates and details.
 2. Preserve all structural and factual details of the candidate's resume (their name, subtitle, locations, degrees, schools, GPA/dates, company names, titles, and employment dates). Do not invent new jobs, dates, credentials, or projects they do not have.
-3. ATS COMPATIBILITY OPTIMIZATION: Identify key technical skills, technologies, methodologies, and terms requested in the Job Description. Naturally integrate as many of these exact keywords/skills as possible into the resumeSummary, resumeSkills list, and job experience bullets where they align with the candidate's actual background. This is critical for passing ATS keyword filters.
+3. ATS COMPATIBILITY OPTIMIZATION: Identify key technical skills, technologies, methodologies, and terms requested in the Job Description. Naturally integrate as many of these exact keywords/skills as possible into the resumeSummary, resumeSkills list, AND job experience bullets where they align with the candidate's actual background. This is critical for passing ATS keyword filters.
 4. Optimize the resumeSummary to align with the job's key focus areas.
 5. Optimize the resumeSkills (a comma-separated list) to include the most relevant hard and soft skills extracted from the job description that fit the candidate's profile.
 6. Optimize the bullets in the resumeExperience list:
    - Match the exact number of experience items (currently ${state.resumeExperience.length} items).
-   - For each job, rewrite or refine the bullet points to highlight skills, tasks, and achievements relevant to the target job description.
-   - Use markdown **bolding** (e.g. **Agile**, **PRD**, **SaaS**, **A/B Testing**) to highlight matching terms and metrics.
-   - Keep the length and format consistent so it fits nicely.
-7. KEYWORD & TERM UNIQUE ENFORCEMENT: Ensure that key terms or skills are not repeated redundantly across different sections. Each keyword or key achievement should be highlighted only once in the resume to maintain a diverse, professional, and non-repetitive narrative.
+   - PRESERVE BULLET COUNT: Each job's bullets field contains multiple bullet points separated by newlines. You MUST output the same number of newline-separated bullet lines as in the input — do NOT merge, drop, or consolidate any bullets. Refine each bullet individually.
+   - Output ALL bullets in plain text only. Do NOT use markdown bold (**text**), asterisks, or any markdown syntax in the output.
+   - Naturally weave in relevant keywords from the job description into existing bullet content.
+7. ATS KEYWORD DENSITY: To maximise ATS keyword match scores, important keywords from the Job Description should appear across MULTIPLE sections — in the resumeSummary, resumeSkills, AND in experience bullets. Do not restrict a keyword to just one section.
 8. Return the response in the exact JSON schema requested. Do not return markdown wraps, just the raw JSON object.
 9. JSON ESCAPING RULE: All string values in the JSON output MUST be properly escaped. Specifically, if you use double quotes inside a string value, you MUST escape them as \\" (e.g., write \\"Product Manager\\" instead of "Product Manager"). Do not include raw, unescaped double quotes inside your string values, as this breaks the JSON parser.
 
@@ -122,6 +122,7 @@ ${JSON.stringify({
     resumeExperience: state.resumeExperience.map(exp => ({
       title: exp.title,
       company: exp.company,
+      bulletCount: exp.bullets.split('\n').filter(Boolean).length,
       bullets: exp.bullets,
     })),
   }, null, 2)}

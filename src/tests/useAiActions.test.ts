@@ -110,6 +110,81 @@ describe('useAiActions — tailorDocument (resume)', () => {
     expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('tailored'));
   });
 
+  it('strips markdown bold (**text**) from tailored bullets', async () => {
+    vi.mocked(GeminiService.tailorResume).mockResolvedValue({
+      resumeSummary: 'Updated summary',
+      resumeSkills: 'React, Node.js',
+      resumeExperience: [
+        { bullets: 'Led **market research** for the product.\nImproved **conversion rates** by 20%.', company: '', title: '', dates: '', location: '' },
+        { bullets: 'Built **microservices** with Node.js.', company: '', title: '', dates: '', location: '' },
+      ],
+    });
+
+    const { result } = renderHook(() => {
+      const [resumeState, setResumeState] = useState<ResumeState>(DEFAULT_RESUME_STATE);
+      const [clState, setClState] = useState<CoverLetterState>(DEFAULT_CL_STATE);
+      const actions = useAiActions({
+        geminiKey: 'test-api-key',
+        activeDocType: 'resume',
+        resumeState,
+        clState,
+        jobDescription: 'Looking for a senior engineer.',
+        setResumeState,
+        setClState,
+        onNeedKey: vi.fn(),
+        toast: mockToast,
+      });
+      return { resumeState, clState, ...actions };
+    });
+
+    await act(async () => {
+      await result.current.tailorDocument();
+    });
+
+    expect(result.current.resumeState.resumeExperience[0].bullets).not.toContain('**');
+    expect(result.current.resumeState.resumeExperience[0].bullets).toContain('market research');
+    expect(result.current.resumeState.resumeExperience[0].bullets).toContain('conversion rates');
+    expect(result.current.resumeState.resumeExperience[1].bullets).not.toContain('**');
+    expect(result.current.resumeState.resumeExperience[1].bullets).toContain('microservices');
+  });
+
+  it('preserves all bullet points per job after tailoring', async () => {
+    vi.mocked(GeminiService.tailorResume).mockResolvedValue({
+      resumeSummary: 'Updated summary',
+      resumeSkills: 'React, Node.js',
+      resumeExperience: [
+        { bullets: 'Led the architecture.\nMentored 6 developers.\nCollaborated with product managers.\nOwned the roadmap.', company: '', title: '', dates: '', location: '' },
+        { bullets: 'Built REST APIs.\nImplemented automated testing.', company: '', title: '', dates: '', location: '' },
+      ],
+    });
+
+    const { result } = renderHook(() => {
+      const [resumeState, setResumeState] = useState<ResumeState>(DEFAULT_RESUME_STATE);
+      const [clState, setClState] = useState<CoverLetterState>(DEFAULT_CL_STATE);
+      const actions = useAiActions({
+        geminiKey: 'test-api-key',
+        activeDocType: 'resume',
+        resumeState,
+        clState,
+        jobDescription: 'Looking for a senior engineer.',
+        setResumeState,
+        setClState,
+        onNeedKey: vi.fn(),
+        toast: mockToast,
+      });
+      return { resumeState, clState, ...actions };
+    });
+
+    await act(async () => {
+      await result.current.tailorDocument();
+    });
+
+    const job0Bullets = result.current.resumeState.resumeExperience[0].bullets.split('\n').filter(Boolean);
+    const job1Bullets = result.current.resumeState.resumeExperience[1].bullets.split('\n').filter(Boolean);
+    expect(job0Bullets.length).toBe(4);
+    expect(job1Bullets.length).toBe(2);
+  });
+
   it('aiLoading is false when not running a request', () => {
     const { result } = renderHook(() => {
       const [resumeState, setResumeState] = useState<ResumeState>(DEFAULT_RESUME_STATE);
