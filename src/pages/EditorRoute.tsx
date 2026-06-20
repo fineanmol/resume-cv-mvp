@@ -109,7 +109,6 @@ export function EditorRoute({
     if (!sheetRef.current) return;
     dispatchClearEditorFocus();
 
-    const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '/');
     const clCompany = cl.state.companyName?.trim();
     const clCompanySlug = clCompany ? clCompany.replace(/\s+/g, '_') : '';
 
@@ -124,12 +123,6 @@ export function EditorRoute({
       const { PdfService } = await import('../services/pdf');
       await PdfService.downloadPdf(sheetRef.current, filename);
       toast.success('Print dialog opened. Select "Save as PDF" → Margins: None → uncheck Headers & footers → Save.');
-
-      // Rename the cover letter document title to reflect the company after first download
-      if (activeDocType === 'coverletter' && clCompany) {
-        const newTitle = `${clCompany} Cover Letter (${today})`;
-        cl.set(prev => ({ ...prev, title: newTitle }), true);
-      }
     } catch {
       toast.error('PDF download failed. Please try again.');
     }

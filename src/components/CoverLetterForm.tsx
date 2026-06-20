@@ -93,7 +93,15 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
               <label className="block text-[10px] text-text-muted mb-1">Company Name</label>
               <input className={inputCls} value={state.companyName}
                 onChange={e => setText({ companyName: clean(e.target.value) })}
-                onBlur={onCommit} />
+                onBlur={e => {
+                  const company = e.target.value.trim();
+                  if (company) {
+                    const today = new Date().toLocaleDateString('en-GB');
+                    const newTitle = `${company} - Cover Letter (${today})`;
+                    handleChange(p => ({ ...p, title: newTitle }), true);
+                  }
+                  onCommit();
+                }} />
             </div>
             <div>
               <label className="block text-[10px] text-text-muted mb-1">Target Role</label>
