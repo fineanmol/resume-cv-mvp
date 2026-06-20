@@ -85,7 +85,7 @@ const TAILOR_RESUME_SCHEMA = {
       items: {
         type: 'OBJECT',
         properties: {
-          bullets: { type: 'STRING', description: 'Tailored experience bullets separated by newlines. Must contain at least as many newline-delimited lines as the input bulletCount. Plain text only — no markdown.' },
+          bullets: { type: 'STRING', description: 'Tailored experience bullets separated by newlines. Must contain at least as many newline-delimited lines as the input bulletCount. You may wrap 1–3 key ATS keywords per bullet in **double asterisks** for bold; no other markdown.' },
         },
         required: ['bullets'],
       },
@@ -109,7 +109,8 @@ CRITICAL INSTRUCTIONS:
 6. Optimize the bullets in the resumeExperience list:
    - Match the exact number of experience items (currently ${state.resumeExperience.length} items).
    - PRESERVE BULLET COUNT: Each job's bullets field contains multiple bullet points separated by newlines. You MUST output the same number of newline-separated bullet lines as in the input — do NOT merge, drop, or consolidate any bullets. Refine each bullet individually.
-   - Output ALL bullets in plain text only. Do NOT use markdown bold (**text**), asterisks, or any markdown syntax in the output.
+   - You MAY wrap the 1–3 most impactful ATS keyword matches per bullet in **double asterisks** (e.g. **Kubernetes**). Bold only the most important keywords — keep it sparse and professional.
+   - Do NOT bold more than 3 phrases per bullet. Do NOT use any other markdown syntax (no _italic_, no #headers, no - lists).
    - Naturally weave in relevant keywords from the job description into existing bullet content.
 7. ATS KEYWORD DENSITY: To maximise ATS keyword match scores, important keywords from the Job Description should appear across MULTIPLE sections — in the resumeSummary, resumeSkills, AND in experience bullets. Do not restrict a keyword to just one section.
 8. Return the response in the exact JSON schema requested. Do not return markdown wraps, just the raw JSON object.

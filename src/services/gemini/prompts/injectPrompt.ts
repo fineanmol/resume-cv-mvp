@@ -33,7 +33,7 @@ Your task is to naturally insert this keyword into one of the cover letter parag
 CRITICAL INSTRUCTIONS:
 1. STRICT TRUTH & FACTUAL INTEGRITY: Keep all statements 100% grounded in the candidate's original text. Do not invent new skills or experience details.
 2. Insert the keyword naturally.
-3. OUTPUT PLAIN TEXT ONLY — do NOT use any markdown formatting. No bold (**text**), no italics, no asterisks around words.
+3. You MAY wrap the injected keyword (and up to 2 other closely related key phrases) in **double asterisks** for bold. Do NOT use any other markdown syntax (no _italic_, no #headers, no - lists).
 4. Return ONLY the modified fields (p1, p2, p3, p4, and highlights) that were updated.
 5. JSON ESCAPING RULE: All string values in the JSON output MUST be properly escaped.
 
@@ -87,7 +87,7 @@ Your task is to naturally insert this keyword into the resumeSummary, resumeSkil
 CRITICAL INSTRUCTIONS:
 1. STRICT TRUTH & FACTUAL INTEGRITY: Keep all statements 100% grounded in the candidate's original text. Do not invent new skills or experience details.
 2. Insert the keyword naturally.
-3. OUTPUT PLAIN TEXT ONLY — do NOT use any markdown formatting. No bold (**text**), no italics, no asterisks around words.
+3. You MAY wrap the injected keyword (and up to 2 other closely related key phrases) in **double asterisks** for bold. Do NOT use any other markdown syntax (no _italic_, no #headers, no - lists).
 4. Return ONLY the modified fields (resumeSummary, resumeSkills, and resumeExperience) that were updated.
 5. JSON ESCAPING RULE: All string values in the JSON output MUST be properly escaped.
 
