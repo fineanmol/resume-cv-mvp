@@ -80,6 +80,17 @@ export const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
     desc: 'Interactive two-column layout with wave details, custom photo shape options, and draggable sections.',
     docTypes: ['resume'],
   },
+  {
+    id: 'professional',
+    name: 'Professional',
+    accent: '#314855',
+    chipName: 'Professional',
+    tagline: 'Clean & ATS-Optimized',
+    badge: 'ATS Friendly',
+    designBadge: 'Pro',
+    desc: 'Clean professional layout with highlights section — ATS optimized.',
+    docTypes: ['coverletter'],
+  },
 ];
 
 export const TEMPLATE_IDS = TEMPLATE_CATALOG.map(t => t.id);

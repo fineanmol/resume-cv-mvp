@@ -38,7 +38,15 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
           className={fullInputCls}
           value={state.name}
           onChange={(e) => onChange((p) => ({ ...p, name: clean(e.target.value) }), true)}
-          onBlur={onCommit}
+          onBlur={(e) => {
+            const name = e.target.value.trim();
+            if (name) {
+              const today = new Date().toLocaleDateString('en-GB');
+              const newTitle = `${name} - Resume (${today})`;
+              onChange((p) => ({ ...p, title: newTitle }), true);
+            }
+            onCommit();
+          }}
         />
       </div>
       <div>

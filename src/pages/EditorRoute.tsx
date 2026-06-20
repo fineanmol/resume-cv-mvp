@@ -68,6 +68,28 @@ export function EditorRoute({
     document.title = activeDocType === 'resume' ? 'Resume Builder' : 'Cover Letter Builder';
   }, [activeDocType]);
 
+  // Auto-update resume document title when name changes (only while it's still a generic placeholder)
+  useEffect(() => {
+    const name = resume.state.name.trim();
+    if (!name) return;
+    const isGeneric = !resume.state.title || /^New Resume/i.test(resume.state.title);
+    if (!isGeneric) return;
+    const today = new Date().toLocaleDateString('en-GB');
+    resume.set(prev => ({ ...prev, title: `${name} - Resume (${today})` }), true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resume.state.name]);
+
+  // Auto-update cover letter document title when company changes (only while it's still a generic placeholder)
+  useEffect(() => {
+    const company = cl.state.companyName?.trim();
+    if (!company) return;
+    const isGeneric = !cl.state.title || /^New Cover Letter/i.test(cl.state.title);
+    if (!isGeneric) return;
+    const today = new Date().toLocaleDateString('en-GB');
+    cl.set(prev => ({ ...prev, title: `${company} - Cover Letter (${today})` }), true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cl.state.companyName]);
+
   useAutoSave({
     user,
     activeDocId,

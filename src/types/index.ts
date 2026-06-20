@@ -67,7 +67,7 @@ export interface SectionVisibilitySettings {
 }
 
 export interface DesignerLayoutSettings {
-  template?: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer';
+  template?: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer' | 'professional';
   headerStyle?: HeaderStyle;  // layout variant for the name/contact block
   bulletStyle?: 'disc' | 'circle' | 'square' | 'dash' | 'arrow' | 'number' | 'none';
   skillsStyle?: 'chips' | 'normal' | 'grid';
@@ -212,7 +212,7 @@ export interface DocumentMetadata {
   updatedAt: number;
 }
 
-export type TemplateId = 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer';
+export type TemplateId = 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer' | 'professional';
 
 export type DocType = 'resume' | 'coverletter';
 
