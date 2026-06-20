@@ -324,8 +324,8 @@ body {
   .pdf-sheet .designer-column section > ul.flex {
     display: block !important;
   }
-  /* Restore spacing between sibling entries once gap is gone */
-  .pdf-sheet section > div > .group\/item + .group\/item,
+  /* Restore spacing between sibling entries once gap is gone — skip grid containers (e.g. language grid) */
+  .pdf-sheet section > div:not(.grid) > .group\/item + .group\/item,
   .pdf-sheet section > ul > li + li {
     margin-top: var(--entry-gap, 8px);
   }

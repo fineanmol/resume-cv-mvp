@@ -808,8 +808,8 @@ export class PdfService {
     .designer-column section > ul.flex {
       display: block !important;
     }
-    /* Restore entry gap (flex gap is gone after the display change) */
-    section > div > .group\/item + .group\/item,
+    /* Restore entry gap (flex gap is gone after the display change) — skip grid containers (e.g. language grid) */
+    section > div:not(.grid) > .group\/item + .group\/item,
     section > ul > li + li {
       margin-top: var(--entry-gap, 8px);
     }
