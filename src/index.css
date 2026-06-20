@@ -216,6 +216,7 @@ body {
   .group\/avatar > div,
   .pdf-sheet .bg-slate-100 {
     background-color: transparent !important;
+    box-shadow: none !important;
   }
 
   /* Preserve border-radius clipping so the circle photo stays circular.
@@ -254,12 +255,15 @@ body {
    *   - Each individual entry (job, degree, project, etc.) is atomic: never split mid-entry
    *   - Section headings stay with their first entry
    *   - Page breaks are allowed between entries inside a long section
-   *   - The two-column CSS grid is kept as-is — Chrome's print engine naturally
-   *     maintains both column positions across page boundaries without floats.
+   *   - Designer columns use flex (not grid) in print so Chrome fragments each
+   *     column independently instead of orphaning the header on page 1
    * ──────────────────────────────────────────────────────── */
 
   /* Allow the two-column designer grid to break across pages.
-   * Keep display: grid — Chrome handles grid layout correctly across print pages. */
+   * Keep display:grid on the outer container — Chrome maintains column positions.
+   * Override display:flex on each .designer-column to display:block so Chrome
+   * can fragment block children (sections) across pages instead of treating the
+   * whole flex column as one unbreakable unit. */
   .pdf-sheet [data-testid="designer-column-grid"] {
     break-inside: auto !important;
     page-break-inside: auto !important;
@@ -272,7 +276,15 @@ body {
     display: block !important;
     min-height: 0 !important;
   }
+  .pdf-sheet .designer-column > .group\/draggable,
+  .pdf-sheet .designer-column section {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
 
+  /* Keep header attached to the first section below it — break-after:avoid
+   * prevents Chrome inserting a page break right after the header, which would
+   * leave header alone on page 1 and all body content on page 2. */
   .pdf-sheet header {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
@@ -328,6 +340,10 @@ body {
   .pdf-sheet section > div:not(.grid) > .group\/item + .group\/item,
   .pdf-sheet section > ul > li + li {
     margin-top: var(--entry-gap, 8px);
+  }
+  /* Designer columns use flex gap in preview; display:block in print drops it */
+  .pdf-sheet .designer-column > .group\/draggable:not(:last-child) {
+    margin-bottom: var(--section-gap, 8px);
   }
 
   /* Force background graphics to print across all elements */

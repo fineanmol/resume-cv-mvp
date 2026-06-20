@@ -619,7 +619,11 @@ export const DesignerTemplate: React.FC = () => {
 
   return (
     <div className={`pdf-sheet text-slate-800 font-sans ${sheetActiveClass}`}
-      style={{ ...sheetStyle, ['--entry-gap' as string]: `${entrySpacing}px` } as React.CSSProperties}
+      style={{
+        ...sheetStyle,
+        ['--entry-gap' as string]: `${entrySpacing}px`,
+        ['--section-gap' as string]: `${sectionGap}px`,
+      } as React.CSSProperties}
       id="resume-sheet"
       onClick={(e) => { if (e.target === e.currentTarget && isEditable) clearActive(); }}>
       <HeaderWrapper

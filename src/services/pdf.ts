@@ -634,22 +634,67 @@ export class PdfService {
 
     // Reset any preview page-break margin adjustments (data-pb-push) so they
     // don't affect the PDF layout — the browser's print engine handles breaks itself.
-    // We do preserve a small padding-top (16px) on previously-pushed items so that
-    // elements which land at the top of page 2+ have a bit of breathing room
-    // (matching the 16px the preview adds to push items below the separator band).
     clone.querySelectorAll<HTMLElement>('[data-pb-push]').forEach(el => {
       el.style.marginTop = el.getAttribute('data-pb-orig') ?? '';
       el.removeAttribute('data-pb-push');
       el.removeAttribute('data-pb-orig');
     });
 
-    // Strip the gray placeholder background from the avatar container (bg-slate-100)
+    // ── Designer template: convert two-column grid → float layout ────────────
+    // CSS Grid with a single row is an atomic formatting context in Chrome's
+    // print engine: Chrome cannot fragment between columns in a row, so it
+    // moves the ENTIRE grid to the next page when it doesn't fit after the
+    // header (leaving header alone on page 1, all sections on page 2).
+    // Floated blocks CAN be fragmented across pages by Chrome, so we replace
+    // the grid with a float-based layout only in the PDF clone.
+    const designerGrid = clone.querySelector<HTMLElement>('[data-testid="designer-column-grid"]');
+    if (designerGrid) {
+      const [leftCol, rightCol] = Array.from(
+        designerGrid.querySelectorAll<HTMLElement>(':scope > .designer-column')
+      );
+      if (leftCol && rightCol) {
+        // Read the inline gap React set (style="gap: Xpx") then clear it
+        const gapPx = Math.max(0, parseFloat(designerGrid.style.gap) || parseFloat(designerGrid.style.columnGap) || 16);
+        designerGrid.style.display = 'block'; // override Tailwind `grid` — floats inside grid are ignored
+        designerGrid.style.gap = '';
+        designerGrid.style.columnGap = '';
+        designerGrid.style.rowGap = '';
+
+        // Replicate grid-cols-[1.4fr_1fr] proportions: 1.4/2.4 ≈ 58.33% left, 1/2.4 ≈ 41.67% right
+        leftCol.style.display = 'block';
+        leftCol.style.float = 'left';
+        leftCol.style.width = `calc(58.333% - ${gapPx}px)`;
+        leftCol.style.marginRight = `${gapPx}px`;
+        leftCol.style.gap = ''; // clear inline flex gap (margin-bottom handles spacing)
+
+        rightCol.style.display = 'block';
+        rightCol.style.float = 'left';
+        rightCol.style.width = '41.667%';
+        rightCol.style.gap = ''; // clear inline flex gap
+
+        // Clearfix so the container wraps both floats
+        const clearfix = document.createElement('div');
+        clearfix.style.cssText = 'clear:both;display:block;height:0;';
+        designerGrid.appendChild(clearfix);
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Strip the gray placeholder background and shadow from the avatar container.
+    // The inner div of .group/avatar always has bg-slate-100 + shadow-sm hardcoded;
+    // we wipe them here so nothing shows through the photo in print.
     clone.querySelectorAll('.group\\/avatar > div').forEach(el => {
-      if (el instanceof HTMLElement) el.style.backgroundColor = 'transparent';
+      if (el instanceof HTMLElement) {
+        el.style.backgroundColor = 'transparent';
+        el.style.boxShadow = 'none';
+      }
     });
-    // Remove bg-slate-100 class from any element that has it inside the photo area
+    // Belt-and-suspenders: also strip the class so Tailwind's CSS rule no longer applies
     clone.querySelectorAll('[class*="bg-slate-100"]').forEach(el => {
-      el.className = el.className.replace(/\bbg-slate-100\b/g, '');
+      el.className = el.className
+        .replace(/\bbg-slate-100(?:\/\d+)?\b/g, '')
+        .replace(/\bshadow-sm\b/g, '')
+        .trim();
     });
 
     // Force all images to absolute URLs (iframe is about:blank, relative hrefs break)
@@ -698,6 +743,7 @@ export class PdfService {
     .group\\/avatar > div,
     [class*="bg-slate-100"] {
       background-color: transparent !important;
+      box-shadow: none !important;
     }
 
     /* Preserve border-radius clipping ONLY for the avatar/photo container.
@@ -738,22 +784,17 @@ export class PdfService {
       print-color-adjust: exact !important;
     }
 
-    /* ── Page-break management ─────────────────────────────────
-     * Keep the CSS grid as-is — Chrome's print engine maintains the two-column
-     * grid layout naturally across page boundaries. Floats are NOT used because
-     * they cause one column to disappear on pages 2/3 when column heights differ.
-     * ──────────────────────────────────────────────────────────── */
-
     /* margin: 0 prevents Chrome from printing its built-in date/title/URL/page-number
      * headers & footers — those only render when there is non-zero @page margin space. */
     @page { size: A4; margin: 0; }
 
-    /* Allow the grid and its columns to break across pages */
-    [data-testid="designer-column-grid"] {
-      break-inside: auto !important;
-      page-break-inside: auto !important;
-      overflow: visible !important;
-    }
+    /* ── Page-break management ─────────────────────────────────
+     * The designer two-column grid is converted to float layout in the JS clone
+     * preparation above. Floated blocks fragment correctly across print pages.
+     * We just need to ensure the columns and their children allow fragmentation.
+     * ──────────────────────────────────────────────────────────── */
+
+    /* Float columns: allow fragmentation and ensure block layout */
     .designer-column {
       break-inside: auto !important;
       page-break-inside: auto !important;
@@ -761,7 +802,13 @@ export class PdfService {
       display: block !important;
       min-height: 0 !important;
     }
+    .designer-column > .group\\/draggable,
+    .designer-column section {
+      break-inside: auto !important;
+      page-break-inside: auto !important;
+    }
 
+    /* Header: stay with the first row of content below it */
     header {
       break-inside: avoid !important;
       page-break-inside: avoid !important;
@@ -812,6 +859,10 @@ export class PdfService {
     section > div:not(.grid) > .group\/item + .group\/item,
     section > ul > li + li {
       margin-top: var(--entry-gap, 8px);
+    }
+    /* Designer columns use flex gap in preview; display:block in print drops it */
+    .designer-column > .group\\/draggable:not(:last-child) {
+      margin-bottom: var(--section-gap, 8px);
     }
   </style>
 </head>
