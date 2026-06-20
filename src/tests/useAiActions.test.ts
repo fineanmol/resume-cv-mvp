@@ -110,7 +110,7 @@ describe('useAiActions — tailorDocument (resume)', () => {
     expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('tailored'));
   });
 
-  it('strips markdown bold (**text**) from tailored bullets', async () => {
+  it('preserves markdown bold markers (**text**) in tailored bullets', async () => {
     vi.mocked(GeminiService.tailorResume).mockResolvedValue({
       resumeSummary: 'Updated summary',
       resumeSkills: 'React, Node.js',
@@ -141,11 +141,9 @@ describe('useAiActions — tailorDocument (resume)', () => {
       await result.current.tailorDocument();
     });
 
-    expect(result.current.resumeState.resumeExperience[0].bullets).not.toContain('**');
-    expect(result.current.resumeState.resumeExperience[0].bullets).toContain('market research');
-    expect(result.current.resumeState.resumeExperience[0].bullets).toContain('conversion rates');
-    expect(result.current.resumeState.resumeExperience[1].bullets).not.toContain('**');
-    expect(result.current.resumeState.resumeExperience[1].bullets).toContain('microservices');
+    expect(result.current.resumeState.resumeExperience[0].bullets).toContain('**market research**');
+    expect(result.current.resumeState.resumeExperience[0].bullets).toContain('**conversion rates**');
+    expect(result.current.resumeState.resumeExperience[1].bullets).toContain('**microservices**');
   });
 
   it('preserves all bullet points per job after tailoring', async () => {
@@ -261,7 +259,7 @@ describe('useAiActions — injectKeyword (cover letter)', () => {
     expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('"Go"'));
   });
 
-  it('strips markdown bold from injected cover letter paragraphs and highlights', async () => {
+  it('preserves markdown bold markers in injected cover letter paragraphs and highlights', async () => {
     vi.mocked(GeminiService.injectKeywordIntoCoverLetter).mockResolvedValue({
       p1: 'Experienced in **cross-functional** collaboration.',
       p2: 'Led **agile** teams across 3 time zones.',
@@ -291,19 +289,15 @@ describe('useAiActions — injectKeyword (cover letter)', () => {
       await result.current.injectKeyword('cross-functional');
     });
 
-    expect(result.current.clState.p1).not.toContain('**');
-    expect(result.current.clState.p1).toContain('cross-functional');
-    expect(result.current.clState.p2).not.toContain('**');
-    expect(result.current.clState.p2).toContain('agile');
-    expect(result.current.clState.highlights[0].category).not.toContain('**');
-    expect(result.current.clState.highlights[0].category).toContain('Leadership');
-    expect(result.current.clState.highlights[0].text).not.toContain('**');
-    expect(result.current.clState.highlights[0].text).toContain('10 engineers');
+    expect(result.current.clState.p1).toContain('**cross-functional**');
+    expect(result.current.clState.p2).toContain('**agile**');
+    expect(result.current.clState.highlights[0].category).toContain('**Leadership**');
+    expect(result.current.clState.highlights[0].text).toContain('**10 engineers**');
   });
 });
 
 describe('useAiActions — injectKeyword (resume)', () => {
-  it('strips markdown bold from injected resumeSummary and resumeSkills', async () => {
+  it('preserves markdown bold markers in injected resumeSummary and resumeSkills', async () => {
     vi.mocked(GeminiService.injectKeywordIntoResume).mockResolvedValue({
       resumeSummary: 'Passionate engineer with expertise in **Kubernetes** orchestration.',
       resumeSkills: 'React, Node.js, **Kubernetes**, Docker',
@@ -333,12 +327,9 @@ describe('useAiActions — injectKeyword (resume)', () => {
       await result.current.injectKeyword('Kubernetes');
     });
 
-    expect(result.current.resumeState.resumeSummary).not.toContain('**');
-    expect(result.current.resumeState.resumeSummary).toContain('Kubernetes');
-    expect(result.current.resumeState.resumeSkills).not.toContain('**');
-    expect(result.current.resumeState.resumeSkills).toContain('Kubernetes');
-    expect(result.current.resumeState.resumeExperience[0].bullets).not.toContain('**');
-    expect(result.current.resumeState.resumeExperience[0].bullets).toContain('Kubernetes');
+    expect(result.current.resumeState.resumeSummary).toContain('**Kubernetes**');
+    expect(result.current.resumeState.resumeSkills).toContain('**Kubernetes**');
+    expect(result.current.resumeState.resumeExperience[0].bullets).toContain('**Kubernetes**');
   });
 });
 

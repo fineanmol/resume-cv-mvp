@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GripVertical } from 'lucide-react';
 import { EditableText } from './EditableText';
+import { formatMarkdownBold } from '../../utils/markdown';
 
 export const SkillsEditor = React.memo<{
   value: string;
@@ -133,9 +134,10 @@ export const SkillsEditor = React.memo<{
   if (skillsStyle === 'normal') {
     if (!isEditable) {
       return (
-        <p className={`text-xs text-slate-700 leading-relaxed ${className}`}>
-          {value}
-        </p>
+        <p
+          className={`text-xs text-slate-700 leading-relaxed ${className}`}
+          dangerouslySetInnerHTML={{ __html: formatMarkdownBold(value) }}
+        />
       );
     }
     return (
@@ -160,9 +162,8 @@ export const SkillsEditor = React.memo<{
               key={i}
               className="border-b border-slate-300 pb-1 pt-1 whitespace-nowrap"
               style={{ fontFamily: gridFontFamily ?? "'Open Sans', sans-serif", fontSize: `${(8.25 * fontScale).toFixed(2)}pt`, fontWeight: 700, color: gridTextColor }}
-            >
-              {s}
-            </span>
+              dangerouslySetInnerHTML={{ __html: formatMarkdownBold(s) }}
+            />
           ))}
         </div>
       );
@@ -258,9 +259,8 @@ export const SkillsEditor = React.memo<{
               className={`${chipBase} ${chipSizeClass}`}
               style={{ ...baseStyle, ...chipInlineStyle }}
               title={s}
-            >
-              {s}
-            </span>
+              dangerouslySetInnerHTML={{ __html: formatMarkdownBold(s) }}
+            />
           );
         })}
         </div>
