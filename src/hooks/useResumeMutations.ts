@@ -8,6 +8,8 @@ import type {
   LanguageItem,
   ResumeLayoutSettings,
   EntrySection,
+  CustomContactField,
+  ContactIconType,
 } from '../types';
 
 const ENTRY_ARRAY_KEYS: Record<EntrySection, keyof ResumeState> = {
@@ -206,6 +208,38 @@ export function useResumeMutations(set: ResumeSet) {
     [set]
   );
 
+  const onCustomContactAdd = useCallback(() => {
+    set(prev => ({
+      ...prev,
+      customContacts: [
+        ...(prev.customContacts ?? []),
+        { id: Date.now().toString(), icon: 'globe' as ContactIconType, label: '', value: '' } satisfies CustomContactField,
+      ],
+    }));
+  }, [set]);
+
+  const onCustomContactUpdate = useCallback(
+    (id: string, patch: Partial<Omit<CustomContactField, 'id'>>) => {
+      set(prev => ({
+        ...prev,
+        customContacts: (prev.customContacts ?? []).map(c =>
+          c.id === id ? { ...c, ...patch } : c
+        ),
+      }));
+    },
+    [set]
+  );
+
+  const onCustomContactRemove = useCallback(
+    (id: string) => {
+      set(prev => ({
+        ...prev,
+        customContacts: (prev.customContacts ?? []).filter(c => c.id !== id),
+      }));
+    },
+    [set]
+  );
+
   const onLayoutSettingsChange = useCallback(
     (patch: Partial<ResumeLayoutSettings>) => {
       set(prev => ({
@@ -347,6 +381,9 @@ export function useResumeMutations(set: ResumeSet) {
 
   return useMemo(() => ({
     onFieldChange,
+    onCustomContactAdd,
+    onCustomContactUpdate,
+    onCustomContactRemove,
     onExperienceChange,
     onAddExperience,
     onDeleteExperience,
@@ -376,6 +413,9 @@ export function useResumeMutations(set: ResumeSet) {
     onAddSimilarLanguage,
   }), [
     onFieldChange,
+    onCustomContactAdd,
+    onCustomContactUpdate,
+    onCustomContactRemove,
     onExperienceChange,
     onAddExperience,
     onDeleteExperience,

@@ -10,6 +10,8 @@ export type ActiveSectionContextValue = {
   setOpenPopoverId: (id: string | null) => void;
   handleMoveSectionUpDown: (id: string, dir: 'up' | 'down') => void;
   handleMoveItemUpDown: (sectionId: string, index: number, dir: 'up' | 'down') => void;
+  /** Remove a section from the Designer column arrays by ID (removes only first occurrence). */
+  handleDeleteSection: (id: string) => void;
 } | null;
 
 export const ActiveSectionContext = createContext<ActiveSectionContextValue>(null);

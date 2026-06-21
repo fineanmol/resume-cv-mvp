@@ -31,7 +31,8 @@ export interface SectionWrapperProps {
 }
 
 export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWrapper({
-  id, title, isEditable, align, onAlignChange, onAddEntry, onMoveLeft, onMoveRight, onDeleteSection,
+  id, title, isEditable, align, onAlignChange, onAddEntry, onMoveLeft, onMoveRight,
+  onDeleteSection: propOnDeleteSection,
   isActive: propIsActive, onSelect: propOnSelect, onMoveUp: propOnMoveUp, onMoveDown: propOnMoveDown, children,
   skillsStyle, onSkillsStyleChange, onSkillsValueChange,
   layoutSettings, onLayoutSettingsChange,
@@ -44,6 +45,7 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
   });
   const onMoveUp = propOnMoveUp ?? (context?.handleMoveSectionUpDown ? () => context.handleMoveSectionUpDown(id, 'up') : undefined);
   const onMoveDown = propOnMoveDown ?? (context?.handleMoveSectionUpDown ? () => context.handleMoveSectionUpDown(id, 'down') : undefined);
+  const onDeleteSection = propOnDeleteSection ?? (context?.handleDeleteSection ? () => context.handleDeleteSection!(id) : undefined);
 
   const popoverId = `section:${id}`;
   const showSettings = context?.openPopoverId === popoverId;

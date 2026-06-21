@@ -1,14 +1,14 @@
-import { useState, useRef, useEffect, useContext } from 'react';
+import { useState, useRef, useLayoutEffect, useContext } from 'react';
 import {
   createContentEditableBulletKeyDownHandler,
   normalizeBulletText,
   parseEditableBullets,
 } from '../../hooks/useBulletKeyboard';
 import { splitIntoBullets } from '../../utils/bullets';
-import { formatMarkdownInline } from '../../utils/markdown';
+import { formatMarkdownInline, htmlToMarkdown } from '../../utils/markdown';
 import type { EditableFieldKey } from '../../config/fieldPlaceholders';
 import { getFieldPlaceholder } from '../../config/fieldPlaceholders';
-import { clearEditableIfEmpty } from '../../utils/editableText';
+import { isEditableEmpty } from '../../utils/editableText';
 import { ActiveItemContext } from './ActiveItemContext';
 
 export function BulletList({
@@ -46,29 +46,49 @@ export function BulletList({
   // Enter/Backspace handlers save via onChange; skip the blur save that would overwrite with stale lines.
   const suppressBlurSaveRef = useRef(false);
   const pendingFocusIdxRef = useRef<number | null>(null);
+  // Guard against re-entrant innerHTML writes: some browsers fire blur+focus
+  // when innerHTML is written on a focused contentEditable element, which
+  // triggers onFocus a second time before the first call has finished. We
+  // track which bullet index has been initialised for the current focus
+  // session and skip the write on any subsequent onFocus calls.
+  const htmlInitializedRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    const targetIdx = pendingFocusIdxRef.current;
-    if (targetIdx === null) return;
-    pendingFocusIdxRef.current = null;
+  // Stable Map from bullet index → span DOM element for imperative innerHTML writes.
+  const spanRefs = useRef<Map<number, HTMLSpanElement>>(new Map());
+  // Stable ref to lines so the layout effect doesn't need lines in its deps
+  // (lines is a new array every render but its source of truth is bullets).
+  const linesRef = useRef<string[]>(lines);
+  linesRef.current = lines;
 
-    const focusTarget = () => {
-      const el = document.querySelector(
-        `[data-bullet-id="${prefixId}-${targetIdx}"]`,
-      ) as HTMLElement | null;
-      if (!el) return false;
-      el.focus();
-      setFocusedBullet(targetIdx);
-      return true;
-    };
-
-    if (focusTarget()) return;
-    requestAnimationFrame(() => {
-      if (!focusTarget()) {
-        requestAnimationFrame(focusTarget);
+  // Sync innerHTML for every non-focused bullet whenever the bullets string changes.
+  // useLayoutEffect ensures the DOM is updated before the browser paints, so
+  // there is no flash of empty content on mount or after external updates.
+  // Also handles pending focus moves synchronously so a rapid second Enter
+  // fires on the newly-focused span (not the old one).
+  useLayoutEffect(() => {
+    spanRefs.current.forEach((el, idx) => {
+      // Only skip if the user is actively typing in this exact span
+      // (htmlInitializedRef tracks the current live-editing session).
+      // After structural ops (Enter/Backspace), htmlInitializedRef is reset to
+      // null so all spans — including the formerly-focused one — get refreshed.
+      if (document.activeElement === el && htmlInitializedRef.current === idx) {
+        return;
       }
+      el.innerHTML = formatMarkdownInline(linesRef.current[idx] ?? '');
     });
-  }, [bullets, prefixId]);
+
+    // Move focus synchronously (before paint) so a rapid second Enter lands
+    // on the correct new span rather than the still-focused original one.
+    const targetIdx = pendingFocusIdxRef.current;
+    if (targetIdx !== null) {
+      pendingFocusIdxRef.current = null;
+      const el = spanRefs.current.get(targetIdx);
+      if (el && document.activeElement !== el) {
+        el.focus();
+      }
+    }
+  }, [bullets]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   if (!lines.length) return null;
 
@@ -108,7 +128,6 @@ export function BulletList({
         const showMarker = hasCustomMarker && (!isEmpty || (isEditable && (focusedBullet === bIdx || isParentItemActive)));
         // Empty-and-unfocused editable rows collapse unless the parent entry is active
         const isHiddenRow = isEditable && isEmpty && focusedBullet !== bIdx && !isParentItemActive;
-        const showPlaceholder = isEditable && isEmpty && (focusedBullet === bIdx || isParentItemActive);
 
         return (
           <li
@@ -128,34 +147,84 @@ export function BulletList({
             {hasCustomMarker && !showMarker && isEditable && isEmpty && (
               <span contentEditable={false} className="shrink-0 w-4" />
             )}
-            {isEditable && focusedBullet === bIdx ? (
+            {isEditable ? (
+              // Single persistent span — no DOM swap when focus changes.
+              // innerHTML is managed imperatively (useLayoutEffect + onFocus) so
+              // React never tracks or reconciles it, preventing execCommand
+              // formatting from being wiped on re-renders.
               <span
+                ref={(el) => {
+                  if (el) spanRefs.current.set(bIdx, el);
+                  else spanRefs.current.delete(bIdx);
+                }}
                 data-bullet-id={`${prefixId}-${bIdx}`}
                 data-placeholder={resolvedPlaceholder}
                 data-empty={isEmpty ? 'true' : undefined}
                 className={`min-w-0 flex-1 text-${align} ${editableClass}`}
                 contentEditable={true}
                 suppressContentEditableWarning={true}
-                // eslint-disable-next-line jsx-a11y/no-autofocus
-                autoFocus
                 onFocus={(e) => {
-                  clearEditableIfEmpty(e.currentTarget);
+                  const el = e.currentTarget;
+                  // Guard: only initialise innerHTML once per focus session.
+                  // Some browsers re-fire focus after an innerHTML write on a
+                  // focused element; without this guard that creates an infinite
+                  // loop: onFocus → innerHTML → blur → focus → onFocus → …
+                  if (htmlInitializedRef.current !== bIdx) {
+                    htmlInitializedRef.current = bIdx;
+                    el.innerHTML = bullet ? formatMarkdownInline(bullet) : '';
+                    if (isEditableEmpty(el.textContent ?? '')) el.innerHTML = '';
+                    // Place cursor at end.
+                    const sel = window.getSelection();
+                    if (sel) {
+                      const range = document.createRange();
+                      range.selectNodeContents(el);
+                      range.collapse(false);
+                      sel.removeAllRanges();
+                      sel.addRange(range);
+                    }
+                  }
+                  // Safe to call here: span already exists in the DOM, so the
+                  // resulting re-render only updates marker visibility — no node
+                  // is unmounted or remounted.
                   setFocusedBullet(bIdx);
                 }}
+                onInput={(e) => {
+                  // Keep data-empty in sync so the CSS placeholder hides while typing
+                  const el = e.currentTarget;
+                  if (el.textContent?.replace(/\u200B/g, '').trim()) {
+                    el.removeAttribute('data-empty');
+                  } else {
+                    el.setAttribute('data-empty', 'true');
+                  }
+                }}
                 onBlur={(e) => {
+                  // Clear the init guard so the next focus session re-populates innerHTML.
+                  htmlInitializedRef.current = null;
                   if (suppressBlurSaveRef.current) {
                     suppressBlurSaveRef.current = false;
                     return;
                   }
                   setFocusedBullet(null);
+                  // Convert live HTML → markdown so bold/italic/underline persists.
+                  const md = normalizeBulletText(htmlToMarkdown(e.currentTarget.innerHTML));
                   const updated = [...lines];
-                  updated[bIdx] = normalizeBulletText(e.currentTarget.textContent ?? '');
-                  if (!updated[bIdx].trim()) {
+                  updated[bIdx] = md;
+                  if (!md.trim()) {
                     e.currentTarget.innerHTML = '';
                   }
                   onBulletChange(updated.join('\n'));
                 }}
                 onKeyDown={(e) => {
+                  // Intercept formatting shortcuts before the structural handler
+                  // so execCommand applies HTML tags that htmlToMarkdown converts.
+                  const isMod = e.ctrlKey || e.metaKey;
+                  if (isMod && (e.key === 'b' || e.key === 'i' || e.key === 'u')) {
+                    e.preventDefault();
+                    if (e.key === 'b') document.execCommand('bold');
+                    else if (e.key === 'i') document.execCommand('italic');
+                    else document.execCommand('underline');
+                    return;
+                  }
                   const handler = createContentEditableBulletKeyDownHandler({
                     bullets: lines,
                     bIdx,
@@ -167,24 +236,15 @@ export function BulletList({
                   });
                   if (e.key === 'Enter') {
                     suppressBlurSaveRef.current = true;
+                    htmlInitializedRef.current = null; // structural op — allow full refresh
                     setFocusedBullet(bIdx + 1);
                   }
                   handler(e);
                   if (e.key === 'Backspace' && e.defaultPrevented) {
                     suppressBlurSaveRef.current = true;
+                    htmlInitializedRef.current = null; // structural op — allow full refresh
                   }
                 }}
-              >
-                {showPlaceholder ? '' : (bullet || '\u200B')}
-              </span>
-            ) : isEditable ? (
-              <span
-                data-bullet-id={`${prefixId}-${bIdx}`}
-                data-placeholder={resolvedPlaceholder}
-                data-empty={isEmpty ? 'true' : undefined}
-                className={`min-w-0 flex-1 text-${align} ${editableClass}`}
-                dangerouslySetInnerHTML={{ __html: formatMarkdownInline(bullet) }}
-                onClick={() => setFocusedBullet(bIdx)}
               />
             ) : (
               <span

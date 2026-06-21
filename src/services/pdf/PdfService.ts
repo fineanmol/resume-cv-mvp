@@ -36,12 +36,21 @@ export class PdfService {
       const pdf = await loadingTask.promise;
       if (pdf.numPages === 0) return null;
 
+      // Collect all candidate images across all pages, then pick the best one
+      // (largest near-square image ≥ 60×60 px — skips logos, icons, dividers).
+      interface Candidate { dataUrl: string; score: number }
+      const candidates: Candidate[] = [];
+
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
         const opList = await page.getOperatorList();
 
         for (let i = 0; i < opList.fnArray.length; i++) {
-          if (opList.fnArray[i] === pdfjs.OPS.paintImageXObject) {
+          if (
+            opList.fnArray[i] === pdfjs.OPS.paintImageXObject ||
+            (pdfjs.OPS as Record<string, number>)['paintJpegXObject'] !== undefined &&
+            opList.fnArray[i] === (pdfjs.OPS as Record<string, number>)['paintJpegXObject']
+          ) {
             const imageObjId = opList.argsArray[i][0] as string;
 
             const img = await new Promise<PdfImage>((resolve) => {
@@ -51,52 +60,65 @@ export class PdfService {
               if (result) resolve(result);
             });
 
-            if (img && img.width && img.height) {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.width;
-              canvas.height = img.height;
-              const ctx = canvas.getContext('2d');
-              if (!ctx) continue;
+            if (!img || !img.width || !img.height) continue;
+            // Skip tiny images (icons, decorations, dividers)
+            if (img.width < 60 || img.height < 60) continue;
 
-              let pixelData = img.data;
-              if (pixelData.length === img.width * img.height * 3) {
-                const rgba = new Uint8ClampedArray(img.width * img.height * 4);
-                let j = 0;
-                for (let k = 0; k < pixelData.length; k += 3) {
-                  rgba[j] = pixelData[k];
-                  rgba[j + 1] = pixelData[k + 1];
-                  rgba[j + 2] = pixelData[k + 2];
-                  rgba[j + 3] = 255;
-                  j += 4;
-                }
-                pixelData = rgba;
-              } else if (pixelData.length === img.width * img.height) {
-                const rgba = new Uint8ClampedArray(img.width * img.height * 4);
-                let j = 0;
-                for (let k = 0; k < pixelData.length; k++) {
-                  const val = pixelData[k];
-                  rgba[j] = val;
-                  rgba[j + 1] = val;
-                  rgba[j + 2] = val;
-                  rgba[j + 3] = 255;
-                  j += 4;
-                }
-                pixelData = rgba;
-              } else if (pixelData.length !== img.width * img.height * 4) {
-                continue;
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) continue;
+
+            let pixelData = img.data;
+            if (pixelData.length === img.width * img.height * 3) {
+              const rgba = new Uint8ClampedArray(img.width * img.height * 4);
+              let j = 0;
+              for (let k = 0; k < pixelData.length; k += 3) {
+                rgba[j] = pixelData[k];
+                rgba[j + 1] = pixelData[k + 1];
+                rgba[j + 2] = pixelData[k + 2];
+                rgba[j + 3] = 255;
+                j += 4;
               }
-
-              const imageData = new ImageData(
-                new Uint8ClampedArray(pixelData),
-                img.width,
-                img.height
-              );
-              ctx.putImageData(imageData, 0, 0);
-              return canvas.toDataURL('image/jpeg');
+              pixelData = rgba;
+            } else if (pixelData.length === img.width * img.height) {
+              const rgba = new Uint8ClampedArray(img.width * img.height * 4);
+              let j = 0;
+              for (let k = 0; k < pixelData.length; k++) {
+                const val = pixelData[k];
+                rgba[j] = val;
+                rgba[j + 1] = val;
+                rgba[j + 2] = val;
+                rgba[j + 3] = 255;
+                j += 4;
+              }
+              pixelData = rgba;
+            } else if (pixelData.length !== img.width * img.height * 4) {
+              continue;
             }
+
+            const imageData = new ImageData(
+              new Uint8ClampedArray(pixelData),
+              img.width,
+              img.height
+            );
+            ctx.putImageData(imageData, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg');
+
+            // Score: area × aspect-ratio closeness to square/portrait (0.5–1.5 ratio)
+            const ratio = img.width / img.height;
+            const aspectScore = ratio >= 0.5 && ratio <= 1.5 ? 1 : 0.1;
+            const score = img.width * img.height * aspectScore;
+            candidates.push({ dataUrl, score });
           }
         }
       }
+
+      if (candidates.length === 0) return null;
+      // Return the highest-scored candidate (largest near-square/portrait image)
+      candidates.sort((a, b) => b.score - a.score);
+      return candidates[0].dataUrl;
     } catch (err) {
       console.error("Failed to extract image from PDF:", err);
     }

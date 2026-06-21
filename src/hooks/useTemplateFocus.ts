@@ -27,6 +27,8 @@ export interface SectionContextValue {
   setOpenPopoverId: (id: string | null) => void;
   handleMoveSectionUpDown: (id: string, dir: 'up' | 'down') => void;
   handleMoveItemUpDown: (sectionId: string, index: number, dir: 'up' | 'down') => void;
+  /** Remove a section from the Designer column arrays (removes only first occurrence, not all). */
+  handleDeleteSection: (id: string) => void;
 }
 
 export interface TemplateFocusResult {
@@ -124,6 +126,24 @@ export function useTemplateFocus({
     });
   }, [designerLeftSections, designerRightSections, onFieldChange, layoutSettings]);
 
+  // Uses indexOf + splice (not filter) so only the FIRST occurrence is removed when
+  // the same section id appears in both columns (e.g. two experience sections).
+  const handleDeleteSection = useCallback((id: string) => {
+    const leftCol = [...(designerLeftSections ?? [])];
+    const leftIdx = leftCol.indexOf(id);
+    if (leftIdx !== -1) {
+      leftCol.splice(leftIdx, 1);
+      onFieldChange?.('layoutSettings', { ...layoutSettings, designerLeftSections: leftCol });
+      return;
+    }
+    const rightCol = [...(designerRightSections ?? [])];
+    const rightIdx = rightCol.indexOf(id);
+    if (rightIdx !== -1) {
+      rightCol.splice(rightIdx, 1);
+      onFieldChange?.('layoutSettings', { ...layoutSettings, designerRightSections: rightCol });
+    }
+  }, [designerLeftSections, designerRightSections, onFieldChange, layoutSettings]);
+
   const sectionContextValue = useMemo<SectionContextValue>(() => ({
     activeSectionId,
     setActiveSectionId,
@@ -133,7 +153,8 @@ export function useTemplateFocus({
     setOpenPopoverId,
     handleMoveSectionUpDown,
     handleMoveItemUpDown,
-  }), [activeSectionId, activeItemId, openPopoverId, handleMoveSectionUpDown, handleMoveItemUpDown]);
+    handleDeleteSection,
+  }), [activeSectionId, activeItemId, openPopoverId, handleMoveSectionUpDown, handleMoveItemUpDown, handleDeleteSection]);
 
   return {
     activeSectionId,

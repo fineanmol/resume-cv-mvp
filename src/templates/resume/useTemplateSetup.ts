@@ -51,6 +51,7 @@ export function useTemplateSetup({
     name, subtitle, phone, email, linkedin, location, avatar,
     resumeSummary, resumeSkills, resumeExperience, resumeEducation,
     resumeCerts, resumeAchievements, resumeLanguages, layoutSettings,
+    customContacts,
   } = state;
 
   const {
@@ -134,10 +135,11 @@ export function useTemplateSetup({
     layoutSettings,
     onLayoutSettingsChange: handleLayoutSettingsPatch,
     onAvatarChange: (url: string) => onFieldChange?.('avatar', url as ResumeState['avatar']),
+    customContacts: customContacts ?? [],
   }), [
     name, subtitle, phone, email, location, linkedin, avatar, showAvatar,
     brandColor, headingFontCss, headerStyle, isEditable, ec, sectionSpacing,
-    layoutSettings, handleLayoutSettingsPatch, onFieldChange,
+    layoutSettings, handleLayoutSettingsPatch, onFieldChange, customContacts,
   ]);
 
   const bottomProps = useMemo(() => ({

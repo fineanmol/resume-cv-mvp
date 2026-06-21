@@ -64,7 +64,7 @@ export function makeHeaderProps(
   onFieldChange: CoverLetterTemplateProps['onFieldChange'],
   onLayoutSettingsChange?: CoverLetterTemplateProps['onLayoutSettingsChange'],
 ): TemplateHeaderProps {
-  const { name, subtitle, phone, email, location, linkedin, avatar, layoutSettings } = state;
+  const { name, subtitle, phone, email, location, linkedin, avatar, layoutSettings, customContacts } = state;
   return {
     name: { value: name, onSave: (v: string) => onFieldChange?.('name', v) },
     subtitle: { value: subtitle, onSave: (v: string) => onFieldChange?.('subtitle', v) },
@@ -87,6 +87,7 @@ export function makeHeaderProps(
       : (patch: Partial<LayoutSettings>) =>
           onFieldChange?.('layoutSettings', { ...layoutSettings, ...patch } as CoverLetterState['layoutSettings']),
     onAvatarChange: (url: string) => onFieldChange?.('avatar', url),
+    customContacts: customContacts ?? [],
   };
 }
 

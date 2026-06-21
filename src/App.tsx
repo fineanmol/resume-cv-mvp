@@ -107,7 +107,13 @@ export default function App() {
       await dbService.saveResume(uid, id, state);
       resume.reset(state);
     } else {
-      const state = { ...DEFAULT_CL_STATE, id, title: `New Cover Letter (${new Date().toLocaleDateString()})`, layoutSettings: { ...DEFAULT_CL_STATE.layoutSettings, template } };
+      const clLayoutSettings = {
+        ...DEFAULT_CL_STATE.layoutSettings,
+        template,
+        // Professional template uses the EnhancvHeader two-tone style by default
+        ...(template === 'professional' && { headerStyle: 'enhancv' as const }),
+      };
+      const state = { ...DEFAULT_CL_STATE, id, title: `New Cover Letter (${new Date().toLocaleDateString()})`, layoutSettings: clLayoutSettings };
       await dbService.saveCoverLetter(uid, id, state);
       cl.reset(state);
     }

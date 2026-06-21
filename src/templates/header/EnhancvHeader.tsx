@@ -5,6 +5,7 @@ import { HeaderWrapper } from '../shared/HeaderWrapper';
 import { AvatarCircleEditable } from '../shared/AvatarCircleEditable';
 import { LI } from '../shared/LinkedInIcon';
 import { formatLinkedinUrl } from '../../utils/linkedin';
+import { CONTACT_ICON_MAP } from '../../components/ui/ContactIconPicker';
 import type { TemplateHeaderProps } from './types';
 
 export const EnhancvHeader: React.FC<TemplateHeaderProps> = (p) => {
@@ -69,6 +70,15 @@ export const EnhancvHeader: React.FC<TemplateHeaderProps> = (p) => {
               </span>
             </span>
           )}
+          {(p.customContacts ?? []).filter(c => c.value.trim()).map((field) => {
+            const Icon = CONTACT_ICON_MAP[field.icon];
+            return (
+              <span key={field.id} className="flex items-center gap-1.5 min-w-0">
+                <Icon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                <span className="truncate">{field.value}</span>
+              </span>
+            );
+          })}
         </div>
       </div>
       {showPhoto && (

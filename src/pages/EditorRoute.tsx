@@ -191,6 +191,7 @@ export function EditorRoute({
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen(p => !p)}
           isResume={isResume}
+          currentTemplate={isResume ? (resume.state.layoutSettings.template ?? 'navy') : (cl.state.layoutSettings.template ?? 'navy')}
           onOpenTemplates={() => setShowTemplatesModal(true)}
           onOpenAddSection={() => setShowAddSectionModal(true)}
           onOpenRearrange={() => setShowRearrangeModal(true)}
@@ -305,7 +306,12 @@ export function EditorRoute({
               } else {
                 cl.set(p => ({
                   ...p,
-                  layoutSettings: { ...p.layoutSettings, template: templateId },
+                  layoutSettings: {
+                    ...p.layoutSettings,
+                    template: templateId,
+                    // Professional template uses the EnhancvHeader two-tone style by default
+                    ...(templateId === 'professional' && { headerStyle: 'enhancv' as const }),
+                  },
                 }), true);
               }
             }}

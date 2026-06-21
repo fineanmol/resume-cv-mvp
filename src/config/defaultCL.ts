@@ -8,6 +8,7 @@ export const DEFAULT_CL_STATE: CoverLetterState = {
   linkedin: "linkedin.com/in/johndoe",
   location: "San Francisco, CA",
   avatar: "/profile_picture.jpg",
+  customContacts: [],
 
   companyName: "Acme Tech",
   jobTitle: "Senior Software Engineer",

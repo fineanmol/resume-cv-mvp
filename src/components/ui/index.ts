@@ -1,4 +1,5 @@
 export { AccordionSection } from './AccordionSection';
+export { ContactIconPicker, CONTACT_ICON_MAP } from './ContactIconPicker';
 export { ToggleSwitch } from './ToggleSwitch';
 export { AddItemButton } from './AddItemButton';
 export { BulletEditor } from './BulletEditor';

@@ -46,7 +46,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({
         <PdfImportBlock
           geminiKey={geminiKey}
           onImport={(parsed, avatar) =>
-            handleChange((prev) => ({ ...prev, avatar: avatar || prev.avatar || '', ...parsed }) as ResumeState)
+            handleChange((prev) => ({ ...prev, ...parsed, avatar: avatar || prev.avatar || '' }) as ResumeState)
           }
         />
       </Suspense>

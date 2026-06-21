@@ -83,6 +83,28 @@ export interface HighlightItem {
   text: string;
 }
 
+export type ContactIconType =
+  | 'globe'
+  | 'github'
+  | 'twitter'
+  | 'instagram'
+  | 'youtube'
+  | 'phone'
+  | 'mail'
+  | 'linkedin'
+  | 'location'
+  | 'link'
+  | 'briefcase'
+  | 'calendar'
+  | 'custom';
+
+export interface CustomContactField {
+  id: string;
+  icon: ContactIconType;
+  label: string;
+  value: string;
+}
+
 // ── Phase 1c: shared document identity fields ─────────────────────────────────
 
 export interface DocumentBase {
@@ -95,6 +117,7 @@ export interface DocumentBase {
   linkedin: string;
   location: string;
   avatar: string;
+  customContacts?: CustomContactField[];
 }
 
 export interface CoverLetterState extends DocumentBase {

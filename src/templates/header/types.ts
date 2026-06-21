@@ -1,4 +1,4 @@
-import type { HeaderStyle, LayoutSettings } from '../../types';
+import type { CustomContactField, HeaderStyle, LayoutSettings } from '../../types';
 
 export interface EditField {
   value: string;
@@ -25,4 +25,5 @@ export interface TemplateHeaderProps {
   onAvatarChange?: (url: string) => void;
   isActive?: boolean;
   onSelect?: () => void;
+  customContacts?: CustomContactField[];
 }

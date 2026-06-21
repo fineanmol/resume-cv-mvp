@@ -9,6 +9,7 @@ export const DEFAULT_RESUME_STATE: ResumeState = {
   linkedin: "linkedin.com/in/johndoe",
   location: "San Francisco, CA",
   avatar: "/profile_picture.jpg",
+  customContacts: [],
 
   resumeSummary: "Innovative and results-driven Senior Software Engineer with over 5 years of professional experience in designing, building, and deploying scalable web applications. Expert in React, TypeScript, Node.js, and cloud systems, with a passion for writing clean, maintainable code and optimizing system architectures.",
   

@@ -243,6 +243,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
               onChange={clSet}
               onCommit={clCommitHistory}
               geminiKey={geminiKey}
+              onAiTailor={onAiTailor}
+              aiLoading={aiLoading}
+              isOnline={isOnline}
             />
           )}
         </aside>

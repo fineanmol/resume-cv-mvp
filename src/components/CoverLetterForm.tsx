@@ -1,14 +1,16 @@
 import React, { useCallback, useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { CoverLetterState } from '../types';
+import type { CoverLetterState, LayoutSettings, CustomContactField, ContactIconType } from '../types';
 import type { UndoRedoSetter } from '../hooks/useUndoRedo';
 import { AccordionSection } from './ui/AccordionSection';
+import { ContactIconPicker } from './ui/ContactIconPicker';
 import { ITEM_ANIM } from '../constants/animations';
-import { inputCls, sectionBodyCls } from '../constants/formClasses';
+import { inputCls, sectionBodyCls, addButtonCls, labelCls } from '../constants/formClasses';
 import {
-  Plus, Trash2, ArrowUp, ArrowDown,
-  Briefcase, FileText, AlignLeft, GripVertical,
+  Plus, Trash2, ArrowUp, ArrowDown, X,
+  Briefcase, FileText, AlignLeft, GripVertical, Phone,
 } from 'lucide-react';
+
 
 const PdfImportBlock = lazy(() =>
   import('./forms/resume/PdfImportBlock').then(m => ({ default: m.PdfImportBlock }))
@@ -19,6 +21,10 @@ interface CoverLetterFormProps {
   onChange: UndoRedoSetter<CoverLetterState>;
   onCommit: () => void;
   geminiKey: string;
+  /** AI tailor action — rewrites letter body to match the job description in the right panel */
+  onAiTailor?: () => void;
+  aiLoading?: boolean;
+  isOnline?: boolean;
 }
 
 export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChange, onCommit, geminiKey }) => {
@@ -37,6 +43,11 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
 
   const setDiscrete = (partial: Partial<CoverLetterState>) =>
     handleChange(p => ({ ...p, ...partial }));
+
+  const onLayoutSettingsChange = useCallback((patch: Partial<LayoutSettings>) =>
+    handleChange(p => ({ ...p, layoutSettings: { ...p.layoutSettings, ...patch } }), true),
+    [handleChange]
+  );
 
   const moveHighlight = (index: number, dir: 'up' | 'down') => {
     const list = [...state.highlights];
@@ -63,7 +74,7 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
           geminiKey={geminiKey}
           label="Import PDF to Cover Letter"
           description="Upload your resume PDF to auto-fill your contact details (name, email, phone, location, LinkedIn) into this cover letter via Gemini AI."
-          onImport={(parsed) =>
+          onImport={(parsed, avatar) =>
             handleChange((prev) => ({
               ...prev,
               ...(parsed.name !== undefined && { name: parsed.name }),
@@ -72,7 +83,7 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
               ...(parsed.phone !== undefined && { phone: parsed.phone }),
               ...(parsed.linkedin !== undefined && { linkedin: parsed.linkedin }),
               ...(parsed.location !== undefined && { location: parsed.location }),
-              ...(parsed.avatar !== undefined && parsed.avatar && { avatar: parsed.avatar }),
+              avatar: avatar || prev.avatar || '',
             }))
           }
         />
@@ -80,6 +91,7 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
 
       <div className="space-y-3">
 
+        {/* ── Target Position ─────────────────────────────────────────────── */}
         <AccordionSection
           id="target"
           icon={Briefcase}
@@ -124,17 +136,28 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
                 onBlur={onCommit} />
             </div>
           </div>
+        </AccordionSection>
+
+        {/* ── Contact Details ──────────────────────────────────────────────── */}
+        <AccordionSection
+          id="contact"
+          icon={Phone}
+          label="Contact Details"
+          openSection={openSection}
+          onToggle={toggle}
+          bodyClassName={`${sectionBodyCls} space-y-3`}
+        >
           <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-[10px] text-text-muted mb-1">Email</label>
-              <input className={inputCls} value={state.email}
-                onChange={e => setText({ email: clean(e.target.value) })}
-                onBlur={onCommit} />
-            </div>
             <div>
               <label className="block text-[10px] text-text-muted mb-1">Phone</label>
               <input className={inputCls} value={state.phone}
                 onChange={e => setText({ phone: clean(e.target.value) })}
+                onBlur={onCommit} />
+            </div>
+            <div>
+              <label className="block text-[10px] text-text-muted mb-1">Email</label>
+              <input className={inputCls} value={state.email}
+                onChange={e => setText({ email: clean(e.target.value) })}
                 onBlur={onCommit} />
             </div>
           </div>
@@ -152,8 +175,74 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
                 onBlur={onCommit} />
             </div>
           </div>
+
+          {/* ── Custom / extra contact fields ────────────────────────── */}
+          {(state.customContacts ?? []).length > 0 && (
+            <div className="space-y-2 pt-1">
+              <label className={labelCls}>Extra Links &amp; Fields</label>
+              {(state.customContacts ?? []).map((field: CustomContactField) => (
+                <div key={field.id} className="flex items-center gap-1.5">
+                  <ContactIconPicker
+                    value={field.icon}
+                    onChange={(icon) => setDiscrete({
+                      customContacts: (state.customContacts ?? []).map(c =>
+                        c.id === field.id ? { ...c, icon } : c
+                      ),
+                    })}
+                  />
+                  <input
+                    className={inputCls}
+                    placeholder="Label"
+                    value={field.label}
+                    onChange={e => setText({
+                      customContacts: (state.customContacts ?? []).map(c =>
+                        c.id === field.id ? { ...c, label: e.target.value } : c
+                      ),
+                    })}
+                    onBlur={onCommit}
+                    style={{ maxWidth: '90px' }}
+                  />
+                  <input
+                    className={inputCls}
+                    placeholder="Value / URL"
+                    value={field.value}
+                    onChange={e => setText({
+                      customContacts: (state.customContacts ?? []).map(c =>
+                        c.id === field.id ? { ...c, value: e.target.value } : c
+                      ),
+                    })}
+                    onBlur={onCommit}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setDiscrete({
+                      customContacts: (state.customContacts ?? []).filter(c => c.id !== field.id),
+                    })}
+                    className="flex-shrink-0 text-text-muted hover:text-red-400 transition cursor-pointer p-1"
+                    title="Remove field"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setDiscrete({
+              customContacts: [
+                ...(state.customContacts ?? []),
+                { id: Date.now().toString(), icon: 'globe' as ContactIconType, label: '', value: '' },
+              ],
+            })}
+            className={addButtonCls}
+          >
+            <Plus size={13} /> Add field
+          </button>
         </AccordionSection>
 
+        {/* ── Letter Paragraphs ────────────────────────────────────────────── */}
         <AccordionSection
           id="paragraphs"
           icon={AlignLeft}
@@ -185,6 +274,7 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
           ))}
         </AccordionSection>
 
+        {/* ── Highlights ───────────────────────────────────────────────────── */}
         <AccordionSection
           id="highlights"
           icon={FileText}
@@ -256,6 +346,7 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
             ))}
           </AnimatePresence>
         </AccordionSection>
+
 
       </div>
     </div>

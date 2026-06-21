@@ -35,7 +35,7 @@ export const LeftHeader: React.FC<TemplateHeaderProps> = (p) => {
         <AvatarCircleEditable
           src={p.avatar}
           name={p.name.value}
-          size="w-16 h-16"
+          size="w-24 h-24"
           border={`${p.brandColor}60`}
           isEditable={p.isEditable}
           onAvatarChange={p.onAvatarChange}
