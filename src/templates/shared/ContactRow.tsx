@@ -63,7 +63,8 @@ export const ContactRow: React.FC<{
         const Icon = CONTACT_ICON_MAP[field.icon] ?? Star;
         return (
           <span key={field.id} className={`flex items-center gap-1 ${itemCls ?? ''}`}>
-            <Icon className="w-3 h-3 flex-shrink-0 mt-[1px]" />
+            {/* size={12} sets width/height attributes directly so react-icons SVGs render at 12px reliably */}
+            <Icon size={12} className="flex-shrink-0 mt-[1px]" />
             <span>{field.value}</span>
           </span>
         );

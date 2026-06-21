@@ -342,8 +342,8 @@ export const DesignerTemplate: React.FC = () => {
           </div>
         </div>
 
-        {/* Left (default): photo right */}
-        {(layoutSettings?.headerStyle ?? 'left') === 'left' && showPhoto && (
+        {/* Left / enhancv / banner: photo on the right */}
+        {(['left', 'enhancv', 'banner'] as string[]).includes(layoutSettings?.headerStyle ?? 'left') && showPhoto && (
           <ProfilePhotoWithWaves
             avatar={avatar}
             name={name}

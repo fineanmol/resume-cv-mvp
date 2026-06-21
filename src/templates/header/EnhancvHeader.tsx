@@ -75,7 +75,8 @@ export const EnhancvHeader: React.FC<TemplateHeaderProps> = (p) => {
             const Icon = CONTACT_ICON_MAP[field.icon] ?? Star;
             return (
               <span key={field.id} className="flex items-center gap-1.5 min-w-0">
-                <Icon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                {/* size={14} sets width/height attributes directly so react-icons SVGs render at 14px reliably */}
+                <Icon size={14} className="text-slate-400 flex-shrink-0" />
                 <span className="truncate">{field.value}</span>
               </span>
             );
