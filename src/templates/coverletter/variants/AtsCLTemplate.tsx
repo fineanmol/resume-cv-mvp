@@ -1,10 +1,12 @@
 import React from 'react';
 import { EditableText } from '../../shared/EditableText';
+import { TemplateHeader } from '../../TemplateHeader';
 import type { CoverLetterTemplateProps } from '../shared';
 import {
   interpolate,
   makeEditableClass,
   makeSheetStyle,
+  makeHeaderProps,
   makeHlText,
   resolveFonts,
 } from '../shared';
@@ -14,16 +16,21 @@ const AtsCLTemplate: React.FC<CoverLetterTemplateProps> = ({
   isEditable = false,
   onFieldChange,
   onHighlightChange,
+  onLayoutSettingsChange,
 }) => {
   const {
-    name, subtitle, phone, email, linkedin, location,
+    name,
     companyName, jobTitle, salutation, p1, p2, p3, p4, highlights,
-    layoutSettings,
+    layoutSettings, avatar,
   } = state;
+
+  const { showPhoto = true, brandColor = '#1e293b' } = layoutSettings;
+  const showAvatar = showPhoto && !!avatar;
 
   const { headingFontCss } = resolveFonts(layoutSettings);
   const editableClass = makeEditableClass(isEditable);
   const sheetStyle = makeSheetStyle(layoutSettings);
+  const headerProps = makeHeaderProps(state, isEditable, editableClass, headingFontCss, showAvatar, brandColor, onFieldChange, onLayoutSettingsChange);
   const hlText = makeHlText(isEditable, editableClass, onHighlightChange);
   const ip = (text: string) => interpolate(text, companyName, jobTitle);
 
@@ -38,32 +45,8 @@ const AtsCLTemplate: React.FC<CoverLetterTemplateProps> = ({
 
   return (
     <div className="pdf-sheet text-slate-900" style={sheetStyle} id="cover-letter-sheet">
-      {/* ── Applicant header ── */}
-      <header>
-        <EditableText
-          tag="h1"
-          value={name}
-          isEditable={isEditable}
-          editableClass={editableClass}
-          className="text-xl font-bold text-slate-900"
-          style={{ fontFamily: headingFontCss }}
-          onSave={(v) => onFieldChange?.('name', v)}
-        />
-        <EditableText
-          tag="p"
-          value={subtitle}
-          isEditable={isEditable}
-          editableClass={editableClass}
-          className="text-sm text-slate-600 mt-0.5"
-          onSave={(v) => onFieldChange?.('subtitle', v)}
-        />
-        <address className="not-italic flex flex-wrap gap-x-3 text-xs text-slate-600 mt-1.5">
-          {phone && <span>{phone}</span>}
-          {email && <span>{email}</span>}
-          {location && <span>{location}</span>}
-          {linkedin && <span>{linkedin}</span>}
-        </address>
-      </header>
+      {/* ── Applicant header — respects headerStyle from Design Panel ── */}
+      <TemplateHeader {...headerProps} />
 
       <p className="text-xs text-slate-600 mt-4 mb-1">{today}</p>
 

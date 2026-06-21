@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import type { CoverLetterState, HighlightItem } from '../types';
+import type { CoverLetterState, HighlightItem, LayoutSettings } from '../types';
 
 export type CoverLetterSet = (
   newState: CoverLetterState | ((prev: CoverLetterState) => CoverLetterState),
@@ -25,5 +25,24 @@ export function useCoverLetterMutations(set: CoverLetterSet) {
     [set]
   );
 
-  return useMemo(() => ({ onFieldChange, onHighlightChange }), [onFieldChange, onHighlightChange]);
+  /**
+   * Dedicated handler for layout-settings patches.
+   * Uses a functional update so it always merges with the LATEST prev.layoutSettings,
+   * avoiding the stale-closure issue that would arise if the caller captured
+   * `layoutSettings` from a render closure.
+   */
+  const onLayoutSettingsChange = useCallback(
+    (patch: Partial<LayoutSettings>) => {
+      set(prev => ({
+        ...prev,
+        layoutSettings: { ...prev.layoutSettings, ...patch },
+      }));
+    },
+    [set]
+  );
+
+  return useMemo(
+    () => ({ onFieldChange, onHighlightChange, onLayoutSettingsChange }),
+    [onFieldChange, onHighlightChange, onLayoutSettingsChange]
+  );
 }

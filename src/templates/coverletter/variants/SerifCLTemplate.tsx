@@ -17,6 +17,7 @@ const SerifCLTemplate: React.FC<CoverLetterTemplateProps> = ({
   isEditable = false,
   onFieldChange,
   onHighlightChange,
+  onLayoutSettingsChange,
 }) => {
   const { name, salutation, p1, p2, p3, p4, highlights, layoutSettings, companyName, jobTitle, avatar } = state;
   const { sectionSpacing, brandColor = '#1e293b', showPhoto = true } = layoutSettings;
@@ -26,7 +27,7 @@ const SerifCLTemplate: React.FC<CoverLetterTemplateProps> = ({
   const editableClass = makeEditableClass(isEditable);
   const sheetStyle = makeSheetStyle(layoutSettings);
   const spacingStyle = makeSpacingStyle(sectionSpacing);
-  const headerProps = makeHeaderProps(state, isEditable, editableClass, headingFontCss, showAvatar, brandColor, onFieldChange);
+  const headerProps = makeHeaderProps(state, isEditable, editableClass, headingFontCss, showAvatar, brandColor, onFieldChange, onLayoutSettingsChange);
   const paragraphEl = makeParagraphEl(isEditable, editableClass, onFieldChange);
   const hlText = makeHlText(isEditable, editableClass, onHighlightChange);
   const ip = (text: string) => interpolate(text, companyName, jobTitle);

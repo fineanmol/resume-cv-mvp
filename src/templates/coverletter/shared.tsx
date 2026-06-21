@@ -10,6 +10,8 @@ export interface CoverLetterTemplateProps {
   isEditable?: boolean;
   onFieldChange?: <K extends keyof CoverLetterState>(field: K, value: CoverLetterState[K]) => void;
   onHighlightChange?: (index: number, field: keyof HighlightItem, value: string) => void;
+  /** Preferred over onFieldChange for layoutSettings patches — uses functional update to avoid stale closures. */
+  onLayoutSettingsChange?: (patch: Partial<LayoutSettings>) => void;
 }
 
 /** Replace {{company}} and {{role}} tokens in body text. */
@@ -60,6 +62,7 @@ export function makeHeaderProps(
   showAvatar: boolean,
   brandColor: string,
   onFieldChange: CoverLetterTemplateProps['onFieldChange'],
+  onLayoutSettingsChange?: CoverLetterTemplateProps['onLayoutSettingsChange'],
 ): TemplateHeaderProps {
   const { name, subtitle, phone, email, location, linkedin, avatar, layoutSettings } = state;
   return {
@@ -78,8 +81,11 @@ export function makeHeaderProps(
     ec: editableClass,
     sectionSpacing: layoutSettings.sectionSpacing,
     layoutSettings,
-    onLayoutSettingsChange: (patch: Partial<LayoutSettings>) =>
-      onFieldChange?.('layoutSettings', { ...layoutSettings, ...patch }),
+    // Prefer the dedicated functional-update handler; fall back to onFieldChange with closure spread.
+    onLayoutSettingsChange: onLayoutSettingsChange
+      ? onLayoutSettingsChange
+      : (patch: Partial<LayoutSettings>) =>
+          onFieldChange?.('layoutSettings', { ...layoutSettings, ...patch } as CoverLetterState['layoutSettings']),
     onAvatarChange: (url: string) => onFieldChange?.('avatar', url),
   };
 }

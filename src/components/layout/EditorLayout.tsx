@@ -319,7 +319,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
             {isResume ? (
               <DesignPanel
                 layout={resumeState.layoutSettings}
-                onChange={patch => resumeSet(p => ({ ...p, layoutSettings: { ...p.layoutSettings, ...patch } }))}
+                onChange={patch => resumeSet(p => ({ ...p, layoutSettings: { ...p.layoutSettings, ...patch } }), true)}
                 docType="resume"
                 focusSection={designFocusSection}
                 onFocusHandled={onDesignFocusHandled}
@@ -331,7 +331,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
             ) : (
               <DesignPanel
                 layout={clState.layoutSettings}
-                onChange={patch => clSet(p => ({ ...p, layoutSettings: { ...p.layoutSettings, ...patch } }))}
+                onChange={patch => clSet(p => ({ ...p, layoutSettings: { ...p.layoutSettings, ...patch } }), true)}
                 docType="coverletter"
                 focusSection={designFocusSection}
                 onFocusHandled={onDesignFocusHandled}

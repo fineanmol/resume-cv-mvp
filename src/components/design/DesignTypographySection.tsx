@@ -63,10 +63,12 @@ interface Props {
   onChange: (patch: Partial<LayoutSettings>) => void;
   openSection: string;
   onToggle: (id: string) => void;
+  docType?: 'resume' | 'coverletter';
 }
 
-const DesignTypographySection: React.FC<Props> = ({ layout, onChange, openSection, onToggle }) => {
+const DesignTypographySection: React.FC<Props> = ({ layout, onChange, openSection, onToggle, docType = 'resume' }) => {
   const isDesigner = (layout.template ?? 'navy') === 'designer';
+  const isCoverLetter = docType === 'coverletter';
 
   return (
     <>
@@ -93,21 +95,23 @@ const DesignTypographySection: React.FC<Props> = ({ layout, onChange, openSectio
         )}
       </AccordionSection>
 
-      <AccordionSection
-        id="textAlignment"
-        icon={AlignLeft}
-        label="Text Alignment"
-        openSection={openSection}
-        onToggle={onToggle}
-        variant="design"
-        bodyClassName="p-3 border-t border-border-color/40 space-y-4"
-      >
-        <AlignmentPicker title="Summary Alignment" value={layout.summaryAlign} defaultValue="justify" onChange={align => onChange({ summaryAlign: align })} />
-        <AlignmentPicker title="Experience Alignment" value={layout.experienceAlign} defaultValue="left" onChange={align => onChange({ experienceAlign: align })} />
-        <AlignmentPicker title="Education Alignment" value={layout.educationAlign} defaultValue="left" onChange={align => onChange({ educationAlign: align })} />
-        <AlignmentPicker title="Certifications Alignment" value={layout.certsAlign} defaultValue="left" onChange={align => onChange({ certsAlign: align })} />
-        <AlignmentPicker title="Achievements Alignment" value={layout.achievementsAlign} defaultValue="left" onChange={align => onChange({ achievementsAlign: align })} />
-      </AccordionSection>
+      {!isCoverLetter && (
+        <AccordionSection
+          id="textAlignment"
+          icon={AlignLeft}
+          label="Text Alignment"
+          openSection={openSection}
+          onToggle={onToggle}
+          variant="design"
+          bodyClassName="p-3 border-t border-border-color/40 space-y-4"
+        >
+          <AlignmentPicker title="Summary Alignment" value={layout.summaryAlign} defaultValue="justify" onChange={align => onChange({ summaryAlign: align })} />
+          <AlignmentPicker title="Experience Alignment" value={layout.experienceAlign} defaultValue="left" onChange={align => onChange({ experienceAlign: align })} />
+          <AlignmentPicker title="Education Alignment" value={layout.educationAlign} defaultValue="left" onChange={align => onChange({ educationAlign: align })} />
+          <AlignmentPicker title="Certifications Alignment" value={layout.certsAlign} defaultValue="left" onChange={align => onChange({ certsAlign: align })} />
+          <AlignmentPicker title="Achievements Alignment" value={layout.achievementsAlign} defaultValue="left" onChange={align => onChange({ achievementsAlign: align })} />
+        </AccordionSection>
+      )}
     </>
   );
 };

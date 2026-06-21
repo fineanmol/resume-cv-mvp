@@ -33,25 +33,32 @@ const DesignHeaderSection: React.FC<Props> = ({ layout, onChange, docType, openS
         variant="design"
         bodyClassName="p-3 border-t border-border-color/40 space-y-3"
       >
-        <div className="grid grid-cols-2 gap-1.5 mb-2">
-          {(isDesigner ? designerHeaderStyles : HEADER_STYLES).map(h => {
-            const isActive = (layout.headerStyle ?? (isDesigner ? 'left' : 'centered')) === h.id;
-            return (
-              <button
-                key={h.id}
-                onClick={() => onChange({ headerStyle: h.id })}
-                className={`px-2 py-2 rounded-lg border text-left transition cursor-pointer ${
-                  isActive
-                    ? 'border-brand-accent bg-brand-accent/8 text-brand-accent'
-                    : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
-                }`}
-              >
-                <span className="block text-[10px] font-bold">{h.label}</span>
-                <span className="block text-[9px] opacity-70 leading-tight">{h.desc}</span>
-              </button>
-            );
-          })}
-        </div>
+        {docType === 'coverletter' && (layout.template ?? 'navy') === 'sidebar' ? (
+          <p className="text-[10px] text-text-muted leading-relaxed pb-1">
+            The Sidebar template uses a fixed two-column layout — header style is not applicable.
+            Switch to another template to use different header styles.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-1.5 mb-2">
+            {(isDesigner ? designerHeaderStyles : HEADER_STYLES).map(h => {
+              const isActive = (layout.headerStyle ?? (isDesigner ? 'left' : 'centered')) === h.id;
+              return (
+                <button
+                  key={h.id}
+                  onClick={() => onChange({ headerStyle: h.id })}
+                  className={`px-2 py-2 rounded-lg border text-left transition cursor-pointer ${
+                    isActive
+                      ? 'border-brand-accent bg-brand-accent/8 text-brand-accent'
+                      : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
+                  }`}
+                >
+                  <span className="block text-[10px] font-bold">{h.label}</span>
+                  <span className="block text-[9px] opacity-70 leading-tight">{h.desc}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <p className="text-[10px] text-text-muted leading-relaxed border-t border-border-color/30 pt-3">
           Contact field visibility, photo, and uppercase name are in the document header gear on the canvas.

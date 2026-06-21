@@ -91,7 +91,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
 
       <DesignTemplateSection layout={layout} onChange={onChange} openSection={activeOpen} onToggle={toggle} docType={docType} />
       <DesignColorsSection layout={layout} onChange={onChange} openSection={activeOpen} onToggle={toggle} />
-      <DesignTypographySection layout={layout} onChange={onChange} openSection={activeOpen} onToggle={toggle} />
+      <DesignTypographySection layout={layout} onChange={onChange} openSection={activeOpen} onToggle={toggle} docType={docType} />
       <DesignSpacingSection layout={layout} onChange={onChange} docType={docType} openSection={activeOpen} onToggle={toggle} />
       <DesignHeaderSection layout={layout} onChange={onChange} docType={docType} openSection={activeOpen} onToggle={toggle} />
       <DesignSectionToggles layout={layout} onChange={onChange} docType={docType} openSection={activeOpen} onToggle={toggle} />

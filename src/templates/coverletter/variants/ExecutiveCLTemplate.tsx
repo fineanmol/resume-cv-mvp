@@ -17,6 +17,7 @@ const ExecutiveCLTemplate: React.FC<CoverLetterTemplateProps> = ({
   isEditable = false,
   onFieldChange,
   onHighlightChange,
+  onLayoutSettingsChange,
 }) => {
   const {
     name, subtitle, companyName, jobTitle, salutation,
@@ -28,7 +29,7 @@ const ExecutiveCLTemplate: React.FC<CoverLetterTemplateProps> = ({
   const showAvatar = showPhoto && !!avatar;
   const editableClass = makeEditableClass(isEditable);
   const sheetStyle = makeSheetStyle(layoutSettings);
-  const headerProps = makeHeaderProps(state, isEditable, editableClass, headingFontCss, showAvatar, brandColor, onFieldChange);
+  const headerProps = makeHeaderProps(state, isEditable, editableClass, headingFontCss, showAvatar, brandColor, onFieldChange, onLayoutSettingsChange);
   const paragraphEl = makeParagraphEl(isEditable, editableClass, onFieldChange);
   const hlText = makeHlText(isEditable, editableClass, onHighlightChange);
   const ip = (text: string) => interpolate(text, companyName, jobTitle);

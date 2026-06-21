@@ -61,8 +61,8 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
       <Suspense fallback={<div className="h-24 rounded-xl bg-card/50 animate-pulse border border-border-color/40" aria-hidden />}>
         <PdfImportBlock
           geminiKey={geminiKey}
-          label="Import Resume PDF"
-          description="Upload your resume PDF to auto-fill your contact details (name, email, phone, location, LinkedIn) via Gemini AI."
+          label="Import PDF to Cover Letter"
+          description="Upload your resume PDF to auto-fill your contact details (name, email, phone, location, LinkedIn) into this cover letter via Gemini AI."
           onImport={(parsed) =>
             handleChange((prev) => ({
               ...prev,
