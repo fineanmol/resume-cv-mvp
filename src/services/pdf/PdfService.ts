@@ -19,7 +19,10 @@ import { PAGE_WIDTH_PX } from '../../constants/page';
 interface PdfImage {
   width: number;
   height: number;
-  data: Uint8ClampedArray | number[];
+  /** Raw pixel data (RGBA, RGB, or grayscale) — present in older pdfjs builds */
+  data?: Uint8ClampedArray | number[];
+  /** ImageBitmap — present in pdfjs v6+ when OffscreenCanvas is supported */
+  bitmap?: ImageBitmap;
 }
 
 export class PdfService {
@@ -70,40 +73,48 @@ export class PdfService {
             const ctx = canvas.getContext('2d');
             if (!ctx) continue;
 
-            let pixelData = img.data;
-            if (pixelData.length === img.width * img.height * 3) {
-              const rgba = new Uint8ClampedArray(img.width * img.height * 4);
-              let j = 0;
-              for (let k = 0; k < pixelData.length; k += 3) {
-                rgba[j] = pixelData[k];
-                rgba[j + 1] = pixelData[k + 1];
-                rgba[j + 2] = pixelData[k + 2];
-                rgba[j + 3] = 255;
-                j += 4;
+            if (img.bitmap) {
+              // pdfjs v6+: image transferred as ImageBitmap from worker
+              ctx.drawImage(img.bitmap, 0, 0);
+            } else if (img.data) {
+              // Older pdfjs: raw pixel array (RGBA, RGB, or grayscale)
+              let pixelData: Uint8ClampedArray | number[] = img.data;
+              if (pixelData.length === img.width * img.height * 3) {
+                const rgba = new Uint8ClampedArray(img.width * img.height * 4);
+                let j = 0;
+                for (let k = 0; k < pixelData.length; k += 3) {
+                  rgba[j] = pixelData[k];
+                  rgba[j + 1] = pixelData[k + 1];
+                  rgba[j + 2] = pixelData[k + 2];
+                  rgba[j + 3] = 255;
+                  j += 4;
+                }
+                pixelData = rgba;
+              } else if (pixelData.length === img.width * img.height) {
+                const rgba = new Uint8ClampedArray(img.width * img.height * 4);
+                let j = 0;
+                for (let k = 0; k < pixelData.length; k++) {
+                  const val = pixelData[k];
+                  rgba[j] = val;
+                  rgba[j + 1] = val;
+                  rgba[j + 2] = val;
+                  rgba[j + 3] = 255;
+                  j += 4;
+                }
+                pixelData = rgba;
+              } else if (pixelData.length !== img.width * img.height * 4) {
+                continue;
               }
-              pixelData = rgba;
-            } else if (pixelData.length === img.width * img.height) {
-              const rgba = new Uint8ClampedArray(img.width * img.height * 4);
-              let j = 0;
-              for (let k = 0; k < pixelData.length; k++) {
-                const val = pixelData[k];
-                rgba[j] = val;
-                rgba[j + 1] = val;
-                rgba[j + 2] = val;
-                rgba[j + 3] = 255;
-                j += 4;
-              }
-              pixelData = rgba;
-            } else if (pixelData.length !== img.width * img.height * 4) {
-              continue;
+              const imageData = new ImageData(
+                new Uint8ClampedArray(pixelData as Uint8ClampedArray),
+                img.width,
+                img.height
+              );
+              ctx.putImageData(imageData, 0, 0);
+            } else {
+              continue; // no usable image data
             }
 
-            const imageData = new ImageData(
-              new Uint8ClampedArray(pixelData),
-              img.width,
-              img.height
-            );
-            ctx.putImageData(imageData, 0, 0);
             const dataUrl = canvas.toDataURL('image/jpeg');
 
             // Score: area × aspect-ratio closeness to square/portrait (0.5–1.5 ratio)

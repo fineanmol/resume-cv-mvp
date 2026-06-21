@@ -82,6 +82,8 @@ export function makeHeaderProps(
     sectionSpacing: layoutSettings.sectionSpacing,
     layoutSettings,
     // Prefer the dedicated functional-update handler; fall back to onFieldChange with closure spread.
+    // NOTE: the fallback captures `layoutSettings` from the render closure, so rapid concurrent
+    // calls can stomp on each other.  Always provide `onLayoutSettingsChange` to avoid this.
     onLayoutSettingsChange: onLayoutSettingsChange
       ? onLayoutSettingsChange
       : (patch: Partial<LayoutSettings>) =>

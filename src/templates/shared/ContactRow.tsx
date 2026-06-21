@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin, Star } from 'lucide-react';
 import type { CustomContactField, LayoutSettings } from '../../types';
 import { EditableText } from './EditableText';
 import { LI } from './LinkedInIcon';
@@ -59,7 +59,8 @@ export const ContactRow: React.FC<{
         </span>
       )}
       {visibleCustom.map((field) => {
-        const Icon = CONTACT_ICON_MAP[field.icon];
+        // Fallback to Star icon guards against unknown icon values from stale/migrated data.
+        const Icon = CONTACT_ICON_MAP[field.icon] ?? Star;
         return (
           <span key={field.id} className={`flex items-center gap-1 ${itemCls ?? ''}`}>
             <Icon className="w-3 h-3 flex-shrink-0 mt-[1px]" />

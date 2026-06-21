@@ -14,14 +14,6 @@ interface Props {
 }
 
 const DesignHeaderSection: React.FC<Props> = ({ layout, onChange, docType, openSection, onToggle }) => {
-  const isDesigner = (layout.template ?? 'navy') === 'designer';
-
-  const designerHeaderStyles = [
-    { id: 'left'     as const, label: 'Photo Right', desc: 'Name left, photo right' },
-    { id: 'centered' as const, label: 'Centered',    desc: 'Photo above, centered layout' },
-    { id: 'minimal'  as const, label: 'Minimal',     desc: 'Full-width, no photo' },
-  ];
-
   return (
     <>
       <AccordionSection
@@ -40,8 +32,8 @@ const DesignHeaderSection: React.FC<Props> = ({ layout, onChange, docType, openS
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-1.5 mb-2">
-            {(isDesigner ? designerHeaderStyles : HEADER_STYLES).map(h => {
-              const isActive = (layout.headerStyle ?? (isDesigner ? 'left' : 'centered')) === h.id;
+            {HEADER_STYLES.map(h => {
+              const isActive = (layout.headerStyle ?? 'centered') === h.id;
               return (
                 <button
                   key={h.id}

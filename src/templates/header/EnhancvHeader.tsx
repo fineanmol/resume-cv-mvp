@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin, Star } from 'lucide-react';
 import { EditableText } from '../shared/EditableText';
 import { HeaderWrapper } from '../shared/HeaderWrapper';
 import { AvatarCircleEditable } from '../shared/AvatarCircleEditable';
@@ -71,7 +71,8 @@ export const EnhancvHeader: React.FC<TemplateHeaderProps> = (p) => {
             </span>
           )}
           {(p.customContacts ?? []).filter(c => c.value.trim()).map((field) => {
-            const Icon = CONTACT_ICON_MAP[field.icon];
+            // Fallback to Star icon guards against unknown icon values from stale/migrated data.
+            const Icon = CONTACT_ICON_MAP[field.icon] ?? Star;
             return (
               <span key={field.id} className="flex items-center gap-1.5 min-w-0">
                 <Icon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />

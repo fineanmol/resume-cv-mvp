@@ -184,11 +184,12 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
                 <div key={field.id} className="flex items-center gap-1.5">
                   <ContactIconPicker
                     value={field.icon}
-                    onChange={(icon) => setDiscrete({
-                      customContacts: (state.customContacts ?? []).map(c =>
+                    onChange={(icon) => handleChange(p => ({
+                      ...p,
+                      customContacts: (p.customContacts ?? []).map(c =>
                         c.id === field.id ? { ...c, icon } : c
                       ),
-                    })}
+                    }))}
                   />
                   <input
                     className={inputCls}
