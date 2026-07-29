@@ -9,9 +9,10 @@ export function getPrintStyleBlock(): string {
       print-color-adjust: exact !important;
     }
 
+    /* Block layout (not flex-center): centering leaves L/R gutters in Playwright PDF. */
     body {
-      display: flex;
-      justify-content: center;
+      display: block !important;
+      justify-content: unset !important;
     }
 
     .pdf-sheet {
@@ -20,6 +21,7 @@ export function getPrintStyleBlock(): string {
       height: auto !important;         /* let content determine height across pages */
       min-height: auto !important;
       width: 210mm !important;
+      max-width: 210mm !important;
       box-sizing: border-box !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
@@ -100,6 +102,14 @@ export function getPrintStyleBlock(): string {
       page-break-inside: avoid !important;
       break-after: avoid !important;
       page-break-after: avoid !important;
+      padding-bottom: 4px !important;
+      margin-bottom: 4px !important;
+    }
+    header .mt-2 {
+      margin-top: 4px !important;
+    }
+    [data-testid="designer-column-grid"] {
+      margin-top: 4px !important;
     }
 
     .group\\/draggable {
@@ -141,16 +151,52 @@ export function getPrintStyleBlock(): string {
     .designer-column section > ul.flex {
       display: block !important;
     }
-    /* Restore entry gap (flex gap is gone after the display change) — skip grid containers (e.g. language grid) */
+    /* Skills grid must stay flex-wrap (override section > div.flex display:block). */
+    section > div.flex[data-skills-grid],
+    .designer-column section > div.flex[data-skills-grid],
+    section [data-skills-grid] {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      justify-content: flex-start !important;
+      column-gap: 17.8pt !important;
+      row-gap: 8.5pt !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    [data-skill-grid-item] {
+      max-width: 100%;
+      flex: 0 0 auto !important;
+    }
+    /* Restore entry gap after flex→block; keep moderately tight for 1-page fit */
     section > div:not(.grid) > .group\\/item + .group\\/item,
     section > ul > li + li {
       margin-top: var(--entry-gap, 8px);
     }
-    /* Projects/achievements: container is ul > div.group/item (not ul > li), gap = entrySpacing-4 */
+    /* Education: dashed rule (Masters ↔ Bachelors) matches Experience; don't double-stack gap */
+    section [data-education-entries] {
+      display: block !important;
+    }
+    section [data-education-entries] > .group\\/item:has(.border-dashed) + .group\\/item {
+      margin-top: 0 !important;
+    }
+    /* Center dashed job/cert separators: equal space above & below the rule */
+    section .border-dashed.border-b {
+      padding-bottom: 3.5pt !important;
+      margin-bottom: 3.5pt !important;
+    }
+    /* Education Masters↔Bachelors: match golden Sakshi Product Resume (~79pt title span) */
+    section [data-education-entries] [data-edu-separator='true'] {
+      padding-bottom: 5.5pt !important;
+      margin-bottom: 6pt !important;
+    }
+    /* When a dashed rule already has margin-bottom, don't double-stack entry gap */
+    section > div:not(.grid) > .group\\/item:has(.border-dashed) + .group\\/item {
+      margin-top: 0 !important;
+    }
     section > ul > .group\\/item + .group\\/item {
       margin-top: calc(var(--entry-gap, 8px) - 4px);
     }
-    /* Designer columns use flex gap in preview; display:block in print drops it */
     .designer-column > .group\\/draggable:not(:last-child) {
       margin-bottom: var(--section-gap, 8px);
     }

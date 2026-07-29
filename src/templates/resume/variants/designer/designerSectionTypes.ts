@@ -6,6 +6,8 @@ export type DesignerFG = {
   section: React.CSSProperties;
   entry: React.CSSProperties;
   entryTitle: React.CSSProperties;
+  /** Cert/achievement titles — Open Sans Bold ~8.88pt (matches website Product Resume). */
+  itemTitle: React.CSSProperties;
   company: React.CSSProperties;
   body: React.CSSProperties;
   meta: React.CSSProperties;

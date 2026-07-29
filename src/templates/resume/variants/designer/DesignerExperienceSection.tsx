@@ -78,6 +78,7 @@ export const DesignerExperienceSection: React.FC<DesignerExperienceSectionProps>
               const showBullets = showExp(exp, 'bullets');
               const showLink = showExp(exp, 'link');
 
+              const isLast = idx === resumeExperience.length - 1;
               return (
                 <ItemWrapper
                   key={idx} sectionId="experience" index={idx} totalItems={resumeExperience.length}
@@ -97,7 +98,8 @@ export const DesignerExperienceSection: React.FC<DesignerExperienceSectionProps>
                     />
                   )}
                 >
-                  <div style={FG.body}>
+                  {/* pb/mb keep the dashed rule centered between jobs (print drops flex gap). */}
+                  <div style={FG.body} className={isLast ? undefined : 'border-b border-dashed border-slate-300 pb-1 mb-1.5'}>
                     <div className="flex items-center gap-2">
                       <span className="flex items-center gap-1.5 flex-1 min-w-0">
                         {showLogo && (
@@ -109,7 +111,7 @@ export const DesignerExperienceSection: React.FC<DesignerExperienceSectionProps>
                             onLogoChange={(logo) => onExperienceChange?.(idx, 'logo', logo)}
                           />
                         )}
-                        <E field="experience.title" value={exp.title} isEditable={isEditable} editableClass={ec} className="min-w-0 break-words leading-snug" style={{ ...FG.entry, color: C_TITLE }} onSave={v => onExperienceChange?.(idx, 'title', v)} />
+                        <E field="experience.title" value={exp.title} isEditable={isEditable} editableClass={ec} className="min-w-0 break-words leading-snug" style={{ ...FG.entry, color: C_HEAD }} onSave={v => onExperienceChange?.(idx, 'title', v)} />
                       </span>
                       {showDates && (
                         <DateRangePicker

@@ -75,6 +75,7 @@ export const DesignerAchievementsSection: React.FC<DesignerAchievementsSectionPr
           <ul className="flex flex-col" style={{ ...FG.body, gap: `${entrySpacing - 4}px` }}>
             {(resumeAchievements ?? []).map((ach, idx) => {
               const showLink = showAch(ach, 'link');
+              const isLast = idx === (resumeAchievements ?? []).length - 1;
               return (
               <ItemWrapper
                 key={idx} sectionId="achievements" index={idx} totalItems={(resumeAchievements ?? []).length}
@@ -88,34 +89,33 @@ export const DesignerAchievementsSection: React.FC<DesignerAchievementsSectionPr
                   />
                 )}
               >
-                <li className={`text-${achievementsAlign}`}>
-                  <div className="flex-1 min-w-0">
-                    <div className={`flex items-center gap-1.5 leading-snug ${achievementsAlign === 'center' ? 'justify-center' : achievementsAlign === 'right' ? 'justify-end' : ''}`}>
-                      {showAchievementIcons && (
-                        isEditable ? (
-                          <EntryIconPicker
-                            variant="achievement"
-                            currentIcon={ach.icon || 'star'}
-                            onChange={(icon) => onAchievementChange?.(idx, 'icon', icon)}
-                            isEditable={isEditable}
-                            accentColor={C_TITLE}
-                            accentColor2={C_COMPANY}
-                            index={idx}
-                            title={ach.title}
-                            iconClassName="w-3 h-3 shrink-0"
-                            wrapperClassName="shrink-0"
-                          />
-                        ) : (
-                          getDynamicAchievementIcon(idx, ach.title, ach.icon, C_TITLE, 'w-3 h-3 shrink-0', C_COMPANY)
-                        )
-                      )}
-                      <div className={`flex items-center gap-1 min-w-0 flex-1 ${achievementsAlign === 'center' ? 'justify-center' : achievementsAlign === 'right' ? 'justify-end' : ''}`}>
+                <li className={`text-${achievementsAlign}${isLast ? '' : ' border-b border-dashed border-slate-300 pb-2'}`}>
+                  <div className={`flex gap-2 items-start ${achievementsAlign === 'center' ? 'justify-center' : achievementsAlign === 'right' ? 'justify-end' : ''}`}>
+                    {showAchievementIcons && (
+                      isEditable ? (
+                        <EntryIconPicker
+                          variant="achievement"
+                          currentIcon={ach.icon || 'star'}
+                          onChange={(icon) => onAchievementChange?.(idx, 'icon', icon)}
+                          isEditable={isEditable}
+                          accentColor={C_COMPANY}
+                          accentColor2={C_COMPANY}
+                          index={idx}
+                          title={ach.title}
+                          iconClassName="w-4 h-4 shrink-0"
+                          wrapperClassName="shrink-0 mt-0.5"
+                        />
+                      ) : (
+                        getDynamicAchievementIcon(idx, ach.title, ach.icon, C_COMPANY, 'w-4 h-4 shrink-0 mt-0.5', C_COMPANY)
+                      )
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className={`flex items-center gap-1 leading-snug ${achievementsAlign === 'center' ? 'justify-center' : achievementsAlign === 'right' ? 'justify-end' : ''}`}>
                         <E tag="strong" field="achievements.title" value={ach.title} isEditable={isEditable} editableClass={ec}
-                          style={{ ...FG.entryTitle, color: C_TITLE }}
+                          style={{ ...FG.itemTitle, color: C_HEAD }}
                           onSave={v => onAchievementChange?.(idx, 'title', v)} />
                         {showLink && <WorkLink url={ach.url} brandColor={C_COMPANY} />}
                       </div>
-                    </div>
                       {showAchievementDesc && (ach.desc || isEditable) && (
                         showAchievementBullets ? (
                           <BulletList
@@ -136,6 +136,7 @@ export const DesignerAchievementsSection: React.FC<DesignerAchievementsSectionPr
                             onSave={(v) => onAchievementChange?.(idx, 'desc', v)} />
                         )
                       )}
+                    </div>
                   </div>
                 </li>
               </ItemWrapper>

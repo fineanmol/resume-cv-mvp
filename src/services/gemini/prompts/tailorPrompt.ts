@@ -39,12 +39,17 @@ CRITICAL INSTRUCTIONS:
 2. Preserve all candidate contact details (their name, subtitle, email, phone, location, LinkedIn). Do not invent credentials they do not have.
 3. Incorporate the company name and target role naturally in the letter.
 4. ATS COMPATIBILITY OPTIMIZATION: Identify key technical skills, technologies, methodologies, and terms requested in the Job Description. Naturally integrate as many of these exact keywords/skills as possible into the cover letter paragraphs and highlights where they align with the candidate's actual background. This is critical for passing ATS filters.
-5. Optimize paragraphs p1, p2, p3, p4:
-   - Use dynamic placeholders like {{company}} and {{role}} in the intro (p1).
-   - Ensure other paragraphs are unbolded text containing no placeholders, but rich with active verbs and tailored skills.
+5. Optimize paragraphs p1, p2, p3, p4 - ALL FOUR must be complete:
+   - Each paragraph: 2-4 full sentences (not one thin line).
+   - p1: interest + fit for {{role}} at {{company}} using {{company}}/{{role}} placeholders.
+   - p2: concrete proof from past work (metrics kept truthful).
+   - p3: why this company/role and how you would contribute.
+   - p4: close with availability/work auth if present in master text; thank them; ask for a conversation.
+   - Plain text only. No markdown (**). No em dash (—); use hyphen (-) instead.
+   - Do NOT invent fluent German unless the master letter already states a German level; if mentioning German, keep it accurate (B2 if that is what the master profile uses).
 6. Optimize the highlights list (array of category/text objects):
    - Match the exact number of highlights (currently ${state.highlights.length} items).
-   - Refine the 'category' and 'text' fields to highlight achievements relevant to the target job description.
+   - Each highlight text must be a complete sentence with a concrete outcome or capability.
 7. Return the response in the exact JSON schema requested. Do not return markdown wraps, just the raw JSON object.
 8. JSON ESCAPING RULE: All string values in the JSON output MUST be properly escaped. Specifically, if you use double quotes inside a string value, you MUST escape them as \\" (e.g., write \\"Product Manager\\" instead of "Product Manager"). Do not include raw, unescaped double quotes inside your string values, as this breaks the JSON parser.
 
@@ -78,7 +83,7 @@ const TAILOR_RESUME_SCHEMA = {
   type: 'OBJECT',
   properties: {
     resumeSummary: { type: 'STRING', description: 'Tailored summary paragraph' },
-    resumeSkills: { type: 'STRING', description: 'Tailored skills list' },
+    resumeSkills: { type: 'STRING', description: 'Comma-separated plain skill names only. No markdown, no bullets.' },
     resumeExperience: {
       type: 'ARRAY',
       description: 'Must contain exactly the same number of items as the input.',
@@ -105,14 +110,20 @@ CRITICAL INSTRUCTIONS:
 2. Preserve all structural and factual details of the candidate's resume (their name, subtitle, locations, degrees, schools, GPA/dates, company names, titles, and employment dates). Do not invent new jobs, dates, credentials, or projects they do not have.
 3. ATS COMPATIBILITY OPTIMIZATION: Identify key technical skills, technologies, methodologies, and terms requested in the Job Description. Naturally integrate as many of these exact keywords/skills as possible into the resumeSummary, resumeSkills list, AND job experience bullets where they align with the candidate's actual background. This is critical for passing ATS keyword filters.
 4. Optimize the resumeSummary to align with the job's key focus areas.
-5. Optimize the resumeSkills (a comma-separated list) to include the most relevant hard and soft skills extracted from the job description that fit the candidate's profile.
+5. Optimize the resumeSkills (a comma-separated list ONLY). Rules for skills:
+   - Plain text skill names separated by commas. Example: "Roadmapping, PRDs, Jira, Prompt Engineering"
+   - NEVER use markdown in skills (no **, no *, no _, no #).
+   - NEVER use bullet prefixes (- or •) inside resumeSkills.
+   - Do NOT put language levels in resumeSkills; languages live elsewhere.
+   - CRITICAL LAYOUT: Keep the EXACT same skill tokens and the EXACT same ORDER as the input resumeSkills. Do NOT reorder, insert, or append skills. Weave JD keywords into summary/bullets instead — reordering long chips breaks the 1-page skills grid.
 6. Optimize the bullets in the resumeExperience list:
    - Match the exact number of experience items (currently ${state.resumeExperience.length} items).
-   - PRESERVE BULLET COUNT: Each job's bullets field contains multiple bullet points separated by newlines. You MUST output the same number of newline-separated bullet lines as in the input — do NOT merge, drop, or consolidate any bullets. Refine each bullet individually.
-   - You MAY wrap the 1–3 most impactful ATS keyword matches per bullet in **double asterisks** (e.g. **Kubernetes**). Bold only the most important keywords — keep it sparse and professional.
-   - Do NOT bold more than 3 phrases per bullet. Do NOT use any other markdown syntax (no _italic_, no #headers, no - lists).
+   - PRESERVE BULLET COUNT: Each job's bullets field contains multiple bullet points separated by newlines. You MUST output the same number of newline-separated bullet lines as in the input - do NOT merge, drop, or consolidate any bullets. Refine each bullet individually.
+   - resumeSkills: plain text only (no **).
+   - Experience bullets: you MAY wrap 1-3 key ATS keywords per bullet in **double asterisks** for bold highlighting (Designer template). Keep it sparse.
+   - Do NOT use the em dash character (—). Use a normal hyphen (-) or a comma instead.
    - Naturally weave in relevant keywords from the job description into existing bullet content.
-7. ATS KEYWORD DENSITY: To maximise ATS keyword match scores, important keywords from the Job Description should appear across MULTIPLE sections — in the resumeSummary, resumeSkills, AND in experience bullets. Do not restrict a keyword to just one section.
+7. ATS KEYWORD DENSITY: To maximise ATS keyword match scores, important keywords from the Job Description should appear across MULTIPLE sections - in the resumeSummary, resumeSkills, AND in experience bullets. Do not restrict a keyword to just one section.
 8. Return the response in the exact JSON schema requested. Do not return markdown wraps, just the raw JSON object.
 9. JSON ESCAPING RULE: All string values in the JSON output MUST be properly escaped. Specifically, if you use double quotes inside a string value, you MUST escape them as \\" (e.g., write \\"Product Manager\\" instead of "Product Manager"). Do not include raw, unescaped double quotes inside your string values, as this breaks the JSON parser.
 

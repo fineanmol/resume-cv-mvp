@@ -26,6 +26,8 @@ export interface PageSpacingSettings {
   sectionSpacing: number;
   /** Gap between individual entries within a section (px) */
   entrySpacing?: number;
+  /** Gap between education entries (Masters / Bachelors). Defaults above entrySpacing. */
+  educationEntrySpacing?: number;
   /** Gap between designer template left/right columns (px) */
   columnGap?: number;
 }

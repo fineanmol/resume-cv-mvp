@@ -33,4 +33,6 @@ export interface IAiService {
   injectKeywordIntoResume(apiKey: string, state: ResumeState, keyword: string): Promise<Partial<ResumeState>>;
   improveExperienceBullet(apiKey: string, bulletText: string, jobTitle?: string, jdText?: string): Promise<string>;
   extractJdFromHtml(apiKey: string, rawHtml: string): Promise<string>;
+  humanizeResume(apiKey: string, state: ResumeState): Promise<Partial<ResumeState>>;
+  humanizeCoverLetter(apiKey: string, state: CoverLetterState): Promise<Partial<CoverLetterState>>;
 }

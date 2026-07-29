@@ -73,12 +73,12 @@ export const DesignerLanguagesSection: React.FC<DesignerLanguagesSectionProps> =
                   )}
                 >
                   <div className="flex justify-between items-start gap-1">
-                    <div>
-                      <E tag="p" field="languages.name" value={lang.name} isEditable={isEditable} editableClass={ec}
-                        style={{ ...FG.entry, color: C_TITLE }}
+                    <div className="flex items-baseline gap-1.5 min-w-0 flex-wrap">
+                      <E tag="span" field="languages.name" value={lang.name} isEditable={isEditable} editableClass={ec}
+                        style={{ ...FG.itemTitle, color: C_TITLE }}
                         onSave={v => onLanguageChange?.(idx, 'name', v)} />
                       {showLevel && (
-                        <E tag="p" field="languages.level" value={lang.level} isEditable={isEditable} editableClass={ec}
+                        <E tag="span" field="languages.level" value={lang.level} isEditable={isEditable} editableClass={ec}
                           style={FG.meta}
                           onSave={v => onLanguageChange?.(idx, 'level', v)} />
                       )}

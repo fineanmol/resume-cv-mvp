@@ -111,3 +111,16 @@ npm run test
 npm run build
 ```
 This runs the typescript compiler checks (`tsc`) and bundles the application via Vite.
+
+### Auto-apply API + MCP (Designer PDF)
+
+Local HTTP API and Cursor MCP for tailoring + headless **Designer** PDF export (used by the n8n auto-apply repo).
+
+See **[docs/API_MCP.md](docs/API_MCP.md)**.
+
+```bash
+export GEMINI_API_KEY=...
+npx playwright install chromium   # once
+npm run api    # http://127.0.0.1:8791
+npm run mcp    # Cursor MCP (stdio)
+```

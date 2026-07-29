@@ -130,16 +130,17 @@ export function designerFloatTransform(clone: HTMLElement) {
   designerGrid.style.columnGap = '';
   designerGrid.style.rowGap = '';
 
-  // Replicate grid-cols-[1.4fr_1fr] proportions: 1.4/2.4 ≈ 58.33% left, 1/2.4 ≈ 41.67% right
+  // Match CSS grid-cols-[1.5fr_1fr] with gap. Use decimal factors — nested
+  // `* 1.5 / 2.5` is invalid in some Chromium calc() paths and collapses width.
   leftCol.style.display = 'block';
   leftCol.style.float = 'left';
-  leftCol.style.width = `calc(58.333% - ${gapPx}px)`;
+  leftCol.style.width = `calc((100% - ${gapPx}px) * 0.6)`;
   leftCol.style.marginRight = `${gapPx}px`;
   leftCol.style.gap = ''; // clear inline flex gap (margin-bottom handles spacing)
 
   rightCol.style.display = 'block';
   rightCol.style.float = 'left';
-  rightCol.style.width = '41.667%';
+  rightCol.style.width = `calc((100% - ${gapPx}px) * 0.4)`;
   rightCol.style.gap = ''; // clear inline flex gap
 
   // Clearfix so the container wraps both floats

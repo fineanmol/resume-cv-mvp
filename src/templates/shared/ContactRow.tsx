@@ -4,6 +4,7 @@ import type { CustomContactField, LayoutSettings } from '../../types';
 import { EditableText } from './EditableText';
 import { LI } from './LinkedInIcon';
 import { formatLinkedinUrl } from '../../utils/linkedin';
+import { formatContactUrl } from '../../utils/contactUrl';
 import { CONTACT_ICON_MAP } from '../../components/ui/ContactIconPicker';
 import type { EditField } from '../header/types';
 
@@ -18,9 +19,10 @@ export const ContactRow: React.FC<{
   ec: string;
   cls?: string;
   itemCls?: string;
+  style?: React.CSSProperties;
   layoutSettings?: LayoutSettings;
   customContacts?: CustomContactField[];
-}> = ({ phone, email, location, linkedin, isEditable, ec, cls, itemCls, layoutSettings, customContacts }) => {
+}> = ({ phone, email, location, linkedin, isEditable, ec, cls, itemCls, style, layoutSettings, customContacts }) => {
   const settings: Partial<LayoutSettings> = layoutSettings ?? {};
   const hasPhone = (settings.showPhone ?? true) && !!(phone?.value && phone.value.trim());
   const hasEmail = (settings.showEmail ?? true) && !!(email?.value && email.value.trim());
@@ -33,7 +35,7 @@ export const ContactRow: React.FC<{
   }
 
   return (
-    <div className={cls ?? 'flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 mt-2'}>
+    <div className={cls ?? 'flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 mt-2'} style={style}>
       {hasPhone && (
         <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
           <Phone className="w-3 h-3 flex-shrink-0 mt-[1px]" />
@@ -61,11 +63,14 @@ export const ContactRow: React.FC<{
       {visibleCustom.map((field) => {
         // Fallback to Star icon guards against unknown icon values from stale/migrated data.
         const Icon = CONTACT_ICON_MAP[field.icon] ?? Star;
+        const href = formatContactUrl(field.value);
         return (
           <span key={field.id} className={`flex items-center gap-1 ${itemCls ?? ''}`}>
             {/* size={12} sets width/height attributes directly so react-icons SVGs render at 12px reliably */}
             <Icon size={12} className="flex-shrink-0 mt-[1px]" />
-            <span>{field.value}</span>
+            <a href={href} target="_blank" rel="noopener noreferrer" className="hover:underline cursor-pointer" data-href={href}>
+              {field.value}
+            </a>
           </span>
         );
       })}

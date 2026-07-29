@@ -24,6 +24,8 @@ export interface DesignerEducationSectionProps {
   C_COMPANY: string;
   dsec: React.CSSProperties;
   entrySpacing: number;
+  /** Preferred gap between Masters/Bachelors; falls back to entrySpacing + 6. */
+  educationEntrySpacing?: number;
   brandColor: string | undefined;
   bulletStyle: string;
   showEdu: (edu: ResumeState['resumeEducation'][number], field: keyof NonNullable<ResumeState['resumeEducation'][number]['visibility']>) => boolean;
@@ -50,6 +52,7 @@ export const DesignerEducationSection: React.FC<DesignerEducationSectionProps> =
   C_COMPANY,
   dsec,
   entrySpacing,
+  educationEntrySpacing,
   brandColor,
   bulletStyle,
   showEdu,
@@ -70,7 +73,11 @@ export const DesignerEducationSection: React.FC<DesignerEducationSectionProps> =
       >
         <section style={dsec}>
           <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Education</h3>
-          <div className="flex flex-col" style={{ gap: `${entrySpacing}px` }}>
+          <div
+            data-education-entries
+            className="flex flex-col"
+            style={{ gap: `${educationEntrySpacing ?? entrySpacing + 6}px` }}
+          >
             {resumeEducation.map((edu, idx) => {
               const { gradeText } = parseEducationGrade(edu.bullets);
               const showLogo = (layoutSettings?.showEducationLogo ?? true) && showEdu(edu, 'logo');
@@ -78,6 +85,7 @@ export const DesignerEducationSection: React.FC<DesignerEducationSectionProps> =
               const showLocation = (layoutSettings?.showEducationLocation ?? true) && showEdu(edu, 'location');
               const showGpa = (layoutSettings?.showEducationGpa ?? true) && showEdu(edu, 'gpa');
               const showBullets = showEdu(edu, 'bullets');
+              const isLast = idx === resumeEducation.length - 1;
 
               return (
                 <ItemWrapper
@@ -97,61 +105,72 @@ export const DesignerEducationSection: React.FC<DesignerEducationSectionProps> =
                     />
                   )}
                 >
-                  <div className="flex gap-3 justify-between items-start" style={FG.body}>
-                    <div className="flex-1 space-y-0.5">
-                      <div className="flex items-center gap-1.5 leading-snug">
-                        {showLogo && (
-                          <ItemLogo
-                            logo={edu.logo}
-                            brandColor={C_COMPANY}
-                            placeholderIconName="graduation-cap"
-                            isEditable={isEditable}
-                            onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
-                          />
-                        )}
-                        <E field="education.degree" value={edu.degree} isEditable={isEditable} editableClass={ec} className="break-words" style={{ ...FG.entry, color: C_TITLE }} onSave={v => onEducationChange?.(idx, 'degree', v)} />
-                      </div>
-                      {(edu.school || isEditable) && (
-                        <div className="flex justify-between leading-snug">
-                          <E field="education.school" value={edu.school} isEditable={isEditable} editableClass={ec} style={{ ...FG.company, color: C_COMPANY }} onSave={v => onEducationChange?.(idx, 'school', v)} />
-                        </div>
-                      )}
-                      {(showDates || showLocation) && (
-                        <div className="flex justify-between leading-snug" style={FG.meta}>
-                          {showDates && (
-                            <DateRangePicker
-                              value={edu.dates}
+                  {/* Match golden master: dashed rule + air between Masters and Bachelors. */}
+                  <div
+                    style={FG.body}
+                    className={
+                      isLast
+                        ? undefined
+                        : 'border-b border-dashed border-slate-300 pb-2 mb-2.5'
+                    }
+                    data-edu-separator={isLast ? undefined : 'true'}
+                  >
+                    <div className="flex gap-3 justify-between items-start">
+                      <div className="flex-1 space-y-0.5">
+                        <div className="flex items-center gap-1.5 leading-snug">
+                          {showLogo && (
+                            <ItemLogo
+                              logo={edu.logo}
+                              brandColor={C_COMPANY}
+                              placeholderIconName="graduation-cap"
                               isEditable={isEditable}
-                              onSave={v => onEducationChange?.(idx, 'dates', v)}
-                              style={FG.meta}
+                              onLogoChange={(logo) => onEducationChange?.(idx, 'logo', logo)}
                             />
                           )}
-                          {showLocation && (
-                            <E field="education.location" value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
-                          )}
+                          <E field="education.degree" value={edu.degree} isEditable={isEditable} editableClass={ec} className="break-words" style={{ ...FG.entry, color: C_HEAD }} onSave={v => onEducationChange?.(idx, 'degree', v)} />
+                        </div>
+                        {(edu.school || isEditable) && (
+                          <div className="flex justify-between leading-snug">
+                            <E field="education.school" value={edu.school} isEditable={isEditable} editableClass={ec} style={{ ...FG.company, color: C_COMPANY }} onSave={v => onEducationChange?.(idx, 'school', v)} />
+                          </div>
+                        )}
+                        {(showDates || showLocation) && (
+                          <div className="flex justify-between leading-snug" style={FG.meta}>
+                            {showDates && (
+                              <DateRangePicker
+                                value={edu.dates}
+                                isEditable={isEditable}
+                                onSave={v => onEducationChange?.(idx, 'dates', v)}
+                                style={FG.meta}
+                              />
+                            )}
+                            {showLocation && (
+                              <E field="education.location" value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
+                            )}
+                          </div>
+                        )}
+                        <EducationDescription
+                          bullets={edu.bullets}
+                          isEditable={isEditable}
+                          editableClass={ec}
+                          onBulletChange={(v) => onEducationChange?.(idx, 'bullets', v)}
+                          className={`leading-snug text-${educationAlign}`}
+                          bulletStyle={bulletStyle}
+                          align={educationAlign}
+                          prefixId={`edu-${idx}`}
+                          showBullets={showBullets || isEditable}
+                          splitGpa
+                        />
+                      </div>
+                      {showGpa && gradeText && (
+                        <div className="flex items-center gap-2 h-full flex-shrink-0 self-stretch mt-1">
+                          <div className="w-[1px] bg-slate-300 self-stretch min-h-[30px]" />
+                          <div className="text-center whitespace-pre-line leading-tight px-1 min-w-[60px]" style={{ ...FG.company, color: C_COMPANY }}>
+                            {gradeText}
+                          </div>
                         </div>
                       )}
-                      <EducationDescription
-                        bullets={edu.bullets}
-                        isEditable={isEditable}
-                        editableClass={ec}
-                        onBulletChange={(v) => onEducationChange?.(idx, 'bullets', v)}
-                        className={`leading-snug text-${educationAlign}`}
-                        bulletStyle={bulletStyle}
-                        align={educationAlign}
-                        prefixId={`edu-${idx}`}
-                        showBullets={showBullets || isEditable}
-                        splitGpa
-                      />
                     </div>
-                    {showGpa && gradeText && (
-                      <div className="flex items-center gap-2 h-full flex-shrink-0 self-stretch mt-1">
-                        <div className="w-[1px] bg-slate-300 self-stretch min-h-[30px]" />
-                        <div className="text-center whitespace-pre-line leading-tight px-1 min-w-[60px]" style={{ ...FG.company, color: C_COMPANY }}>
-                          {gradeText}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </ItemWrapper>
               );

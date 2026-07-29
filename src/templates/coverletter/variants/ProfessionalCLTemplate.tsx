@@ -67,8 +67,8 @@ const ProfessionalCLTemplate: React.FC<CoverLetterTemplateProps> = ({
         </p>
       </div>
 
-      {/* ── Letter body ── */}
-      <section className="text-xs text-slate-800 space-y-3 mt-4">
+      {/* ── Letter body — inherit sheet fontSize (no Tailwind text-xs override) ── */}
+      <section className="text-slate-800 space-y-3 mt-4" style={{ fontSize: "inherit" }}>
         <EditableText
           tag="p"
           value={salutation || "To the Recruitment Team,"}
@@ -85,12 +85,12 @@ const ProfessionalCLTemplate: React.FC<CoverLetterTemplateProps> = ({
         {highlights && highlights.length > 0 && (
           <section aria-label="Key highlights" className="mt-1">
             <h2
-              className="text-xs font-bold mb-2"
-              style={{ color: brandColor }}
+              className="font-bold mb-2"
+              style={{ color: brandColor, fontSize: "inherit" }}
             >
               Key Highlights of My Expertise:
             </h2>
-            <ul className="space-y-1.5 text-xs text-slate-700">
+            <ul className="space-y-1.5 text-slate-700" style={{ fontSize: "inherit" }}>
               {highlights.map((item, idx) => (
                 <li key={idx} className="flex items-baseline gap-2">
                   <span

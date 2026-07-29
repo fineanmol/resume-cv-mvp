@@ -1,58 +1,147 @@
+/**
+ * Extract ATS-relevant keywords from a job description.
+ * Prefer known skill phrases; never treat high-frequency filler / German
+ * function words as keywords (those were getting stuffed into resumes).
+ */
 export function extractKeywords(jd: string): string[] {
   if (!jd) return [];
-  
-  const words = jd.toLowerCase().match(/\b[a-z0-9\-+#']+\b/g) || [];
-  
-  const stopWords = new Set([
-    'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours',
-    'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself',
-    'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which',
-    'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be',
-    'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an',
-    'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by',
-    'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before',
-    'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over',
-    'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why',
-    'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such',
-    'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can',
-    'will', 'just', 'don', 'should', 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain',
-    'aren', 'couldn', 'didn', 'doesn', 'hadn', 'hasn', 'haven', 'isn', 'ma', 'mightn',
-    'mustn', 'needn', 'shan', 'shouldn', 'wasn', 'weren', 'won', 'wouldn', 'using', 'experience',
-    'work', 'role', 'team', 'company', 'job', 'skills', 'hiring', 'opportunity', 'requirements',
-    'candidate', 'description', 'position', 'requirements', 'responsibilities', 'qualification',
-    'qualifications', 'successful', 'ideal'
-  ]);
 
-  const candidateKeywords = words.filter(w => w.length > 3 && !stopWords.has(w));
-  
-  const frequencies: { [key: string]: number } = {};
-  candidateKeywords.forEach(w => {
-    frequencies[w] = (frequencies[w] || 0) + 1;
-  });
+  const lowercaseJd = jd.toLowerCase();
 
   const commonTechSkills = [
-    'product management', 'product manager', 'project management', 'software development',
-    'product strategy', 'product roadmap', 'market research', 'data analysis', 'user research',
-    'agile methodology', 'agile methodologies', 'scrum master', 'cross functional', 'cross-functional',
-    'stakeholder management', 'stakeholder engagement', 'a/b testing', 'ab testing', 'user experience',
-    'user stories', 'acceptance criteria', 'wireframes', 'figma', 'jira', 'confluence', 'github',
-    'optimizely', 'amplitude', 'google analytics', 'power bi', 'tableau', 'sql', 'python', 'java',
-    'react', 'typescript', 'javascript', 'api integration', 'saas product', 'saas products', 'fintech',
-    'c++', 'c#', '.net'
+    'product management',
+    'product manager',
+    'product owner',
+    'project management',
+    'software development',
+    'product strategy',
+    'product roadmap',
+    'roadmaps',
+    'market research',
+    'data analysis',
+    'user research',
+    'user experience',
+    'agile methodology',
+    'agile methodologies',
+    'scrum master',
+    'cross functional',
+    'cross-functional',
+    'stakeholder management',
+    'stakeholder engagement',
+    'a/b testing',
+    'ab testing',
+    'user stories',
+    'acceptance criteria',
+    'wireframes',
+    'figma',
+    'jira',
+    'confluence',
+    'github',
+    'optimizely',
+    'amplitude',
+    'google analytics',
+    'power bi',
+    'tableau',
+    'sql',
+    'python',
+    'java',
+    'react',
+    'typescript',
+    'javascript',
+    'api integration',
+    'saas product',
+    'saas products',
+    'fintech',
+    'e-commerce',
+    'ecommerce',
+    'go-to-market',
+    'backlog',
+    'prioritization',
+    'experimentation',
+    'kpi',
+    'okrs',
+    'b2b',
+    'saas',
+    'crm',
+    'salesforce',
+    'machine learning',
+    'c++',
+    'c#',
+    '.net',
   ];
 
+  /** Single-token skills that are safe to score on (allowlist only). */
+  const allowedSingleSkills = new Set([
+    'sql',
+    'python',
+    'java',
+    'react',
+    'typescript',
+    'javascript',
+    'figma',
+    'jira',
+    'confluence',
+    'github',
+    'optimizely',
+    'amplitude',
+    'tableau',
+    'fintech',
+    'saas',
+    'b2b',
+    'crm',
+    'salesforce',
+    'scrum',
+    'kanban',
+    'agile',
+    'roadmap',
+    'roadmaps',
+    'backlog',
+    'analytics',
+    'kpi',
+    'okrs',
+    'api',
+    'apis',
+    'ux',
+    'ui',
+    'seo',
+    'gtm',
+    'mvp',
+    'prd',
+    'prds',
+    'c++',
+    'c#',
+    '.net',
+  ]);
+
   const foundSkills: string[] = [];
-  const lowercaseJd = jd.toLowerCase();
-  commonTechSkills.forEach(skill => {
-    if (lowercaseJd.includes(skill)) {
-      foundSkills.push(skill);
-    }
-  });
+  for (const skill of commonTechSkills) {
+    if (lowercaseJd.includes(skill)) foundSkills.push(skill);
+  }
 
-  const sortedWords = Object.keys(frequencies).sort((a, b) => frequencies[b] - frequencies[a]);
-  const topSingleWords = sortedWords.slice(0, 20);
+  // Also pick allowlisted single tokens that appear in the JD (for C++ / SQL etc.)
+  const words = lowercaseJd.match(/\b[a-z0-9\-+#'.]+\b/g) || [];
+  const frequencies: Record<string, number> = {};
+  for (const w of words) {
+    if (!allowedSingleSkills.has(w)) continue;
+    frequencies[w] = (frequencies[w] || 0) + 1;
+  }
+  const topAllowedSingles = Object.keys(frequencies)
+    .sort((a, b) => frequencies[b] - frequencies[a])
+    .slice(0, 12);
 
-  const allKeywords = Array.from(new Set([...foundSkills, ...topSingleWords]));
-  
+  const germanFiller = new Set([
+    'und', 'oder', 'der', 'die', 'das', 'mit', 'von', 'für', 'nicht', 'sich',
+    'wir', 'eine', 'einer', 'erfahrung', 'zusammenarbeit', 'arbeiten', 'kenntnisse',
+    'anforderungen', 'aufgaben', 'lösung', 'lösungen', 'unterstützt', 'unserer',
+  ]);
+
+  const allKeywords = Array.from(new Set([...foundSkills, ...topAllowedSingles])).filter(
+    (kw) => {
+      const k = kw.toLowerCase();
+      if (germanFiller.has(k)) return false;
+      if (/[äöüß]/i.test(k)) return false; // resume is English — never score DE-only tokens
+      return true;
+    },
+  );
   return allKeywords.sort((a, b) => b.length - a.length);
 }

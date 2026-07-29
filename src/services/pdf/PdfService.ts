@@ -2,18 +2,14 @@ import html2pdf from 'html2pdf.js';
 import { stripEditorFocusClasses } from '../../utils/editorFocus';
 import { sanitizeCssOklch, deepSanitizeColorsForTree } from './colorSanitizer';
 import {
-  designerFloatTransform,
   finalizePdfClone,
   injectSanitizedStyles,
   inlineAllResolvedColors,
-  preserveAvatarShapesForPrint,
   prepareSheetForExport,
-  resolveCloneImageUrls,
-  stripAvatarPlaceholderStyles,
   stripClonedDocStyles,
-  stripEditOnlyFromClone,
 } from './cloneSheet';
-import { getLegacyExportStyleBlock, getPrintStyleBlock } from './printStyles';
+import { buildPrintHtml } from './buildPrintHtml';
+import { getLegacyExportStyleBlock } from './printStyles';
 import { PAGE_WIDTH_PX } from '../../constants/page';
 
 interface PdfImage {
@@ -146,49 +142,8 @@ export class PdfService {
    */
   public static downloadPdf(element: HTMLElement, filename: string): Promise<void> {
     const sheetElement = (element.querySelector('.pdf-sheet') || element) as HTMLElement;
-
-    // Collect all styles from the parent document
-    let allStyles = '';
-    for (const sheet of Array.from(document.styleSheets)) {
-      try {
-        const rules = sheet.cssRules || sheet.rules;
-        if (rules) {
-          allStyles += Array.from(rules).map(r => r.cssText).join('\n') + '\n';
-        }
-      } catch {
-        // Cross-origin stylesheet — skip (fonts are handled via <link> below)
-      }
-    }
-
-    // Collect Google Fonts link tags
-    const fontLinks = Array.from(
-      document.querySelectorAll('link[href*="fonts.googleapis.com"], link[href*="fonts.gstatic.com"]')
-    ).map(l => l.outerHTML).join('\n');
-
-    // Prepare clone: strip editor-only chrome, restore print state
-    const clone = sheetElement.cloneNode(true) as HTMLElement;
-    stripEditOnlyFromClone(clone, sheetElement);
-    preserveAvatarShapesForPrint(clone, sheetElement);
-    designerFloatTransform(clone);
-    stripAvatarPlaceholderStyles(clone);
-    resolveCloneImageUrls(clone);
-
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${filename.replace(/\.pdf$/i, '')}</title>
-  ${fontLinks}
-  <style>
-    ${allStyles}
-    ${getPrintStyleBlock()}
-  </style>
-</head>
-<body>
-  ${clone.outerHTML}
-</body>
-</html>`;
+    // Same HTML document as headless /v1/export_pdfs (Teal-style: one renderer)
+    const html = buildPrintHtml(sheetElement, filename);
 
     return new Promise((resolve, reject) => {
       const iframe = document.createElement('iframe');

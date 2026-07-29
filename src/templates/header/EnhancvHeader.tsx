@@ -73,11 +73,15 @@ export const EnhancvHeader: React.FC<TemplateHeaderProps> = (p) => {
           {(p.customContacts ?? []).filter(c => c.value.trim()).map((field) => {
             // Fallback to Star icon guards against unknown icon values from stale/migrated data.
             const Icon = CONTACT_ICON_MAP[field.icon] ?? Star;
+            const raw = field.value.trim();
+            const href = /^(https?:|mailto:)/i.test(raw) ? raw : `https://${raw.replace(/^\/\//, '')}`;
             return (
               <span key={field.id} className="flex items-center gap-1.5 min-w-0">
                 {/* size={14} sets width/height attributes directly so react-icons SVGs render at 14px reliably */}
                 <Icon size={14} className="text-slate-400 flex-shrink-0" />
-                <span className="truncate">{field.value}</span>
+                <a href={href} target="_blank" rel="noopener noreferrer" className="truncate hover:underline cursor-pointer" data-href={href}>
+                  {field.value}
+                </a>
               </span>
             );
           })}

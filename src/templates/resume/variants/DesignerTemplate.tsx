@@ -1,12 +1,14 @@
 import React from 'react';
 import {
-  Phone, Mail, MapPin,
+  Phone, Mail, MapPin, Globe, Star,
 } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
 import { formatLinkedinUrl } from '../../../utils/linkedin';
+import { formatContactUrl } from '../../../utils/contactUrl';
 import { HeaderWrapper } from '../../shared/HeaderWrapper';
 import { isEntryFieldVisible } from '../../../utils/entryVisibility';
 import { useTemplateRenderContext } from '../useTemplateSetup';
+import { CONTACT_ICON_MAP } from '../../../components/ui/ContactIconPicker';
 import {
   LI,
   ProfilePhotoWithWaves,
@@ -22,7 +24,7 @@ import { DesignerLanguagesSection } from './designer/DesignerLanguagesSection';
 export const DesignerTemplate: React.FC = () => {
   const {
     sheetActiveClass, sheetStyle, isEditable, clearActive, ec, ef,
-    name, subtitle, phone, email, linkedin, location, avatar,
+    name, subtitle, phone, email, linkedin, location, avatar, customContacts,
     resumeSummary, resumeSkills, resumeExperience, resumeEducation,
     resumeCerts, resumeAchievements, resumeLanguages, layoutSettings,
     brandColor, accentColor2, bulletStyle, skillsStyle, summaryAlign, badgeStyle,
@@ -48,16 +50,21 @@ export const DesignerTemplate: React.FC = () => {
   const scale = (layoutSettings?.fontSize ?? 10) / 10;
   const lh = lineHeight;        // Line Height slider
   const C_BODY  = layoutSettings?.bodyTextColor ?? '#3E3E3E'; // Body text color picker
+  // Name/subtitle use tight line-height (not body lh) so the header matches website PDF (~114pt to first section).
   const FG = {
-    name:       { fontFamily: _HEAD,   fontSize: `${(21.5  * scale).toFixed(2)}pt`, fontWeight: 700, lineHeight: lh } as React.CSSProperties,
-    subtitle:   { fontFamily: _ACCENT, fontSize: `${(10.78 * scale).toFixed(2)}pt`, fontWeight: 700, lineHeight: lh } as React.CSSProperties,
+    name:       { fontFamily: _HEAD,   fontSize: `${(21.5  * scale).toFixed(2)}pt`, fontWeight: 700, lineHeight: 1.05 } as React.CSSProperties,
+    subtitle:   { fontFamily: _ACCENT, fontSize: `${(10.78 * scale).toFixed(2)}pt`, fontWeight: 700, lineHeight: 1.15 } as React.CSSProperties,
     section:    { fontFamily: _HEAD,   fontSize: `${(11.4  * scale).toFixed(2)}pt`, fontWeight: 700, lineHeight: lh } as React.CSSProperties,
-    entry:      { fontFamily: _TITLE,  fontSize: `${(9.5   * scale).toFixed(2)}pt`, fontWeight: 400, lineHeight: lh } as React.CSSProperties,
-    entryTitle: { fontFamily: _TITLE,  fontSize: `${(9.5   * scale).toFixed(2)}pt`, fontWeight: 400, lineHeight: lh } as React.CSSProperties,
-    company:    { fontFamily: _ACCENT, fontSize: `${(8.88  * scale).toFixed(2)}pt`, fontWeight: 700, lineHeight: lh } as React.CSSProperties,
-    body:       { fontFamily: _OS,     fontSize: `${(7.61  * scale).toFixed(2)}pt`, fontWeight: 400, color: C_BODY, lineHeight: lh } as React.CSSProperties,
-    contact:    { fontFamily: _OS,     fontSize: `${(7.6   * scale).toFixed(2)}pt`, fontWeight: 700, color: C_BODY, lineHeight: lh } as React.CSSProperties,
-    meta:       { fontFamily: _OS,     fontSize: `${(7     * scale).toFixed(2)}pt`, fontWeight: 400, color: C_BODY, lineHeight: lh } as React.CSSProperties,
+    // Job/degree titles: Raleway Regular 9.5pt #343334 (matches Product Resume.pdf).
+    entry:      { fontFamily: _TITLE,  fontSize: `${(9.5   * scale).toFixed(2)}pt`, fontWeight: 400, lineHeight: Math.min(lh, 1.25) } as React.CSSProperties,
+    entryTitle: { fontFamily: _TITLE,  fontSize: `${(9.5   * scale).toFixed(2)}pt`, fontWeight: 400, lineHeight: Math.min(lh, 1.25) } as React.CSSProperties,
+    // Cert/achievement titles: OpenSans-Bold 8.88pt #343334 (matches website Product Resume).
+    itemTitle:  { fontFamily: _OS,     fontSize: `${(8.88  * scale).toFixed(2)}pt`, fontWeight: 700, lineHeight: Math.min(lh, 1.25) } as React.CSSProperties,
+    // School/company: OpenSans-Bold 8.88pt teal #00B6CB
+    company:    { fontFamily: _ACCENT, fontSize: `${(8.88  * scale).toFixed(2)}pt`, fontWeight: 700, lineHeight: Math.min(lh, 1.25) } as React.CSSProperties,
+    body:       { fontFamily: _OS,     fontSize: `${(7.61  * scale).toFixed(2)}pt`, fontWeight: 400, color: C_BODY, lineHeight: Math.min(lh, 1.22) } as React.CSSProperties,
+    contact:    { fontFamily: _OS,     fontSize: `${(7.6   * scale).toFixed(2)}pt`, fontWeight: 700, color: C_BODY, lineHeight: 1.2 } as React.CSSProperties,
+    meta:       { fontFamily: _OS,     fontSize: `${(7     * scale).toFixed(2)}pt`, fontWeight: 400, color: C_BODY, lineHeight: Math.min(lh, 1.2) } as React.CSSProperties,
   };
   // Colour defaults — user's brandColor / accentColor2 / titleColor override the Figma defaults
   const C_HEAD    = brandColor                      ?? '#343334';  // name + section headings + borders
@@ -86,11 +93,12 @@ export const DesignerTemplate: React.FC = () => {
 
   const showProjectIcons = layoutSettings?.showProjectIcons ?? true;
   const showProjectDesc = layoutSettings?.showProjectDesc ?? true;
-  const showProjectBullets = layoutSettings?.showProjectBullets ?? true;
+  // Website Designer default: no bullets on summary / certs / achievements
+  const showProjectBullets = layoutSettings?.showProjectBullets ?? false;
   const showAchievementIcons = layoutSettings?.showAchievementIcons ?? true;
   const showAchievementDesc = layoutSettings?.showAchievementDesc ?? true;
-  const showAchievementBullets = layoutSettings?.showAchievementBullets ?? true;
-  const showSummaryBullets = layoutSettings?.showSummaryBullets ?? true;
+  const showAchievementBullets = layoutSettings?.showAchievementBullets ?? false;
+  const showSummaryBullets = layoutSettings?.showSummaryBullets ?? false;
 
   const handleAddSkill = () => {
     const list = resumeSkills ? resumeSkills.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -178,6 +186,7 @@ export const DesignerTemplate: React.FC = () => {
             onAddEducation={onAddEducation}
             ec={ec}
             entrySpacing={entrySpacing}
+            educationEntrySpacing={layoutSettings?.educationEntrySpacing ?? entrySpacing + 6}
             brandColor={brandColor}
             bulletStyle={bulletStyle}
             showEdu={showEdu}
@@ -264,6 +273,7 @@ export const DesignerTemplate: React.FC = () => {
       style={{
         ...sheetStyle,
         ['--entry-gap' as string]: `${entrySpacing}px`,
+        ['--education-entry-gap' as string]: `${layoutSettings?.educationEntrySpacing ?? entrySpacing + 6}px`,
         ['--section-gap' as string]: `${sectionGap}px`,
       } as React.CSSProperties}
       id="resume-sheet"
@@ -308,7 +318,7 @@ export const DesignerTemplate: React.FC = () => {
           {showTitle && (
             <span data-header-subtitle className="contents">
               <E tag="p" field="header.subtitle" value={subtitle} isEditable={isEditable} editableClass={ec}
-                className="uppercase mt-1 tracking-wider" style={{ ...FG.subtitle, color: C_COMPANY }} onSave={ef('subtitle')} />
+                className="mt-1 tracking-wider" style={{ ...FG.subtitle, color: C_COMPANY }} onSave={ef('subtitle')} />
             </span>
           )}
 
@@ -324,7 +334,7 @@ export const DesignerTemplate: React.FC = () => {
             {hasEmail && (
               <span className="inline-flex items-center gap-1.5 align-middle">
                 <Mail className="w-3 h-3 text-slate-400 flex-shrink-0 inline-block" aria-hidden />
-                <E field="header.email" value={email} isEditable={isEditable} editableClass={ec} onSave={ef('email')} />
+                <E field="header.email" value={email} isEditable={isEditable} editableClass={ec} href={`mailto:${email}`} onSave={ef('email')} />
               </span>
             )}
             {hasLinkedin && (
@@ -333,6 +343,18 @@ export const DesignerTemplate: React.FC = () => {
                 <E field="header.linkedin" value={linkedin} isEditable={isEditable} editableClass={ec} href={formatLinkedinUrl(linkedin)} onSave={ef('linkedin')} />
               </span>
             )}
+            {(customContacts ?? []).filter((c) => c.value?.trim()).map((field) => {
+              const Icon = CONTACT_ICON_MAP[field.icon] ?? (field.icon === 'globe' ? Globe : Star);
+              const href = formatContactUrl(field.value);
+              return (
+                <span key={field.id} className="inline-flex items-center gap-1.5 align-middle">
+                  <Icon size={12} className="text-slate-400 flex-shrink-0 inline-block" aria-hidden />
+                  <a href={href} target="_blank" rel="noopener noreferrer" className="hover:underline cursor-pointer" data-href={href}>
+                    {field.value}
+                  </a>
+                </span>
+              );
+            })}
             {hasLocation && (
               <span className="inline-flex items-center gap-1.5 align-middle">
                 <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0 inline-block" aria-hidden />
@@ -361,7 +383,7 @@ export const DesignerTemplate: React.FC = () => {
 
       <div
         data-testid="designer-column-grid"
-        className="grid grid-cols-[1.4fr_1fr] mt-2"
+        className="grid grid-cols-[1.5fr_1fr] mt-2"
         style={{ gap: `${layoutSettings?.columnGap ?? 16}px` }}
       >
         <div

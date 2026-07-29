@@ -39,4 +39,9 @@ export const DESIGNER_STYLE_DEFAULTS: Partial<LayoutSettings> = {
   bodyTextColor: "#3E3E3E",
   titleColor: "#343334",
   headerStyle: "left",
+  // Match website Designer export (Sakshi Product Resume): paragraph summary /
+  // cert / achievement descriptions — bullets only on Experience.
+  showSummaryBullets: false,
+  showProjectBullets: false,
+  showAchievementBullets: false,
 };

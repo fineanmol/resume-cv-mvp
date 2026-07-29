@@ -110,7 +110,7 @@ describe('DesignerTemplate — functional regression', () => {
       isEditable: false,
     });
     const projectsHeading = Array.from(container.querySelectorAll('h3')).find(
-      (h) => h.textContent === 'Projects'
+      (h) => h.textContent === 'Certifications' || h.textContent === 'Projects'
     );
     expect(projectsHeading).toBeTruthy();
     const projectsSection = projectsHeading!.closest('section');

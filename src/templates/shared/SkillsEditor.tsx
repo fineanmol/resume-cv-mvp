@@ -26,7 +26,12 @@ export const SkillsEditor = React.memo<{
   const [focusedSkillIdx, setFocusedSkillIdx] = useState<number | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
-  const skillsList = value ? value.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const skillsList = value
+    ? value
+        .split(',')
+        .map((s) => s.replace(/\*\*/g, '').replace(/^[-•*]\s*/, '').trim())
+        .filter(Boolean)
+    : [];
 
   useEffect(() => {
     if (!isEditable) return;
@@ -152,16 +157,36 @@ export const SkillsEditor = React.memo<{
     );
   }
 
-  // ── Grid style: 4-column plain-text table (like a classic ATS resume) ─────
+  // ── Grid style: justified underline rows (match master Product Resume) ─────
   if (skillsStyle === 'grid') {
+    // Match master Product Resume: fixed ~18pt gutters, natural wrap (no flex-grow orphans).
+    const gridStyle: React.CSSProperties = {
+      display: 'flex',
+      flexWrap: 'wrap',
+      justifyContent: 'flex-start',
+      columnGap: '17.8pt',
+      rowGap: '8.5pt',
+      width: '100%',
+      maxWidth: '100%',
+    };
+    const itemStyle: React.CSSProperties = {
+      fontFamily: gridFontFamily ?? "'Open Sans', sans-serif",
+      fontSize: `${(8.25 * fontScale).toFixed(2)}pt`,
+      fontWeight: 700,
+      color: gridTextColor,
+      flex: '0 0 auto',
+      maxWidth: '100%',
+      textAlign: 'left',
+    };
     if (!isEditable) {
       return (
-        <div className={`flex flex-wrap gap-x-4 gap-y-0 ${className}`}>
+        <div data-skills-grid className={`w-full max-w-full ${className}`} style={gridStyle}>
           {skillsList.map((s, i) => (
             <span
               key={i}
-              className="border-b border-slate-300 pb-1 pt-1 whitespace-nowrap"
-              style={{ fontFamily: gridFontFamily ?? "'Open Sans', sans-serif", fontSize: `${(8.25 * fontScale).toFixed(2)}pt`, fontWeight: 700, color: gridTextColor }}
+              data-skill-grid-item
+              className="border-b border-slate-300 pb-1 pt-0.5 whitespace-nowrap"
+              style={itemStyle}
               dangerouslySetInnerHTML={{ __html: formatMarkdownInline(s) }}
             />
           ))}
@@ -170,16 +195,17 @@ export const SkillsEditor = React.memo<{
     }
     // Editable grid: each cell is a contenteditable span, same keyboard contract as chips
     return (
-      <div className={`w-full ${className}`}>
-        <div className="flex flex-wrap gap-x-4 gap-y-0">
+      <div className={`w-full max-w-full ${className}`}>
+        <div data-skills-grid className="w-full max-w-full" style={gridStyle}>
           {skillsList.map((s, i) => (
             <span
               key={i}
               contentEditable={true}
               suppressContentEditableWarning={true}
               data-skill-index={i}
-              className={`min-w-0 outline-none border-b border-slate-300 pb-1 pt-1 whitespace-nowrap ${ec}`}
-              style={{ fontFamily: gridFontFamily ?? "'Open Sans', sans-serif", fontSize: `${(8.25 * fontScale).toFixed(2)}pt`, fontWeight: 700, color: gridTextColor }}
+              data-skill-grid-item
+              className={`min-w-0 outline-none border-b border-slate-300 pb-1 pt-0.5 whitespace-nowrap ${ec}`}
+              style={itemStyle}
               onFocus={() => setFocusedSkillIdx(i)}
               onBlur={(e) => {
                 setFocusedSkillIdx(null);

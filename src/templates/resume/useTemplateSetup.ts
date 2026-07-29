@@ -192,6 +192,7 @@ export function useTemplateSetup({
     linkedin,
     location,
     avatar,
+    customContacts: customContacts ?? [],
     resumeSummary,
     resumeSkills,
     resumeExperience,

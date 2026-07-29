@@ -67,13 +67,13 @@ export const DesignerProjectsSection: React.FC<DesignerProjectsSectionProps> = (
   return (
     <DraggableSection key="certs" id="certs" {...dragProps}>
       <SectionWrapper
-        id="certs" title="Projects" isEditable={isEditable}
+        id="certs" title="Certifications" isEditable={isEditable}
         align={certsAlign} onAlignChange={(a) => onLayoutSettingsChange?.({ certsAlign: a })}
         onAddEntry={onAddCert}
         layoutSettings={layoutSettings} onLayoutSettingsChange={onLayoutSettingsChange}
       >
         <section style={dsec}>
-          <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Projects</h3>
+          <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Certifications</h3>
           <ul className="flex flex-col" style={{ ...FG.body, gap: `${entrySpacing - 4}px` }}>
             {(resumeCerts ?? []).map((cert, idx) => {
               const desc = cert.desc || '';
@@ -84,6 +84,7 @@ export const DesignerProjectsSection: React.FC<DesignerProjectsSectionProps> = (
                 cleanDesc = desc.substring(0, isTechIdx).trim();
                 techStack = desc.substring(isTechIdx).trim();
               }
+              const isLast = idx === (resumeCerts ?? []).length - 1;
               return (
                 <ItemWrapper
                   key={idx} sectionId="certs" index={idx} totalItems={(resumeCerts ?? []).length}
@@ -97,34 +98,34 @@ export const DesignerProjectsSection: React.FC<DesignerProjectsSectionProps> = (
                     />
                   )}
                 >
-                  <li className={`text-${certsAlign}`}>
-                    <div className="flex-1 min-w-0">
-                      <div className={`flex items-center gap-1.5 leading-snug ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
-                        {showProjectIcons && (
-                          isEditable ? (
-                            <EntryIconPicker
-                              variant="project"
-                              currentIcon={cert.icon || 'briefcase'}
-                              onChange={(icon) => onCertChange?.(idx, 'icon', icon)}
-                              isEditable={isEditable}
-                              accentColor={C_TITLE}
-                              accentColor2={C_COMPANY}
-                              index={idx}
-                              title={cert.title}
-                              iconClassName="w-3 h-3 shrink-0"
-                              wrapperClassName="shrink-0"
-                            />
-                          ) : (
-                            getDynamicProjectIcon(idx, cert.title, cert.icon, C_TITLE, 'w-3 h-3 shrink-0', C_COMPANY)
-                          )
-                        )}
-                        <div className={`flex items-center gap-1 min-w-0 flex-1 ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
+                  <li
+                    className={`text-${certsAlign}${isLast ? '' : ' border-b border-dashed border-slate-300 pb-2'}`}
+                  >
+                    <div className={`flex gap-1.5 items-start ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
+                      {showProjectIcons && (
+                        isEditable ? (
+                          <EntryIconPicker
+                            variant="project"
+                            currentIcon={cert.icon || 'briefcase'}
+                            onChange={(icon) => onCertChange?.(idx, 'icon', icon)}
+                            isEditable={isEditable}
+                            accentColor={C_TITLE}
+                            accentColor2={C_COMPANY}
+                            index={idx}
+                            title={cert.title}
+                            iconClassName="w-3 h-3 shrink-0"
+                            wrapperClassName="shrink-0 mt-0.5"
+                          />
+                        ) : (
+                          getDynamicProjectIcon(idx, cert.title, cert.icon, C_TITLE, 'w-3 h-3 shrink-0 mt-0.5', C_COMPANY)
+                        )
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className={`leading-snug ${certsAlign === 'center' ? 'text-center' : certsAlign === 'right' ? 'text-right' : ''}`}>
                           <E tag="strong" field="projects.title" value={cert.title} isEditable={isEditable} editableClass={ec}
-                            style={{ ...FG.entryTitle, color: C_TITLE }}
+                            style={{ ...FG.itemTitle, color: C_HEAD }}
                             onSave={v => onCertChange?.(idx, 'title', v)} />
-                          {showCert(cert, 'link') && <WorkLink url={cert.url} brandColor={C_COMPANY} />}
                         </div>
-                      </div>
                         {showProjectDesc && (cleanDesc || isEditable) && (
                           showProjectBullets ? (
                             <BulletList
@@ -141,10 +142,12 @@ export const DesignerProjectsSection: React.FC<DesignerProjectsSectionProps> = (
                               prefixId={`cert-${idx}`}
                             />
                           ) : (
-                          <E tag="p" field="projects.description" value={cleanDesc} isEditable={isEditable} editableClass={ec}
-                            className={`mt-0.5 leading-snug text-${certsAlign}`}
-                            style={FG.body}
-                            onSave={(v) => onCertChange?.(idx, 'desc', techStack ? `${v}\n${techStack}` : v)} />
+                          <p className={`mt-0.5 leading-snug text-${certsAlign}`} style={FG.body}>
+                            <E field="projects.description" value={cleanDesc} isEditable={isEditable} editableClass={ec}
+                              style={FG.body}
+                              onSave={(v) => onCertChange?.(idx, 'desc', techStack ? `${v}\n${techStack}` : v)} />
+                            {showCert(cert, 'link') && <WorkLink url={cert.url} brandColor={C_COMPANY} />}
+                          </p>
                           )
                         )}
                         {showProjectDesc && techStack && (
@@ -152,6 +155,11 @@ export const DesignerProjectsSection: React.FC<DesignerProjectsSectionProps> = (
                             dangerouslySetInnerHTML={{ __html: formatMarkdownInline(techStack) }}
                           />
                         )}
+                        {/* Link at end of title row when there is no description (website places it after desc). */}
+                        {(!showProjectDesc || (!cleanDesc && !isEditable)) && showCert(cert, 'link') && (
+                          <WorkLink url={cert.url} brandColor={C_COMPANY} />
+                        )}
+                      </div>
                     </div>
                   </li>
                 </ItemWrapper>

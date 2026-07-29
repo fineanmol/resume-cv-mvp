@@ -100,7 +100,7 @@ export function BulletList({
       case 'none':
         return null;
       case 'dash':
-        return <span style={{ color: markerColor }} className={`${markerClass} font-semibold`}>—</span>;
+        return <span style={{ color: markerColor }} className={`${markerClass} font-semibold`}>-</span>;
       case 'arrow':
         return <span style={{ color: markerColor }} className={markerClass}>➤</span>;
       case 'number':

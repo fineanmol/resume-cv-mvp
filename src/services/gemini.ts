@@ -5,6 +5,13 @@ import { buildImproveBulletPayload } from './gemini/prompts/improvePrompt';
 import { buildParseResumePdfPayload } from './gemini/prompts/importPrompt';
 import { buildInjectKeywordIntoCoverLetterPayload, buildInjectKeywordIntoResumePayload } from './gemini/prompts/injectPrompt';
 import { buildExtractJdFromHtmlPayload } from './gemini/prompts/extractJdPrompt';
+import { buildHumanizeCoverLetterPayload, buildHumanizeResumePayload } from './gemini/prompts/humanizePrompt';
+import {
+  composerEnabled,
+  composerRequestJson,
+  extractGeminiPrompt,
+  preferComposerFirst,
+} from './composerJson';
 
 /** Strips markdown code fences from Gemini responses. Exported for testing. */
 export function cleanJson(text: string): string {
@@ -29,7 +36,14 @@ export class GeminiService {
     return cleanJson(text);
   }
 
-  public static async request<T>(apiKey: string, payload: unknown): Promise<T> {
+  private static isRetryableGeminiError(err: unknown): boolean {
+    const msg = err instanceof Error ? err.message : String(err);
+    return /quota|rate|429|503|500|RESOURCE_EXHAUSTED|Empty response|JSON parse|timeout|fetch failed|ECONNRESET|unavailable/i.test(
+      msg,
+    );
+  }
+
+  private static async requestGeminiOnly<T>(apiKey: string, payload: unknown): Promise<T> {
     const response = await fetch(this.getApiUrl(apiKey), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -53,6 +67,31 @@ export class GeminiService {
     } catch (jsonErr) {
       console.error('Gemini raw response was:', responseText);
       throw new Error(`JSON parse failed: ${(jsonErr as Error).message}`, { cause: jsonErr });
+    }
+  }
+
+  private static async requestViaComposer<T>(payload: unknown): Promise<T> {
+    const { prompt, schema } = extractGeminiPrompt(payload);
+    return composerRequestJson<T>(prompt, schema);
+  }
+
+  public static async request<T>(apiKey: string, payload: unknown): Promise<T> {
+    // Explicit Composer-first (skip Gemini)
+    if (preferComposerFirst() && composerEnabled()) {
+      return this.requestViaComposer<T>(payload);
+    }
+
+    try {
+      return await this.requestGeminiOnly<T>(apiKey, payload);
+    } catch (err) {
+      if (!composerEnabled() || !this.isRetryableGeminiError(err)) {
+        throw err;
+      }
+      console.warn(
+        '[ai] Gemini failed — falling back to Composer:',
+        err instanceof Error ? err.message : err,
+      );
+      return this.requestViaComposer<T>(payload);
     }
   }
 
@@ -131,6 +170,26 @@ export class GeminiService {
       buildExtractJdFromHtmlPayload(rawHtml),
     );
     return res.extractedJd;
+  }
+
+  public static async humanizeResume(
+    apiKey: string,
+    state: ResumeState,
+  ): Promise<Partial<ResumeState>> {
+    return this.request<Partial<ResumeState>>(
+      apiKey,
+      buildHumanizeResumePayload(state),
+    );
+  }
+
+  public static async humanizeCoverLetter(
+    apiKey: string,
+    state: CoverLetterState,
+  ): Promise<Partial<CoverLetterState>> {
+    return this.request<Partial<CoverLetterState>>(
+      apiKey,
+      buildHumanizeCoverLetterPayload(state),
+    );
   }
 }
 
