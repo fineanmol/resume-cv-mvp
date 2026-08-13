@@ -25,19 +25,70 @@ export function cleanSkillToken(raw: string): string {
 }
 
 /**
- * Keep golden chip ORDER (1-page grid packing). New JD-only skills are dropped
- * unless they replace an existing token case-insensitively — ATS keywords belong
- * in summary/bullets, not as extra nowrap rows that spill to page 2.
+ * Slot-preserving PM skill alignment for 1-page grid packing.
+ * Replaces matching category chips in-place with exact incoming PM keywords
+ * (e.g. Tableau replaces Power BI, Salesforce replaces SAP, User Stories replaces Requirement Gathering),
+ * preserving the exact 10-row grid alignment and preventing ragged whitespace or 2-page spill.
  */
+const PM_SLOT_GROUPS: Record<string, string[]> = {
+  'Product Strategy': ['Roadmaps', 'Product Discovery', 'Product Lifecycle', 'Product Management'],
+  'Requirement Gathering': ['User Stories', 'Backlog Prioritization', 'Feature Prioritization', 'PRDs'],
+  'SAP': ['Salesforce', 'HubSpot', 'CRM'],
+  'Power BI': ['Tableau', 'Looker', 'Metabase'],
+  'Optimizely': ['Amplitude', 'Mixpanel', 'Hotjar', 'Google Analytics'],
+  'A/B Testing': ['Experimentation', 'Hypothesis Testing', 'Data-driven'],
+  'ETL tools': ['API', 'APIs', 'REST APIs', 'Integrations'],
+  'MS Office': ['Excel', 'Spreadsheets'],
+  'Conflict Management': ['Cross-functional', 'Cross-functional Collaboration', 'Stakeholder Alignment'],
+  'KYC': ['B2B', 'SaaS', 'Marketplace', 'Fintech', 'AI'],
+  'Market Research': ['Competitive Analysis', 'Customer Research', 'User Research'],
+  'Pricing': ['Conversion Rate', 'Funnel Analysis', 'Retention', 'Growth'],
+};
+
 export function alignSkillsToMasterOrder(
   skills: string,
   masterOrder: string = MASTER_RESUME_SKILLS,
 ): string {
   const master = masterOrder.split(',').map(cleanSkillToken).filter(Boolean);
   const incoming = skills.split(',').map(cleanSkillToken).filter(Boolean);
-  const byLower = new Map(incoming.map((s) => [s.toLowerCase(), s]));
-  // Prefer incoming casing when the chip already exists; else keep master label.
-  return master.map((m) => byLower.get(m.toLowerCase()) || m).join(', ');
+  if (!incoming.length) return master.join(', ');
+
+  const incomingLower = new Map(incoming.map((s) => [s.toLowerCase(), s]));
+  const usedIncoming = new Set<string>();
+
+  // Pass 1: Direct case-insensitive matches
+  const slots: string[] = master.map((m) => {
+    const k = m.toLowerCase();
+    if (incomingLower.has(k)) {
+      usedIncoming.add(k);
+      return incomingLower.get(k)!;
+    }
+    return m;
+  });
+
+  // Pass 2: Slot-group replacements for relevant PM tools/skills
+  for (let i = 0; i < master.length; i++) {
+    const masterSlot = master[i];
+    const group = PM_SLOT_GROUPS[masterSlot];
+    if (!group) continue;
+
+    // If current slot already matched directly from incoming, keep it
+    if (usedIncoming.has(slots[i].toLowerCase()) && slots[i].toLowerCase() !== masterSlot.toLowerCase()) {
+      continue;
+    }
+
+    // Find the first incoming skill in this slot group that hasn't been placed yet
+    for (const alt of group) {
+      const altK = alt.toLowerCase();
+      if (incomingLower.has(altK) && !usedIncoming.has(altK)) {
+        slots[i] = incomingLower.get(altK)!;
+        usedIncoming.add(altK);
+        break;
+      }
+    }
+  }
+
+  return slots.join(', ');
 }
 
 /** Comma-separated skills → clean chips + master order lock. */
