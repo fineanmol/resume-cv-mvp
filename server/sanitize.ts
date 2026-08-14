@@ -251,18 +251,44 @@ export function sanitizeResumeForExport(state: ResumeState): ResumeState {
   };
 }
 
+export function cleanJobTitle(raw: string): string {
+  return (raw || '')
+    .replace(/\s*\([mwdfeall\s\/\*,-]+\)/gi, '')
+    .replace(/\s*\(all genders\)/gi, '')
+    .replace(/\s*\(befristet\)/gi, '')
+    .replace(/\s*\(\d+[- ]month.*?\)/gi, '')
+    .replace(/\s*[-–—]\s*(in Voll-|Vollzeit|Teilzeit|befristet).*$/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function sanitizeCoverLetterForExport(state: CoverLetterState): CoverLetterState {
+  const cleanedTitle = cleanJobTitle(scrubPlain(state.jobTitle));
+  const rawTitle = scrubPlain(state.jobTitle);
+
+  const cleanText = (text: string) => {
+    let t = scrubPlain(text);
+    if (rawTitle && cleanedTitle && rawTitle !== cleanedTitle) {
+      t = t.replaceAll(rawTitle, cleanedTitle);
+    }
+    // Also remove any stray (m/w/d) etc. inside the paragraphs and fix grammar
+    return t
+      .replace(/\s*\([mwdfeall\s\/\*,-]+\)/gi, '')
+      .replace(/\s*\(all genders\)/gi, '')
+      .replace(/\bapply in the\b/gi, 'apply for the');
+  };
+
   return {
     ...state,
     name: scrubPlain(state.name),
     subtitle: scrubPlain(state.subtitle),
     companyName: scrubPlain(state.companyName),
-    jobTitle: scrubPlain(state.jobTitle),
+    jobTitle: cleanedTitle,
     salutation: scrubPlain(state.salutation),
-    p1: scrubKeepBold(state.p1),
-    p2: scrubKeepBold(state.p2),
-    p3: scrubKeepBold(state.p3),
-    p4: scrubKeepBold(state.p4),
+    p1: cleanText(state.p1),
+    p2: cleanText(state.p2),
+    p3: cleanText(state.p3),
+    p4: cleanText(state.p4),
     highlights: state.highlights.map((h) => ({
       category: scrubPlain(h.category),
       text: scrubKeepBold(h.text),
