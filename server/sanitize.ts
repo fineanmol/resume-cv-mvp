@@ -30,20 +30,69 @@ export function cleanSkillToken(raw: string): string {
  * (e.g. Tableau replaces Power BI, Salesforce replaces SAP, User Stories replaces Requirement Gathering),
  * preserving the exact 10-row grid alignment and preventing ragged whitespace or 2-page spill.
  */
-const PM_SLOT_GROUPS: Record<string, string[]> = {
-  'Product Strategy': ['Roadmaps', 'Product Discovery', 'Product Lifecycle', 'Product Management'],
-  'Requirement Gathering': ['User Stories', 'Backlog Prioritization', 'Feature Prioritization', 'PRDs'],
-  'SAP': ['Salesforce', 'HubSpot', 'CRM'],
-  'Power BI': ['Tableau', 'Looker', 'Metabase'],
-  'Optimizely': ['Amplitude', 'Mixpanel', 'Hotjar', 'Google Analytics'],
-  'A/B Testing': ['Experimentation', 'Hypothesis Testing', 'Data-driven'],
-  'ETL tools': ['API', 'APIs', 'REST APIs', 'Integrations'],
-  'MS Office': ['Excel', 'Spreadsheets'],
-  'Conflict Management': ['Cross-functional', 'Cross-functional Collaboration', 'Stakeholder Alignment'],
-  'KYC': ['B2B', 'SaaS', 'Marketplace', 'Fintech', 'AI'],
-  'Market Research': ['Competitive Analysis', 'Customer Research', 'User Research'],
-  'Pricing': ['Conversion Rate', 'Funnel Analysis', 'Retention', 'Growth'],
-};
+interface SlotDefinition {
+  slot: string;
+  maxLen: number;
+  alts: string[];
+}
+
+const PM_SLOTS: SlotDefinition[] = [
+  {
+    slot: 'Product Strategy',
+    maxLen: 19,
+    alts: ['Product Discovery', 'Roadmaps', 'Product Management', 'Product Lifecycle', 'Product Vision', 'GTM Strategy'],
+  },
+  {
+    slot: 'Requirement Gathering',
+    maxLen: 23,
+    alts: ['Backlog Prioritization', 'User Stories', 'Feature Prioritization', 'Acceptance Criteria', 'PRDs & User Stories'],
+  },
+  {
+    slot: 'SAP',
+    maxLen: 5,
+    alts: ['CRM', 'ERP', 'API', 'AWS', 'B2B', 'GTM', 'AI'],
+  },
+  {
+    slot: 'Power BI',
+    maxLen: 9,
+    alts: ['Tableau', 'Looker', 'Metabase', 'Mixpanel', 'BigQuery'],
+  },
+  {
+    slot: 'Optimizely',
+    maxLen: 12,
+    alts: ['Salesforce', 'Amplitude', 'Hotjar', 'HubSpot', 'Segment'],
+  },
+  {
+    slot: 'A/B Testing',
+    maxLen: 15,
+    alts: ['Experimentation', 'Data-driven', 'Analytics'],
+  },
+  {
+    slot: 'ETL tools',
+    maxLen: 10,
+    alts: ['APIs', 'REST APIs', 'Automation', 'Python'],
+  },
+  {
+    slot: 'Conflict Management',
+    maxLen: 22,
+    alts: ['Cross-functional', 'Stakeholder Alignment', 'Cross-functional Collab', 'Team Leadership'],
+  },
+  {
+    slot: 'KYC',
+    maxLen: 9,
+    alts: ['SaaS', 'B2B', 'B2C', 'IoT', 'Fintech', 'AI', 'Logistics', 'E-commerce'],
+  },
+  {
+    slot: 'Market Research',
+    maxLen: 19,
+    alts: ['Competitor Analysis', 'User Research', 'Customer Insights', 'Market Analysis'],
+  },
+  {
+    slot: 'Pricing',
+    maxLen: 11,
+    alts: ['Growth', 'Retention', 'Funnel', 'NPS', 'OKRs', 'Operations', 'Customer Success'],
+  },
+];
 
 export function alignSkillsToMasterOrder(
   skills: string,
@@ -56,34 +105,43 @@ export function alignSkillsToMasterOrder(
   const incomingLower = new Map(incoming.map((s) => [s.toLowerCase(), s]));
   const usedIncoming = new Set<string>();
 
-  // Pass 1: Direct case-insensitive matches
-  const slots: string[] = master.map((m) => {
-    const k = m.toLowerCase();
+  // Initialize slots with master
+  const slots = [...master];
+
+  // Direct case-insensitive matches for existing master chips
+  for (let i = 0; i < slots.length; i++) {
+    const k = slots[i].toLowerCase();
     if (incomingLower.has(k)) {
+      slots[i] = incomingLower.get(k)!;
       usedIncoming.add(k);
-      return incomingLower.get(k)!;
     }
-    return m;
-  });
+  }
 
-  // Pass 2: Slot-group replacements for relevant PM tools/skills
-  for (let i = 0; i < master.length; i++) {
-    const masterSlot = master[i];
-    const group = PM_SLOT_GROUPS[masterSlot];
-    if (!group) continue;
+  // Length-budget-aware slot tailoring for JD keywords
+  for (const def of PM_SLOTS) {
+    const slotIdx = slots.findIndex((s) => s.toLowerCase() === def.slot.toLowerCase());
+    if (slotIdx === -1) continue;
 
-    // If current slot already matched directly from incoming, keep it
-    if (usedIncoming.has(slots[i].toLowerCase()) && slots[i].toLowerCase() !== masterSlot.toLowerCase()) {
-      continue;
-    }
-
-    // Find the first incoming skill in this slot group that hasn't been placed yet
-    for (const alt of group) {
+    // Check if any incoming skill matches the slot's alternatives
+    for (const alt of def.alts) {
       const altK = alt.toLowerCase();
-      if (incomingLower.has(altK) && !usedIncoming.has(altK)) {
-        slots[i] = incomingLower.get(altK)!;
-        usedIncoming.add(altK);
-        break;
+      // Match if incoming contains this alt (exact or partial)
+      const matchingIncoming = [...incomingLower.keys()].find(
+        (k) => (k === altK || k.includes(altK) || altK.includes(k)) && !usedIncoming.has(k),
+      );
+
+      if (matchingIncoming) {
+        const candidate = incomingLower.get(matchingIncoming)!;
+        // Strict length check so lines never overflow or wrap awkwardly
+        if (candidate.length <= def.maxLen) {
+          slots[slotIdx] = candidate;
+          usedIncoming.add(matchingIncoming);
+          break;
+        } else if (alt.length <= def.maxLen) {
+          slots[slotIdx] = alt;
+          usedIncoming.add(matchingIncoming);
+          break;
+        }
       }
     }
   }
