@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { ResumeState,CoverLetterState } from '../types';
 const text=z.string().max(30000),short=z.string().max(2000);
 const url=short.refine(v=>!v||/^https?:\/\//i.test(v),'Links must use http:// or https://').optional();
-const photo=short.max(2000000).refine(v=>!v||/^data:image\/(png|jpeg|webp);base64,/.test(v)||/^\/(?!\/)[\w/.-]+$/.test(v),'Use an embedded or local image');
+const photo=z.string().max(2000000).refine(v=>!v||/^data:image\/(png|jpeg|webp);base64,/.test(v)||/^\/(?!\/)[\w/.-]+$/.test(v),'Use an embedded or local image');
 const base={name:short.min(1),subtitle:short,phone:short,email:short,linkedin:short,location:short,avatar:photo,profileId:z.string().optional()};
 const layout=z.object({fontSize:z.number().min(8).max(20),lineHeight:z.number().min(1).max(2),paddingTopBottom:z.number().min(0).max(35),paddingLeftRight:z.number().min(0).max(35),sectionSpacing:z.number().min(0).max(60),template:z.enum(['navy','serif','sidebar','tech','ats','executive','designer','professional','hybrid'])}).passthrough();
 const experience=z.object({title:short,company:short,dates:short,location:short,bullets:text,url,logo:photo.optional()}).passthrough();
