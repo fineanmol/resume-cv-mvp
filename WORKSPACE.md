@@ -13,6 +13,10 @@ For a production-style single-origin process, run `npm run build` and then `npm 
 4. In **Applications & automation**, choose explicit résumé and letter versions, paste a JD, and generate. Both PDFs are saved as a separate draft application. Review changes, facts, page-count warnings and actual PDFs. Editing an application creates a separate classic-editor copy; its prior exported PDFs remain immutable. Publish the edited copy as a new version if desired.
 5. Mark reviewed only after checking the output. The app never submits job applications.
 
+### Carry complete resume data into a master profile
+
+In the classic editor, choose **Export JSON** to download the active resume document, including contact fields, grouped skills, experience/company URLs and logos, education, projects, achievements, languages, and layout metadata. In **Master profiles**, use **Import resume data into this master** and choose that file. The import updates the active master’s career facts while retaining its profile ID, template/design settings, notes, and cover letter settings. Review the profile and save it before generating future versions.
+
 ## AI setup and limits
 
 Controlled AI mode supports OpenAI (Responses API), Anthropic (Messages API), and Gemini (generateContent). Choose the provider and exact model in Applications. Load the account's model catalog or enter an exact text-model ID. Catalog availability is not proof of endpoint compatibility; unsupported models fail without a silent fallback. No fixed list is labelled “latest.”

@@ -155,6 +155,15 @@ export function EditorRoute({
     }
   };
 
+  const handleExportResumeJson = () => {
+    if (!isResume) return;
+    const filename=`${resume.state.name.trim().replace(/[^a-z0-9]+/gi,'_')||'resume'}_data.json`;
+    const url=URL.createObjectURL(new Blob([JSON.stringify(resume.state,null,2)],{type:'application/json'}));
+    const anchor=document.createElement('a');anchor.href=url;anchor.download=filename;anchor.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast.success('Complete resume data exported as JSON. Import it into Master profiles to update your profile.');
+  };
+
   const getDocumentText = () =>
     activeDocType === 'resume'
       ? `${resume.state.name} ${resume.state.subtitle} ${resume.state.resumeSummary} ${resume.state.resumeSkills} ${resume.state.resumeExperience.map(e => `${e.title} ${e.bullets}`).join(' ')}`
@@ -192,6 +201,7 @@ export function EditorRoute({
           showSettings={showSettings}
           setShowSettings={setShowSettings}
           onDownload={handleDownloadPdf}
+          onExportJson={handleExportResumeJson}
           onBack={onBack}
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen(p => !p)}

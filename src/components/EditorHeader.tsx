@@ -2,6 +2,7 @@ import React from 'react';
 import { 
   ArrowLeft, 
   Download, 
+  FileJson,
   Undo2, 
   Redo2, 
   Settings, 
@@ -30,6 +31,7 @@ interface EditorHeaderProps {
   showSettings: boolean;
   setShowSettings: (val: boolean) => void;
   onDownload: () => void;
+  onExportJson?: () => void;
   onBack: () => void;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
@@ -58,6 +60,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   showSettings,
   setShowSettings,
   onDownload,
+  onExportJson,
   onBack,
   sidebarOpen,
   onToggleSidebar,
@@ -207,6 +210,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
         </button>
 
         {/* Direct PDF Download */}
+        {isResume&&onExportJson&&<button onClick={onExportJson} className="flex items-center gap-2 px-3 py-2 border border-border-color/60 hover:bg-card rounded-lg text-xs font-semibold" title="Export all resume data as JSON"><FileJson className="w-4 h-4"/><span>Export JSON</span></button>}
         <button
           onClick={onDownload}
           className="flex items-center gap-2 px-4 py-2 bg-brand-accent hover:bg-brand-accent-hover text-editor font-semibold rounded-lg shadow-lg hover:shadow-brand-accent/10 transition text-xs cursor-pointer"
