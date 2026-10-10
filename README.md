@@ -1,24 +1,28 @@
-# Rebuilt React-Tailwind CV & Cover Letter SaaS MVP
+# Resume/Cover Letter Workspace
 
-An enterprise-ready, modular, and premium Candidate CV & Cover Letter tailoring application. Rebuilt from the ground up utilizing React, TypeScript, and Tailwind CSS. It features Firebase cloud authentication and storage, IndexedDB / LocalStorage hybrid syncing, real-time Gemini AI document tailoring, interactive ATS keyword score widgets, and browser-native print-to-PDF export.
+A local-first React and TypeScript workspace for building editable resumes and cover letters, maintaining reusable profiles, tailoring applications to job descriptions, and exporting recruiter-ready PDFs. The current product path is the unified Studio/classic workspace; the older v1 API remains available only for compatibility with existing automation.
+
+The project is a local beta, not yet a hosted multi-tenant SaaS. See [STUDIO.md](STUDIO.md) and [WORKSPACE.md](WORKSPACE.md) for the authoritative product and operations documentation.
 
 ---
 
 ## 🚀 Premium Features
 
-### 1. Unified Dashboard Workspace
+### 1. Unified Studio Workspace
 - **Modern Landing Page**: High-converting visual showcase themed with custom palettes, scroll animations, and interactive live template renderers.
 - **Unified Document Dashboard**: Complete control panel to list, search, preview, rename, and delete drafts safely.
-- **Credential Auth Modal**: Smooth login/register overlay supporting dual authentication modes (Google Firebase Auth with Firestore, alongside a completely local mock offline environment for local testing).
+- **Reusable profiles**: Keep independent candidate masters, publications, applications, and generated artifacts locally.
+- **Classic workspace**: The `/` and `/studio` routes use the same editor and share the same template and section behavior.
 
 ### 2. Direct Preview A4 Sheet Editing
 - **Wysiwyg ContentEditable**: Directly click and edit headers, contacts, bullet points, summaries, and paragraphs inline on the A4 page preview.
 - **Smart Paragraphs**: In cover letters, paragraph templates contain placeholders like `{{company}}` and `{{role}}`. Modifying paragraphs directly preserves placeholders in the state unless they are edited, preventing static replacement leaks.
 - **State-History Integration**: Edits automatically sync to local state `onBlur` (avoiding cursor caret jumps while typing) and integrate with the undo/redo stack (`Ctrl+Z` / `Cmd+Z` to undo direct text adjustments).
 
-### 3. Visual Template Carousels
+### 3. Visual Template Carousels and controls
 - **Horizontal Switchers**: Reusable sliding carousels positioned at the top of editing sidebars.
-- **Live Miniatures**: Rather than simple skeletons, they render live scaled-down A4 miniature previews (`scale(0.11)`) populated with the user's actual document data. This allows users to inspect exactly how their own content looks in Navy Elegant, Harvard Serif, Creative Sidebar, or Tech Monospace at a glance before clicking to switch layouts.
+- **Live Miniatures**: Previews are populated with the user's document data across ATS, Designer, Hybrid, Navy, Serif, Sidebar, Tech, and Executive layouts.
+- **Shared section controls**: Layout, visibility, ordering, icons, links, bullets, skills, and extra fields use centralized behavior across templates.
 
 ### 4. PDF Export (browser print — not html2canvas)
 
@@ -37,9 +41,10 @@ We use the same approach as Resume.io, Zety, Novoresume, and most resume SaaS pr
 
 **Full decision record:** [docs/ARCHITECTURE.md — PDF export](docs/ARCHITECTURE.md#pdf-export)
 
-### 5. AI Tailoring & ATS Scoring Panel
+### 5. Applications, AI providers, and ATS scoring
 - **Weighted Match Scoring**: Computes compatibility score based on Job Description keyword occurrences.
-- **AI Keyword Injection**: Clicking a missing keyword tag initiates a focused Gemini AI query to naturally inject the keyword into the document, showing a loading spinner on the badge, and saving the state to the history stack (making it instantly undoable).
+- **Provider choice**: Applications can use OpenAI, Anthropic, or Gemini with an explicitly selected model. Provider keys are supplied through environment variables or a temporary in-memory UI key.
+- **Versioned generation**: AI tailoring operates on published document versions; the master profile is not silently overwritten.
 - **Link Scraper**: Extract Job Descriptions from listing links using a CORS proxy and fallback Gemini parsing.
 - **AI Bullet improver**: Sentence-level suggestions to refine experience items on the fly.
 
@@ -47,7 +52,7 @@ We use the same approach as Resume.io, Zety, Novoresume, and most resume SaaS pr
 
 ## 📁 Codebase Architecture
 
-The app is a React + TypeScript SPA under `src/`. For a full guide — editor layout, state flow, template system, duplication map, and the **planned modular component structure** — see:
+The app is a React + TypeScript SPA under `src/`. For the editor layout, state flow, template system, workspace lifecycle, and validation plan, see:
 
 **→ [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
@@ -55,27 +60,25 @@ The app is a React + TypeScript SPA under `src/`. For a full guide — editor la
 
 ```
 src/
-├── App.tsx                     # Editor shell, auth routing, three-panel layout
+├── App.tsx                     # Classic editor shell and route selection
 ├── types/index.ts              # ResumeState, CoverLetterState, LayoutSettings
 ├── config/                     # defaultResume, defaultCL, fonts
 ├── hooks/                      # useUndoRedo, useAutoSave, useAiActions, …
-├── services/                   # db, firebase, gemini, pdf
+├── services/                   # storage, providers, workspace, PDF, AI adapters
 ├── utils/                      # bullets, jdMatcher
-├── components/                 # Forms, panels, modals (flat — refactor planned)
-│   ├── ResumeForm.tsx          # Left panel — 8 resume sections
+├── components/                 # Forms, panels, profile/publication controls
+│   ├── ResumeForm.tsx          # Structured resume section editing
 │   ├── CoverLetterForm.tsx     # Left panel — cover letter
 │   ├── DesignPanel.tsx         # Right panel — design controls
 │   ├── EditorHeader.tsx        # Toolbar, zoom, template/section modals
-│   ├── TemplatesModal.tsx      # Template picker with live preview
-│   ├── AddSectionModal.tsx     # Designer template — add section
-│   ├── RearrangeSectionsModal.tsx
-│   ├── JDPanel.tsx / ATSWidget.tsx
-│   └── Dashboard, LandingPage, Auth, …
+│   ├── ProfileManager.tsx / PublicationBar.tsx
+│   ├── AutomationPanel.tsx / ProviderChoice.tsx
+│   └── design/                 # shared section and skills controls
 ├── templates/
-│   ├── ResumeTemplates.tsx     # 7 resume layouts (navy, serif, sidebar, tech, ats, executive, designer)
+│   ├── ResumeTemplates.tsx     # ATS, Designer, Hybrid, Navy, Serif, Sidebar, Tech, Executive
 │   ├── CoverLetterTemplates.tsx
 │   └── TemplateHeader.tsx      # Shared header (5 styles)
-└── tests/                      # Vitest — templates, pdf, ats, auth, dashboard
+└── tests/                      # Vitest — templates, PDF, workspace, providers, parity
 ```
 
 ### Editor at a glance
@@ -92,14 +95,16 @@ src/
 
 ### Install Dependencies
 ```bash
-npm install
+npm ci
 ```
 
-### Local Dev Server
+### Run the current application
 ```bash
-npm run dev
+npm run studio
 ```
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Open [http://127.0.0.1:5175/studio](http://127.0.0.1:5175/studio). This starts the Vite application and the workspace API on port `8793`; PDF export starts its internal print renderer automatically. On machines without Google Chrome, install Playwright Chromium once with `npx playwright install chromium`.
+
+Profiles and generated artifacts are stored under `data/studio` by default. Set `PROFILE_DATA_DIR` to move that data elsewhere.
 
 ### Run Tests
 ```bash
@@ -112,15 +117,35 @@ npm run build
 ```
 This runs the typescript compiler checks (`tsc`) and bundles the application via Vite.
 
-### Auto-apply API + MCP (Designer PDF)
+### AI keys (optional)
 
-Local HTTP API and Cursor MCP for tailoring + headless **Designer** PDF export (used by the n8n auto-apply repo).
-
-See **[docs/API_MCP.md](docs/API_MCP.md)**.
+AI is not required for editing, templates, local profile storage, PDF export, or preserve-mode JD matching. Configure only the provider you use:
 
 ```bash
+export OPENAI_API_KEY=...
+export ANTHROPIC_API_KEY=...
 export GEMINI_API_KEY=...
-npx playwright install chromium   # once
-npm run api    # http://127.0.0.1:8791
-npm run mcp    # Cursor MCP (stdio)
 ```
+
+### MCP and n8n (optional)
+
+With Studio running, launch the workspace MCP server from an MCP client:
+
+```bash
+node scripts/mcp-launch.mjs
+```
+
+For n8n, set a 32+ character `N8N_BRIDGE_TOKEN`, run `npm run studio:n8n-bridge`, and import an inactive workflow from `n8n/`. Docker n8n reaches the bridge at `http://host.docker.internal:8794`. The original Sakshi workflow is not replaced or activated by these files.
+
+See [STUDIO.md](STUDIO.md), [WORKSPACE.md](WORKSPACE.md), and [docs/API_MCP.md](docs/API_MCP.md) for API contracts, publication rules, validation, and compatibility details.
+
+### Legacy compatibility commands
+
+The older v1 API/MCP path remains separate for existing automation:
+
+```bash
+npm run api    # http://127.0.0.1:8791
+npm run mcp    # legacy MCP over stdio
+```
+
+Do not use this path for the new profile/workspace application flow.
