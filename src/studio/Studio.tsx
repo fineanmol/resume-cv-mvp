@@ -6,7 +6,7 @@ import { ProfileResumePreview } from './ProfileResumePreview';
 import './studio.css';
 import { ProfileSections, SkillsInput } from './ProfileSections';
 type Result={pdfUrl:string;jsonUrl:string;match:ReturnType<typeof matchProfile>;generationMode:string;notes:string[]};
-async function api<T>(url:string,init?:RequestInit):Promise<T>{const r=await fetch('/api/v2'+url,{...init,headers:{'Content-Type':'application/json',...init?.headers}});const d=await r.json();if(!r.ok)throw new Error(d.error||'Request failed');return d;}
+async function api<T>(url:string,init?:RequestInit):Promise<T>{const r=await fetch('/api/v2'+url,{...init,headers:{'Content-Type':'application/json',...init?.headers}});const raw=await r.text();let d:unknown;try{d=JSON.parse(raw);}catch{if(raw.trimStart().startsWith('<!DOCTYPE')||raw.trimStart().startsWith('<html'))throw new Error('Workspace API is not running. Start the project with `npm run studio`, then reload this page.');throw new Error(`Workspace API returned invalid JSON (${r.status}).`);}if(!r.ok)throw new Error(typeof d==='object'&&d&&'error' in d?String((d as {error:unknown}).error):'Request failed');return d as T;}
 export function Studio(){
  const [profile,setProfile]=useState<Profile>(anmol);const [list,setList]=useState<{id:string;name:string}[]>([]);const [tab,setTab]=useState('profile');
  const [jd,setJd]=useState('');const [company,setCompany]=useState('');const [role,setRole]=useState('');const [busy,setBusy]=useState(false);const [dirty,setDirty]=useState(false);const [message,setMessage]=useState('');const [error,setError]=useState('');const [result,setResult]=useState<Result|null>(null);const [json,setJson]=useState('');
