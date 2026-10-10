@@ -106,6 +106,17 @@ Open [http://127.0.0.1:5175/studio](http://127.0.0.1:5175/studio). This starts t
 
 Profiles and generated artifacts are stored under `data/studio` by default. Set `PROFILE_DATA_DIR` to move that data elsewhere.
 
+### Run the production build locally
+
+Build the frontend and serve it together with the workspace API from one origin:
+
+```bash
+npm run build
+HOST=127.0.0.1 PORT=8780 PUBLIC_ORIGIN=http://127.0.0.1:8780 npm start
+```
+
+Open [http://127.0.0.1:8780](http://127.0.0.1:8780). For a real deployment, set `HOST=0.0.0.0`, choose the platform's `PORT`, set `PUBLIC_ORIGIN` to the public HTTPS origin, and persist `PROFILE_DATA_DIR`. The production server intentionally does not enable wildcard origins by default.
+
 ### Run Tests
 ```bash
 npm run test

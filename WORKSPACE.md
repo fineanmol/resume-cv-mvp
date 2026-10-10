@@ -3,6 +3,8 @@
 Start with `npm ci` and `npm run studio`, then open http://127.0.0.1:5175/.
 The old `/studio` URL now opens the same classic application; it is no longer a separate editor.
 
+For a production-style single-origin process, run `npm run build` and then `npm start`. Set `HOST=0.0.0.0`, the platform-provided `PORT`, `PUBLIC_ORIGIN` to the public HTTPS URL, `STUDIO_ALLOWED_ORIGINS` to the allowed browser origins, and `PROFILE_DATA_DIR` to durable storage. The server serves the built frontend and `/api/v2` together; `npm run studio` is development-only.
+
 ## Workflow
 
 1. Choose a profile in the classic dashboard. Anmol is seeded. Master profiles imports/exports versioned JSON and creates blank candidates. ChatGPT/Claude can prepare this JSON; no direct account connection is claimed.

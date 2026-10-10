@@ -17,7 +17,8 @@ const id=z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/);
 async function getProfile(key:string){return profileSchema.parse(JSON.parse(await readFile(path.join(profiles,id.parse(key)+'.json'),'utf8')));}
 const app=new Hono();
 app.use('*',async(c,next)=>{
- const origin=c.req.header('origin'); if(origin&&!['http://127.0.0.1:5175','http://localhost:5175'].includes(origin))return c.json({error:'Origin not allowed'},403);
+ const origin=c.req.header('origin'); const allowedOrigins=(process.env.STUDIO_ALLOWED_ORIGINS||'http://127.0.0.1:5175,http://localhost:5175').split(',').map(x=>x.trim()).filter(Boolean);
+ if(origin&&!allowedOrigins.includes('*')&&!allowedOrigins.includes(origin))return c.json({error:'Origin not allowed'},403);
  if(process.env.STUDIO_API_TOKEN && c.req.header('authorization')!==`Bearer ${process.env.STUDIO_API_TOKEN}`)return c.json({error:'Unauthorized'},401);
  if(['POST','PUT'].includes(c.req.method)&&!c.req.header('content-type')?.includes('application/json'))return c.json({error:'JSON required'},415);
  await next();
@@ -50,5 +51,10 @@ app.post('/api/v2/generate',async c=>{
  });queue=task;return c.json(await task);
 });
 app.get('/api/v2/jobs/:id/:file',async c=>{const key=z.string().regex(/^[a-f0-9]{32}$/).parse(c.req.param('id'));const file=z.enum(['resume.pdf','master-resume.json','meta.json']).parse(c.req.param('file'));const data=await readFile(path.join(jobs,key,file));c.header('Content-Type',file.endsWith('.pdf')?'application/pdf':'application/json');c.header('Cache-Control','no-store');return c.body(new Uint8Array(data));});
-serve({fetch:app.fetch,port:8793,hostname:'127.0.0.1'});
-console.log('Profile API ready: http://127.0.0.1:8793/api/v2/health');
+export { app as studioApp };
+
+if (process.env.STUDIO_NO_LISTEN !== '1') {
+  const port=Number(process.env.STUDIO_API_PORT||8793), hostname=process.env.STUDIO_API_HOST||'127.0.0.1';
+  serve({fetch:app.fetch,port,hostname});
+  console.log(`Profile API ready: http://${hostname}:${port}/api/v2/health`);
+}

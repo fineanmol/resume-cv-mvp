@@ -6,6 +6,7 @@
   "scripts": {
     "studio": "node scripts/studio-dev.mjs",
     "studio:api": "tsx server/studio.ts",
+    "start": "node --import tsx server/production.ts",
     "studio:n8n-bridge": "node scripts/n8n-bridge.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",

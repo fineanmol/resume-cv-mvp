@@ -1,6 +1,8 @@
 # Profile Resume Studio — local beta
 
 Run `npm ci`, then `npm run studio`. Open http://127.0.0.1:5175/studio.
+
+For a single-origin production-style process, run `npm run build` followed by `npm start`. It serves `dist/` and `/api/v2` together. Configure `HOST`, `PORT`, `PUBLIC_ORIGIN`, `STUDIO_ALLOWED_ORIGINS`, and a persistent `PROFILE_DATA_DIR` in the deployment environment. `npm run studio` remains the local development supervisor.
 On macOS the launcher uses installed Google Chrome for PDF generation. Else install the Playwright browser with `npx playwright install chromium`.
 
 The new API listens on 127.0.0.1:8793. The existing `npm run api` /v1 server is independent. No desktop workflow or Sakshi master is migrated or rewritten. This local beta is not a hosted multi-tenant service.
