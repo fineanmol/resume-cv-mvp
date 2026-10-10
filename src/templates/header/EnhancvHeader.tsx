@@ -1,11 +1,8 @@
+import {ContactRow} from '../shared/ContactRow';
 import React from 'react';
-import { Mail, Phone, MapPin, Star } from 'lucide-react';
 import { EditableText } from '../shared/EditableText';
 import { HeaderWrapper } from '../shared/HeaderWrapper';
 import { AvatarCircleEditable } from '../shared/AvatarCircleEditable';
-import { LI } from '../shared/LinkedInIcon';
-import { formatLinkedinUrl } from '../../utils/linkedin';
-import { CONTACT_ICON_MAP } from '../../components/ui/ContactIconPicker';
 import type { TemplateHeaderProps } from './types';
 
 export const EnhancvHeader: React.FC<TemplateHeaderProps> = (p) => {
@@ -14,11 +11,6 @@ export const EnhancvHeader: React.FC<TemplateHeaderProps> = (p) => {
   const uppercaseName = p.layoutSettings?.uppercaseName ?? false;
   const nameClassName = uppercaseName ? 'uppercase' : '';
   const nameStyle: React.CSSProperties = { fontFamily: p.headingFontCss };
-
-  const hasPhone = (p.layoutSettings?.showPhone ?? true) && !!(p.phone?.value && p.phone.value.trim());
-  const hasEmail = (p.layoutSettings?.showEmail ?? true) && !!(p.email?.value && p.email.value.trim());
-  const hasLocation = (p.layoutSettings?.showLocation ?? true) && !!(p.location?.value && p.location.value.trim());
-  const hasLinkedin = (p.layoutSettings?.showLinkedin ?? true) && !!(p.linkedin?.value && p.linkedin.value.trim());
 
   return (
     <HeaderWrapper
@@ -37,55 +29,7 @@ export const EnhancvHeader: React.FC<TemplateHeaderProps> = (p) => {
               className="block text-sm font-semibold uppercase mt-1.5 tracking-wide text-slate-500" />
           )}
         </div>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2 mt-4 text-[11px] text-slate-600 max-w-[550px]">
-          {hasEmail && (
-            <span className="flex items-center gap-1.5 min-w-0">
-              <Mail className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-              <span className="truncate">
-                <EditableText value={p.email.value} onSave={p.email.onSave} isEditable={p.isEditable} editableClass={p.ec} href={`mailto:${p.email.value}`} />
-              </span>
-            </span>
-          )}
-          {hasPhone && (
-            <span className="flex items-center gap-1.5 min-w-0">
-              <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-              <span className="truncate">
-                <EditableText value={p.phone.value} onSave={p.phone.onSave} isEditable={p.isEditable} editableClass={p.ec} />
-              </span>
-            </span>
-          )}
-          {hasLocation && (
-            <span className="flex items-center gap-1.5 min-w-0">
-              <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-              <span className="truncate">
-                <EditableText value={p.location.value} onSave={p.location.onSave} isEditable={p.isEditable} editableClass={p.ec} />
-              </span>
-            </span>
-          )}
-          {hasLinkedin && (
-            <span className="flex items-center gap-1.5 min-w-0">
-              <LI />
-              <span className="truncate">
-                <EditableText value={p.linkedin.value} onSave={p.linkedin.onSave} isEditable={p.isEditable} editableClass={p.ec} href={formatLinkedinUrl(p.linkedin.value)} />
-              </span>
-            </span>
-          )}
-          {(p.customContacts ?? []).filter(c => c.value.trim()).map((field) => {
-            // Fallback to Star icon guards against unknown icon values from stale/migrated data.
-            const Icon = CONTACT_ICON_MAP[field.icon] ?? Star;
-            const raw = field.value.trim();
-            const href = /^(https?:|mailto:)/i.test(raw) ? raw : `https://${raw.replace(/^\/\//, '')}`;
-            return (
-              <span key={field.id} className="flex items-center gap-1.5 min-w-0">
-                {/* size={14} sets width/height attributes directly so react-icons SVGs render at 14px reliably */}
-                <Icon size={14} className="text-slate-400 flex-shrink-0" />
-                <a href={href} target="_blank" rel="noopener noreferrer" className="truncate hover:underline cursor-pointer" data-href={href}>
-                  {field.value}
-                </a>
-              </span>
-            );
-          })}
-        </div>
+        <ContactRow {...p} cls="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-[11px] text-slate-600"/>
       </div>
       {showPhoto && (
         <AvatarCircleEditable

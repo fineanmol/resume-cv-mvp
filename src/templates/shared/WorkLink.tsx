@@ -2,7 +2,7 @@ import React from 'react';
 import { ExternalLink } from 'lucide-react';
 
 export const WorkLink: React.FC<{ url?: string; brandColor?: string }> = ({ url, brandColor }) => {
-  if (!url) return null;
+  if (!url || !/^https?:\/\//i.test(url)) return null;
   return (
     <a
       href={url}

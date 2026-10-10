@@ -1,3 +1,4 @@
+import {SectionSettingsPanel} from './design/SectionSettingsPanel';
 import React, { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import type { LayoutSettings } from '../types';
@@ -48,7 +49,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
     return () => window.clearTimeout(t);
   }, [focusSection, onFocusHandled]);
 
-  const isDesigner = (layout.template ?? 'navy') === 'designer';
+  const isDesigner = ['designer','hybrid'].includes(layout.template ?? 'navy');
 
   return (
     <div
@@ -58,8 +59,8 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
       {onReset && isDesigner && (
         <div className="flex items-center justify-between px-2.5 py-2 rounded-lg border border-border-color/40 bg-sidebar">
           <span className="text-[10px] text-text-muted leading-tight">
-            Restore Figma design defaults<br />
-            <span className="opacity-60">Raleway · Open Sans · Heading #343334 · Accent #00B6CB</span>
+            Restore template design defaults<br />
+            <span className="opacity-60">{layout.template==='hybrid'?'Editorial layout · grouped skills':'Raleway · Open Sans · Heading #343334 · Accent #00B6CB'}</span>
           </span>
           {resetConfirm ? (
             <div className="flex items-center gap-1">
@@ -94,6 +95,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
       <DesignTypographySection layout={layout} onChange={onChange} openSection={activeOpen} onToggle={toggle} docType={docType} />
       <DesignSpacingSection layout={layout} onChange={onChange} docType={docType} openSection={activeOpen} onToggle={toggle} />
       <DesignHeaderSection layout={layout} onChange={onChange} docType={docType} openSection={activeOpen} onToggle={toggle} />
+      {docType==='resume'&&<SectionSettingsPanel layout={layout} onChange={onChange}/>}
       <DesignSectionToggles layout={layout} onChange={onChange} docType={docType} openSection={activeOpen} onToggle={toggle} />
     </div>
   );

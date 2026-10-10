@@ -1,3 +1,4 @@
+import { HYBRID_STYLE_DEFAULTS } from '../../config/hybridDefaults';
 import React, { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
@@ -259,12 +260,12 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
         />
       )}
 
-      <section className="flex-1 min-h-0 relative flex flex-col bg-[#dde3ec]">
-        <div className="sheet-preview-container flex-1 w-full relative">
-          <div style={{ height: scaledSheetHeight }}>
+      <section className="flex-1 min-w-0 min-h-0 relative flex flex-col bg-[#dde3ec] overflow-hidden">
+        <div className="sheet-preview-container flex-1 w-full relative" style={{justifyContent:'flex-start'}}>
+          <div style={{ height: scaledSheetHeight, width:PAGE_WIDTH_PX*zoomScale,flexShrink:0,marginInline:'auto' }}>
             <div
               ref={sheetRef}
-              style={{ transform: `scale(${zoomScale})`, transformOrigin: 'top center', transition: 'transform 0.25s ease-out' }}
+              style={{ width:PAGE_WIDTH_PX, transform: `scale(${zoomScale})`, transformOrigin: 'top left', transition: 'transform 0.25s ease-out' }}
               className={`flex justify-center${sheetOverflow ? ' sheet-overflow-active' : ''}`}
             >
               <Suspense fallback={<div style={{ width: PAGE_WIDTH_PX, height: PAGE_HEIGHT_PX }} className="bg-white animate-pulse rounded shadow-xl" />}>
@@ -328,7 +329,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
                 onFocusHandled={onDesignFocusHandled}
                 onReset={() => resumeSet(p => ({
                   ...p,
-                  layoutSettings: { ...p.layoutSettings, ...DESIGNER_STYLE_DEFAULTS },
+                  layoutSettings: { ...p.layoutSettings, ...(p.layoutSettings.template === 'hybrid' ? HYBRID_STYLE_DEFAULTS : DESIGNER_STYLE_DEFAULTS) },
                 }))}
               />
             ) : (

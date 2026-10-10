@@ -23,7 +23,7 @@ interface Props {
 }
 
 const DesignSpacingSection: React.FC<Props> = ({ layout, onChange, docType, openSection, onToggle }) => {
-  const isDesigner = (layout.template ?? 'navy') === 'designer';
+  const isDesigner = ['designer','hybrid'].includes(layout.template ?? 'navy');
 
   return (
     <AccordionSection

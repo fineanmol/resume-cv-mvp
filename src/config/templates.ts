@@ -25,6 +25,7 @@ export const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
     tagline: 'Modern & Professional',
     desc: 'Clean centered header with an accent border. The classic choice for most industries.',
   },
+  {id:'hybrid',name:'Hybrid',accent:'#008f9e',chipName:'Hybrid',tagline:'Editorial · grouped skills',desc:'The original Hybrid PDF design, with categorized skills, icons and evidence links. Edit content in the forms and reorder sections with Rearrange.',docTypes:['resume']},
   {
     id: 'serif',
     name: 'Harvard Serif',
@@ -54,10 +55,10 @@ export const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
     name: 'Clean ATS',
     accent: '#6366f1',
     chipName: 'ATS',
-    tagline: 'Maximum ATS Score',
+    tagline: 'Simple text structure',
     badge: 'Best for ATS',
     designBadge: 'ATS',
-    desc: 'Plain single-column with no graphics. Guaranteed to parse through any ATS system.',
+    desc: 'Plain single-column with no graphics. Designed for straightforward text extraction; parsing varies by ATS.',
   },
   {
     id: 'executive',

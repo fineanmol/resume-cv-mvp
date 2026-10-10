@@ -1,11 +1,11 @@
 import { useState, useCallback, useMemo } from 'react';
 import type React from 'react';
-import type { ResumeState, LayoutSettings } from '../types';
+import type { ResumeState, ResumeLayoutSettings } from '../types';
 
 interface UseTemplateDragParams {
   designerLeftSections: string[];
   designerRightSections: string[];
-  layoutSettings: LayoutSettings;
+  layoutSettings: ResumeLayoutSettings;
   onFieldChange?: <K extends keyof ResumeState>(field: K, value: ResumeState[K]) => void;
   isEditable: boolean;
   showLayoutBounds: boolean;

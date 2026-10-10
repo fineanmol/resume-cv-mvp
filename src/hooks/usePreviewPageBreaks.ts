@@ -45,7 +45,7 @@ export function usePreviewPageBreaks(
       const scale = zoomRef.current;
 
       const items = Array.from(
-        sheet.querySelectorAll<HTMLElement>('.group\\/item'),
+        sheet.querySelectorAll<HTMLElement>('.group\\/item, .resume-entry, .hybrid-entry, .hybrid-skills'),
       ).filter(el => !el.closest('[data-pdf-hide]'));
 
       for (const el of items) {
@@ -54,8 +54,10 @@ export function usePreviewPageBreaks(
         const bottom = (rect.bottom - sheetRect.top) / scale;
         const boundary = Math.ceil((top + 1) / PAGE_HEIGHT_PX) * PAGE_HEIGHT_PX;
 
-        if (top < boundary && bottom > boundary) {
-          const push = boundary - top + 16;
+        const padding=parseFloat(window.getComputedStyle(sheet).paddingTop)||38;
+        // Oversized entries must flow, not be pushed endlessly into a later page.
+        if (bottom-top < PAGE_HEIGHT_PX-2*padding && top < boundary && bottom > boundary-padding) {
+          const push = boundary - top + padding;
           const currentMT = parseFloat(window.getComputedStyle(el).marginTop) || 0;
           el.setAttribute('data-pb-orig', el.style.marginTop);
           el.setAttribute('data-pb-push', 'true');

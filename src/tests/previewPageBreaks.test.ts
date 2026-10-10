@@ -71,7 +71,7 @@ describe('usePreviewPageBreaks', () => {
     });
 
     expect(item.getAttribute('data-pb-push')).toBe('true');
-    expect(item.style.marginTop).toBe('39px');
+    expect(item.style.marginTop).toBe('61px');
   });
 
   it('resets margins and push attributes on unmount', () => {

@@ -1,5 +1,5 @@
+import { EvidenceLink } from '../../shared/EvidenceLink';
 import React from 'react';
-import { Building2, GraduationCap } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
 import { SummaryContent } from '../../shared/SummaryContent';
@@ -221,7 +221,7 @@ export const ExecutiveTemplate: React.FC = () => {
                       </div>
                       {(showLocation || edu.school) && (
                         <div className="flex justify-between text-slate-600 italic mb-0.5">
-                          <E value={edu.school} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'school', v)} />
+                          <><E value={edu.school} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'school', v)} /><EvidenceLink url={edu.url}/></>
                           {showLocation && (
                             <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
                           )}

@@ -1,3 +1,4 @@
+import { SkillsLayoutOptions } from './SkillsLayoutOptions';
 import React from 'react';
 import { Layout, Image, List, Tag } from 'lucide-react';
 import { AccordionSection, ToggleSwitch } from '../ui';
@@ -95,41 +96,9 @@ const DesignHeaderSection: React.FC<Props> = ({ layout, onChange, docType, openS
           openSection={openSection}
           onToggle={onToggle}
           variant="design"
-          bodyClassName="p-3 border-t border-border-color/40 grid grid-cols-3 gap-1.5"
+          bodyClassName="p-3 border-t border-border-color/40 grid grid-cols-2 gap-1.5"
         >
-          <button
-            onClick={() => onChange({ skillsStyle: 'chips' })}
-            className={`px-2.5 py-2 rounded-lg border text-left transition cursor-pointer ${
-              (layout.skillsStyle ?? 'chips') === 'chips'
-                ? 'border-brand-accent bg-brand-accent/8 text-brand-accent font-bold'
-                : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
-            }`}
-          >
-            <span className="text-[10px] font-semibold block">Chips</span>
-            <span className="text-[8px] opacity-70 leading-tight block mt-0.5">Styled pill badges</span>
-          </button>
-          <button
-            onClick={() => onChange({ skillsStyle: 'normal' })}
-            className={`px-2.5 py-2 rounded-lg border text-left transition cursor-pointer ${
-              (layout.skillsStyle ?? 'chips') === 'normal'
-                ? 'border-brand-accent bg-brand-accent/8 text-brand-accent font-bold'
-                : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
-            }`}
-          >
-            <span className="text-[10px] font-semibold block">Plain Text</span>
-            <span className="text-[8px] opacity-70 leading-tight block mt-0.5">Comma-separated list</span>
-          </button>
-          <button
-            onClick={() => onChange({ skillsStyle: 'grid' })}
-            className={`px-2.5 py-2 rounded-lg border text-left transition cursor-pointer ${
-              (layout.skillsStyle ?? 'chips') === 'grid'
-                ? 'border-brand-accent bg-brand-accent/8 text-brand-accent font-bold'
-                : 'border-border-color/60 hover:border-brand-accent/40 text-text-muted hover:text-text-main'
-            }`}
-          >
-            <span className="text-[10px] font-semibold block">Grid Table</span>
-            <span className="text-[8px] opacity-70 leading-tight block mt-0.5">4-col ATS layout</span>
-          </button>
+          <div className="col-span-2"><SkillsLayoutOptions value={layout.skillsStyle} onChange={skillsStyle=>onChange({skillsStyle})}/></div>
         </AccordionSection>
       )}
 

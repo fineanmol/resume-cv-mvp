@@ -195,4 +195,4 @@ export class GeminiService {
 
 // Compile-time contract enforcement — zero runtime cost.
 // Errors here mean GeminiService's public static API drifted from IAiService.
-const _: IAiService = GeminiService;
+export const aiService: IAiService = GeminiService;

@@ -12,7 +12,7 @@ interface Props {
 }
 
 const DesignColorsSection: React.FC<Props> = ({ layout, onChange, openSection, onToggle }) => {
-  const isDesigner = (layout.template ?? 'navy') === 'designer';
+  const isDesigner = ['designer','hybrid'].includes(layout.template ?? 'navy');
   const brand   = layout.brandColor   ?? '#314855';
   const accent2 = layout.accentColor2 ?? '#0284c7';
 

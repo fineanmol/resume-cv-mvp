@@ -1,0 +1,20 @@
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { z } from 'zod';
+import { resumeDocumentSchema,letterDocumentSchema } from '../src/studio/publication';
+import { validateTemplates } from './validateTemplates';
+import { readFile } from 'node:fs/promises';
+import {providerSchema,modelSchema} from './providers';
+const server=new McpServer({name:'resume-workspace',version:'0.2.0'});
+const profileId=z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/);
+const result=(data:unknown)=>({content:[{type:'text' as const,text:JSON.stringify(data,null,2)}]});
+async function api(url:string,body?:unknown){const r=await fetch('http://127.0.0.1:8793/api/v2'+url,{method:body?'POST':'GET',headers:{'Content-Type':'application/json',...(process.env.STUDIO_API_TOKEN?{Authorization:'Bearer '+process.env.STUDIO_API_TOKEN}:{})},...(body?{body:JSON.stringify(body)}:{})});const data=await r.json();if(!r.ok)throw new Error(data.error||'Workspace request failed');return data;}
+server.tool('list_profiles','List local candidate profiles. Read-only.',{},async()=>result(await api('/profiles')));
+server.tool('read_profile','Read the complete candidate-provided master profile. Read-only.',{profileId},async a=>result(await api('/profiles/'+a.profileId)));
+server.tool('list_publications','Read immutable published resume and cover-letter versions. Read-only.',{profileId},async a=>result(await api('/workspace/profiles/'+a.profileId+'/publications')));
+server.tool('list_applications','Read saved application drafts, changes, page counts and review status. Read-only.',{profileId},async a=>result(await api('/workspace/profiles/'+a.profileId+'/applications')));
+server.tool('validate_document','Validate a classic document JSON contract without saving or generating anything.',{kind:z.enum(['resume','coverletter']),documentJson:z.string().max(3000000)},async a=>{const parsed=(a.kind==='resume'?resumeDocumentSchema:letterDocumentSchema).safeParse(JSON.parse(a.documentJson));return result(parsed.success?{valid:true}:{valid:false,issues:parsed.error.issues});});
+server.tool('generate_draft_application','Creates local draft PDFs from explicit published versions. Does not publish masters or submit applications. AI mode sends documents and JD to the chosen provider and can incur charges; use only with user authorization. Keys must be configured on the local server, not sent in tool arguments.',{profileId,resumeVersion:z.string().uuid(),coverletterVersion:z.string().uuid(),company:z.string(),role:z.string(),jobDescription:z.string().min(10),mode:z.enum(['preserve','ai']).default('preserve'),provider:providerSchema.optional(),model:modelSchema.optional()},async a=>result(await api('/workspace/generate',a)));
+server.tool('validate_templates','Render synthetic short, long and oversized fixtures across all resume and cover-letter templates. Saves local QA artifacts only. Checks PDF page geometry/counts; visual review is still required.',{},async()=>result(await validateTemplates()));
+server.tool('read_validation_report','Read the latest PDF text-retention and geometry QA report. Does not run browser UI tests.',{},async()=>{try{return result(JSON.parse(await readFile('work/template-validation/text-report.json','utf8')));}catch{return result({available:false,instructions:'Run the template matrix and scripts/check-pdf-matrix.py first.'});}});
+await server.connect(new StdioServerTransport());

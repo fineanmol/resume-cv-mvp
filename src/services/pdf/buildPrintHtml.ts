@@ -35,11 +35,15 @@ export function buildPrintHtml(sheetElement: HTMLElement, title = 'Resume'): str
   const clone = sheetElement.cloneNode(true) as HTMLElement;
   stripEditOnlyFromClone(clone, sheetElement);
   preserveAvatarShapesForPrint(clone, sheetElement);
+  clone.querySelectorAll('.group\\/avatar').forEach(node=>{if(!node.querySelector('img'))node.remove();});
   designerFloatTransform(clone);
   stripAvatarPlaceholderStyles(clone);
   resolveCloneImageUrls(clone);
 
   const safeTitle = title.replace(/\.pdf$/i, '').replace(/[<>&"]/g, '');
+  // Page margins repeat on every page; sheet padding only applies at document edges.
+  const paddingPx=parseFloat(getComputedStyle(sheetElement).paddingTop)||0;
+  const pageMarginMm=Math.max(10, Math.min(35,paddingPx*25.4/96));
 
   return `<!DOCTYPE html>
 <html>
@@ -51,6 +55,7 @@ export function buildPrintHtml(sheetElement: HTMLElement, title = 'Resume'): str
   <style>
     ${allStyles}
     ${getPrintStyleBlock()}
+    @page { size: A4; margin: ${pageMarginMm}mm 0; }
   </style>
 </head>
 <body>

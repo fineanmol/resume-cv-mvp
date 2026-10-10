@@ -36,7 +36,9 @@ export type ResumeSet = (
 export function useResumeMutations(set: ResumeSet) {
   const onFieldChange = useCallback(
     (field: keyof ResumeState, value: unknown) => {
-      set(prev => ({ ...prev, [field]: value }));
+      set(prev => ({ ...prev, [field]: value,
+        ...(field === 'resumeSkillGroups' ? {resumeSkills: (value as NonNullable<ResumeState['resumeSkillGroups']>).flatMap(g => g.items).join(', ')} : {}),
+      }));
     },
     [set]
   );

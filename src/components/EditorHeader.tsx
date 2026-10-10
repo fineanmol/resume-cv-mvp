@@ -71,7 +71,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   designPanelActive,
 }) => {
   // "Add Section" and "Rearrange" only make sense for the designer template
-  const isDesigner = currentTemplate === 'designer';
+  const isDesigner = (currentTemplate === 'designer' || currentTemplate === 'hybrid');
   return (
     <header className="bg-sidebar border-b border-border-color/60 px-6 py-3.5 flex items-center justify-between shadow-sm flex-shrink-0 z-10">
       <div className="flex items-center gap-4">

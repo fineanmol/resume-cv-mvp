@@ -1,3 +1,4 @@
+import type { LayoutSettings, EntrySection, AchievementItem } from '../../../../types';
 import React from 'react';
 import { EditableText as E } from '../../../shared/EditableText';
 import { BulletList } from '../../../shared/BulletList';
@@ -25,14 +26,14 @@ export interface DesignerAchievementsSectionProps {
   C_COMPANY: string;
   dsec: React.CSSProperties;
   entrySpacing: number;
-  bulletStyle: string;
+  bulletStyle: NonNullable<LayoutSettings["bulletStyle"]>;
   showAch: (ach: ResumeAchievement, field: keyof NonNullable<ResumeAchievement['visibility']>) => boolean;
   showAchievementIcons: boolean;
   showAchievementDesc: boolean;
   showAchievementBullets: boolean;
   onDeleteAchievement?: (idx: number) => void;
-  onEntryVisibilityChange?: (section: string, idx: number, field: string, value: boolean) => void;
-  onAchievementChange?: (idx: number, field: string, value: string) => void;
+  onEntryVisibilityChange?: (section: EntrySection, idx: number, field: string, value: boolean) => void;
+  onAchievementChange?: (idx: number, field: keyof AchievementItem, value: string) => void;
 }
 
 export const DesignerAchievementsSection: React.FC<DesignerAchievementsSectionProps> = ({
@@ -46,7 +47,6 @@ export const DesignerAchievementsSection: React.FC<DesignerAchievementsSectionPr
   H,
   FG,
   C_HEAD,
-  C_TITLE,
   C_COMPANY,
   dsec,
   entrySpacing,

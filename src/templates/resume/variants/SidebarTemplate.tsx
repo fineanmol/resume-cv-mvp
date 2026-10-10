@@ -1,18 +1,20 @@
+import {LinkedInContact} from '../../shared/LinkedInContact';
+import {ExtraContactFields} from '../../shared/ExtraContactFields';
+import { EvidenceLink } from '../../shared/EvidenceLink';
 import React from 'react';
-import { Phone, Mail, MapPin, Building2, GraduationCap } from 'lucide-react';
+import { Phone, Mail, MapPin } from 'lucide-react';
+import {EntryIconPicker} from '../../shared/EntryIconPicker';
 import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
 import { SummaryContent } from '../../shared/SummaryContent';
 import { SkillsEditor } from '../../shared/SkillsEditor';
 import { EducationDescription } from '../../shared/EducationDescription';
 import { HeaderWrapper } from '../../shared/HeaderWrapper';
-import { formatLinkedinUrl } from '../../../utils/linkedin';
 import { AvatarCircleEditable } from '../../TemplateHeader';
 import { useTemplateRenderContext } from '../useTemplateSetup';
 import {
   ItemLogo,
   ItemWrapper,
-  LI,
   SectionWrapper,
   WorkLink,
 } from '../shared';
@@ -22,7 +24,7 @@ import { isEntryFieldVisible } from '../../../utils/entryVisibility';
 export const SidebarTemplate: React.FC = () => {
   const {
     sheetActiveClass, sheetStyle, isEditable, clearActive, sec, ec, ef,
-    name, subtitle, phone, email, linkedin, location, avatar,
+    name, subtitle, phone, email, linkedin, location, avatar, customContacts,
     resumeSummary, resumeSkills, resumeExperience, resumeEducation,
     resumeCerts, resumeAchievements, resumeLanguages, layoutSettings,
     brandColor, bulletStyle, skillsStyle, summaryAlign,
@@ -83,11 +85,12 @@ export const SidebarTemplate: React.FC = () => {
               {hasPhone && <li className="flex items-center gap-1.5"><Phone className="w-3 h-3 flex-shrink-0 mt-[1px]" /><E value={phone} isEditable={isEditable} editableClass={ec} onSave={ef('phone')} /></li>}
               {hasEmail && <li className="flex items-center gap-1.5"><Mail className="w-3 h-3 flex-shrink-0 mt-[1px]" /><E value={email} isEditable={isEditable} editableClass={ec} onSave={ef('email')} href={`mailto:${email}`} /></li>}
               {hasLocation && <li className="flex items-center gap-1.5"><MapPin className="w-3 h-3 flex-shrink-0 mt-[1px]" /><E value={location} isEditable={isEditable} editableClass={ec} onSave={ef('location')} /></li>}
-              {hasLinkedin && <li className="flex items-center gap-1.5"><LI /><E value={linkedin} isEditable={isEditable} editableClass={ec} onSave={ef('linkedin')} href={formatLinkedinUrl(linkedin)} /></li>}
+              {hasLinkedin && <li className="flex items-center gap-1.5"><LinkedInContact value={linkedin}/></li>}
             </ul>
           </div>
         )}
 
+        <div className="flex flex-col gap-1 text-[11px]"><ExtraContactFields fields={customContacts}/></div>
         {(resumeSkills || isEditable) && (
           <SectionWrapper
             id="skills" title="Skills" isEditable={isEditable}
@@ -129,10 +132,11 @@ export const SidebarTemplate: React.FC = () => {
                   >
                     <li className={`text-${certsAlign}`}>
                       <span className={`flex items-center gap-1 ${certsAlign === 'center' ? 'justify-center' : certsAlign === 'right' ? 'justify-end' : ''}`}>
+                        {layoutSettings.showProjectIcons!==false&&<EntryIconPicker variant="project" currentIcon={cert.icon||'briefcase'} isEditable={isEditable} onChange={v=>onCertChange?.(idx,'icon',v)}/>}
                         <E tag="strong" value={cert.title} isEditable={isEditable} editableClass={ec} className="block text-slate-900 font-bold" onSave={v => onCertChange?.(idx, 'title', v)} />
                         <WorkLink url={cert.url} brandColor={brandColor} />
                       </span>
-                      <E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[10px] text-${certsAlign}`} onSave={v => onCertChange?.(idx, 'desc', v)} />
+                      {layoutSettings.showProjectDesc!==false&&(layoutSettings.showProjectBullets?<BulletList bullets={cert.desc} bulletStyle={bulletStyle} isEditable={isEditable} editableClass={ec} onBulletChange={v=>onCertChange?.(idx,'desc',v)} align={certsAlign}/>:<E tag="p" value={cert.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[10px] text-${certsAlign}`} onSave={v => onCertChange?.(idx, 'desc', v)} />)}
                     </li>
                   </ItemWrapper>
                 ))}
@@ -183,8 +187,9 @@ export const SidebarTemplate: React.FC = () => {
                     isEditable={isEditable} onDelete={() => onDeleteAchievement?.(idx)}
                   >
                     <li className={`text-${achievementsAlign}`}>
+                      {layoutSettings.showAchievementIcons!==false&&<EntryIconPicker variant="achievement" currentIcon={ach.icon||'star'} isEditable={isEditable} onChange={v=>onAchievementChange?.(idx,'icon',v)}/>}
                       <E tag="strong" value={ach.title} isEditable={isEditable} editableClass={ec} className={`block text-slate-900 text-${achievementsAlign}`} onSave={v => onAchievementChange?.(idx, 'title', v)} />
-                      <E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[10px] text-${achievementsAlign}`} onSave={v => onAchievementChange?.(idx, 'desc', v)} />
+                      {layoutSettings.showAchievementDesc!==false&&(layoutSettings.showAchievementBullets?<BulletList bullets={ach.desc} bulletStyle={bulletStyle} isEditable={isEditable} editableClass={ec} onBulletChange={v=>onAchievementChange?.(idx,'desc',v)} align={achievementsAlign}/>:<E tag="p" value={ach.desc} isEditable={isEditable} editableClass={ec} className={`text-slate-500 text-[10px] text-${achievementsAlign}`} onSave={v => onAchievementChange?.(idx, 'desc', v)} />)}
                     </li>
                   </ItemWrapper>
                 ))}
@@ -358,7 +363,7 @@ export const SidebarTemplate: React.FC = () => {
                         </div>
                         {(edu.school || showLocation) && (
                           <div className="flex justify-between text-slate-500 italic mb-1">
-                            <E value={edu.school} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'school', v)} />
+                            <><E value={edu.school} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'school', v)} /><EvidenceLink url={edu.url}/></>
                             {showLocation && (
                               <E value={edu.location} isEditable={isEditable} editableClass={ec} onSave={v => onEducationChange?.(idx, 'location', v)} />
                             )}

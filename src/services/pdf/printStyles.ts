@@ -74,7 +74,20 @@ export function getPrintStyleBlock(): string {
 
     /* margin: 0 prevents Chrome from printing its built-in date/title/URL/page-number
      * headers & footers — those only render when there is non-zero @page margin space. */
-    @page { size: A4; margin: 0; }
+    @page { size: A4; margin: 10mm 0; }
+    @media print {
+      .pdf-sheet { padding-top: 0 !important; padding-bottom: 0 !important; }
+      .resume-entry, .group\\/item { break-inside: avoid; page-break-inside: avoid; }
+      .pdf-sheet p { orphans: 3; widows: 3; }
+      .pdf-sheet li { orphans: 2; widows: 2; }
+      .hybrid-entry, .hybrid-skills { break-inside: avoid; }
+      .hybrid-sheet [data-section="education"] { break-inside: avoid; }
+      .cl-closing-paragraph { break-inside: avoid; break-after: avoid; }
+      .cl-closing-paragraph + div, .pdf-sheet footer { break-inside: avoid; }
+      .resume-entry, .hybrid-entry { box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+      h3 + div, h3 + ul { break-before: avoid; }
+      [data-skill-grid-item], [data-skill-chip] { white-space: normal !important; overflow-wrap: anywhere; break-inside: avoid; }
+    }
 
     /* ── Page-break management ─────────────────────────────────
      * The designer two-column grid is converted to float layout in the JS clone
@@ -108,6 +121,7 @@ export function getPrintStyleBlock(): string {
     header .mt-2 {
       margin-top: 4px !important;
     }
+    .hybrid-sheet .hybrid-header { margin-bottom: 6mm !important; }
     [data-testid="designer-column-grid"] {
       margin-top: 4px !important;
     }
@@ -151,15 +165,14 @@ export function getPrintStyleBlock(): string {
     .designer-column section > ul.flex {
       display: block !important;
     }
-    /* Skills grid must stay flex-wrap (override section > div.flex display:block). */
+    /* Keep the same aligned skills columns in the PDF. */
     section > div.flex[data-skills-grid],
     .designer-column section > div.flex[data-skills-grid],
     section [data-skills-grid] {
-      display: flex !important;
-      flex-wrap: wrap !important;
-      justify-content: flex-start !important;
-      column-gap: 17.8pt !important;
-      row-gap: 8.5pt !important;
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      column-gap: 12pt !important;
+      row-gap: 5pt !important;
       width: 100% !important;
       max-width: 100% !important;
       box-sizing: border-box !important;

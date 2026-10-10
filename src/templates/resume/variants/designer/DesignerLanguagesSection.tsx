@@ -1,3 +1,4 @@
+import type { EntrySection, LanguageItem } from '../../../../types';
 import React from 'react';
 import { EditableText as E } from '../../../shared/EditableText';
 import { LanguageEntrySettings } from '../../../shared/entrySettings';
@@ -22,8 +23,8 @@ export interface DesignerLanguagesSectionProps {
   dsec: React.CSSProperties;
   entrySpacing: number;
   onDeleteLanguage?: (idx: number) => void;
-  onEntryVisibilityChange?: (section: string, idx: number, field: string, value: boolean) => void;
-  onLanguageChange?: (idx: number, field: string, value: string) => void;
+  onEntryVisibilityChange?: (section: EntrySection, idx: number, field: string, value: boolean) => void;
+  onLanguageChange?: (idx: number, field: keyof LanguageItem, value: string) => void;
 }
 
 export const DesignerLanguagesSection: React.FC<DesignerLanguagesSectionProps> = ({

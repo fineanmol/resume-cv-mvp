@@ -1,0 +1,17 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+let s=readFileSync('src/studio/HybridResume.tsx','utf8');
+s=s.replace("import type { LayoutSettings }", "import type { ResumeLayoutSettings }").replace('layout?:LayoutSettings','layout?:ResumeLayoutSettings');
+const start=s.indexOf('  <div className="hybrid-columns"><main>'),end=s.indexOf('  </aside></div>',start);
+if(start<0||end<0)throw new Error('Hybrid blocks not found');
+const lines=s.slice(start,end).split('\n').filter(x=>x.includes('<section data-section='));
+const entries=lines.map(line=>{const name=line.match(/data-section="([^"]+)"/)[1];let jsx=line.slice(line.indexOf('<section'));jsx=jsx.slice(0,jsx.lastIndexOf('</section>')+10);return `${name}:(${jsx}),`;});
+const sections=` const sections={${entries.join('\n')}};\n const renderSection=(id:string)=>!d.hiddenSections.includes(id as never)&&sections[id as keyof typeof sections]?<div key={id}>{sections[id as keyof typeof sections]}</div>:null;\n`;
+s=s.slice(0,start)+`  <div className="hybrid-columns"><main>{(l.designerLeftSections||['experience','education']).map(renderSection)}</main><aside>{(l.designerRightSections||['summary','skills','achievements','certs','languages']).map(renderSection)}</aside></div>\n`+s.slice(end+'  </aside></div>'.length);
+s=s.replace(' return <article',sections+' return <article');
+s=s.replace('<style>{d.hiddenSections.map(k=>\'[data-section="\'+k+\'"]{display:none}\').join(\'\')}</style>','');
+s=s.replace('data-header-style={l.headerStyle}','data-header-style={l.headerStyle} data-bullet-style={l.bulletStyle}');
+s=s.replace('<h1>{p.name}</h1>','<h1 style={{textTransform:layout?.uppercaseName===false?\'none\':\'uppercase\'}}>{p.name}</h1>');
+s=s.replace('<p>{p.summary}</p>', '<p style={{textAlign:l.summaryAlign}}>{p.summary}</p>');
+s=s.replace('<ul>{e.bullets', '<ul style={{textAlign:l.experienceAlign}}>{e.bullets');
+s=s.replace('<p>{a.desc}</p>', '<p style={{textAlign:l.achievementsAlign}}>{a.desc}</p>');
+writeFileSync('src/studio/HybridResume.tsx',s);

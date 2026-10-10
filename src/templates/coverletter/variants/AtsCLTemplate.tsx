@@ -89,7 +89,7 @@ const AtsCLTemplate: React.FC<CoverLetterTemplateProps> = ({
               key={field}
               tag="p"
               value={ip(text)}
-              className="text-xs text-slate-800 mb-3 leading-relaxed"
+              className={`text-xs text-slate-800 mb-3 leading-relaxed ${field==='p4'?'cl-closing-paragraph':''}`}
               isEditable={isEditable}
               editableClass={editableClass}
               onSave={(val) => onFieldChange?.(field, val)}

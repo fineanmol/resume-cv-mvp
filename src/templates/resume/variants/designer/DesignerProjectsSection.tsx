@@ -1,3 +1,4 @@
+import type { LayoutSettings, EntrySection, CertItem } from '../../../../types';
 import React from 'react';
 import { formatMarkdownInline } from '../../../../utils/markdown';
 import { EditableText as E } from '../../../shared/EditableText';
@@ -16,7 +17,7 @@ export interface DesignerProjectsSectionProps {
   resumeCerts: ResumeState['resumeCerts'];
   isEditable: boolean;
   dragProps: DesignerDragProps;
-  certsAlign: string;
+  certsAlign: NonNullable<LayoutSettings["certsAlign"]>;
   onLayoutSettingsChange?: (patch: Partial<DesignerLayoutSettings>) => void;
   layoutSettings: DesignerLayoutSettings;
   onAddCert?: () => void;
@@ -28,14 +29,14 @@ export interface DesignerProjectsSectionProps {
   C_COMPANY: string;
   dsec: React.CSSProperties;
   entrySpacing: number;
-  bulletStyle: string;
+  bulletStyle: NonNullable<LayoutSettings["bulletStyle"]>;
   showCert: (cert: ResumeCert, field: keyof NonNullable<ResumeCert['visibility']>) => boolean;
   showProjectIcons: boolean;
   showProjectDesc: boolean;
   showProjectBullets: boolean;
   onDeleteCert?: (idx: number) => void;
-  onEntryVisibilityChange?: (section: string, idx: number, field: string, value: boolean) => void;
-  onCertChange?: (idx: number, field: string, value: string) => void;
+  onEntryVisibilityChange?: (section: EntrySection, idx: number, field: string, value: boolean) => void;
+  onCertChange?: (idx: number, field: keyof CertItem, value: string) => void;
 }
 
 export const DesignerProjectsSection: React.FC<DesignerProjectsSectionProps> = ({

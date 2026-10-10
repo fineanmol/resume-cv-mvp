@@ -44,7 +44,7 @@ export function useTemplateStyles({
     fontSize: `${fontSize}pt`,
     padding: `${paddingTopBottom}mm ${paddingLeftRight}mm`,
     lineHeight,
-    color: '#334155',
+    color: layoutSettings.bodyTextColor ?? '#334155',
     fontFamily: bodyFontCss,
     ['--sheet-fs' as string]: String(fontSize),
   };

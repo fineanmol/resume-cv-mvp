@@ -1,16 +1,15 @@
+import {LinkedInContact} from '../../shared/LinkedInContact';
 import React from 'react';
 import {
-  Phone, Mail, MapPin, Globe, Star,
+  Phone, Mail, MapPin,
 } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
-import { formatLinkedinUrl } from '../../../utils/linkedin';
-import { formatContactUrl } from '../../../utils/contactUrl';
+
 import { HeaderWrapper } from '../../shared/HeaderWrapper';
 import { isEntryFieldVisible } from '../../../utils/entryVisibility';
 import { useTemplateRenderContext } from '../useTemplateSetup';
-import { CONTACT_ICON_MAP } from '../../../components/ui/ContactIconPicker';
+import {ExtraContactFields} from '../../shared/ExtraContactFields';
 import {
-  LI,
   ProfilePhotoWithWaves,
 } from '../shared';
 import { DesignerSummarySection } from './designer/DesignerSummarySection';
@@ -339,22 +338,10 @@ export const DesignerTemplate: React.FC = () => {
             )}
             {hasLinkedin && (
               <span className="inline-flex items-center gap-1.5 align-middle">
-                <span className="text-slate-400 inline-flex items-center justify-center w-3 h-3 flex-shrink-0" aria-hidden><LI /></span>
-                <E field="header.linkedin" value={linkedin} isEditable={isEditable} editableClass={ec} href={formatLinkedinUrl(linkedin)} onSave={ef('linkedin')} />
+                <LinkedInContact value={linkedin}/>
               </span>
             )}
-            {(customContacts ?? []).filter((c) => c.value?.trim()).map((field) => {
-              const Icon = CONTACT_ICON_MAP[field.icon] ?? (field.icon === 'globe' ? Globe : Star);
-              const href = formatContactUrl(field.value);
-              return (
-                <span key={field.id} className="inline-flex items-center gap-1.5 align-middle">
-                  <Icon size={12} className="text-slate-400 flex-shrink-0 inline-block" aria-hidden />
-                  <a href={href} target="_blank" rel="noopener noreferrer" className="hover:underline cursor-pointer" data-href={href}>
-                    {field.value}
-                  </a>
-                </span>
-              );
-            })}
+            <ExtraContactFields fields={customContacts}/>
             {hasLocation && (
               <span className="inline-flex items-center gap-1.5 align-middle">
                 <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0 inline-block" aria-hidden />

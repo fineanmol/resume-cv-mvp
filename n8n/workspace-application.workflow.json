@@ -1,0 +1,13 @@
+{
+ "name":"Versioned résumé + cover letter drafts",
+ "active":false,
+ "nodes":[
+  {"id":"start","name":"Manual test","type":"n8n-nodes-base.manualTrigger","typeVersion":1,"position":[0,0],"parameters":{}},
+  {"id":"input","name":"Profile and published versions","type":"n8n-nodes-base.set","typeVersion":3.4,"position":[240,0],"parameters":{"mode":"raw","jsonOutput":"{\"profileId\":\"anmol\",\"resumeVersion\":\"PASTE_RESUME_VERSION_UUID\",\"coverletterVersion\":\"PASTE_COVER_LETTER_VERSION_UUID\",\"company\":\"Example GmbH\",\"role\":\"Frontend Engineer\",\"jobDescription\":\"Frontend engineer using Vue and TypeScript.\",\"mode\":\"preserve\"}"}},
+  {"id":"generate","name":"Generate draft package","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[480,0],"parameters":{"method":"POST","url":"http://host.docker.internal:8794/api/v2/workspace/generate","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify($json) }}","options":{"timeout":240000}}},
+  {"id":"resume","name":"Download resume","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[740,-120],"parameters":{"url":"={{ 'http://host.docker.internal:8794' + $json.pdfUrl }}","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","options":{"response":{"response":{"responseFormat":"file","outputPropertyName":"resume"}}}}},
+  {"id":"letter","name":"Download cover letter","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[740,120],"parameters":{"url":"={{ 'http://host.docker.internal:8794' + $json.coverletterUrl }}","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","options":{"response":{"response":{"responseFormat":"file","outputPropertyName":"coverletter"}}}}}
+ ],
+ "connections":{"Manual test":{"main":[[{"node":"Profile and published versions","type":"main","index":0}]]},"Profile and published versions":{"main":[[{"node":"Generate draft package","type":"main","index":0}]]},"Generate draft package":{"main":[[{"node":"Download resume","type":"main","index":0},{"node":"Download cover letter","type":"main","index":0}]]}},
+ "settings":{"executionOrder":"v1"}
+}

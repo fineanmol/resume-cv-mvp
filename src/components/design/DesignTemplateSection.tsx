@@ -1,3 +1,4 @@
+import { HYBRID_STYLE_DEFAULTS } from '../../config/hybridDefaults';
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Layout } from 'lucide-react';
@@ -34,7 +35,7 @@ const DesignTemplateSection: React.FC<Props> = ({ layout, onChange, openSection,
       return (
         <motion.button
           key={t.id}
-          onClick={() => onChange({ template: t.id })}
+          onClick={() => onChange(t.id === 'hybrid' ? {...HYBRID_STYLE_DEFAULTS} : { template: t.id })}
           whileTap={{ scale: 0.96 }}
           className={`relative flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left cursor-pointer transition ${
             isActive

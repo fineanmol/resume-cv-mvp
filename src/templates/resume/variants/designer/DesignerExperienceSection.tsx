@@ -1,3 +1,4 @@
+import type { LayoutSettings, EntrySection, ExperienceItem } from '../../../../types';
 import React from 'react';
 import { EditableText as E } from '../../../shared/EditableText';
 import { BulletList } from '../../../shared/BulletList';
@@ -11,7 +12,7 @@ export interface DesignerExperienceSectionProps {
   resumeExperience: ResumeState['resumeExperience'];
   isEditable: boolean;
   dragProps: DesignerDragProps;
-  experienceAlign: string;
+  experienceAlign: NonNullable<LayoutSettings["experienceAlign"]>;
   onLayoutSettingsChange?: (patch: Partial<DesignerLayoutSettings>) => void;
   layoutSettings: DesignerLayoutSettings;
   onAddExperience?: () => void;
@@ -24,13 +25,13 @@ export interface DesignerExperienceSectionProps {
   dsec: React.CSSProperties;
   entrySpacing: number;
   brandColor: string | undefined;
-  bulletStyle: string;
+  bulletStyle: NonNullable<LayoutSettings["bulletStyle"]>;
   showExp: (exp: ResumeState['resumeExperience'][number], field: keyof NonNullable<ResumeState['resumeExperience'][number]['visibility']>) => boolean;
   onDeleteExperience?: (idx: number) => void;
   onDuplicateExperience?: (idx: number) => void;
   onAddSimilarExperience?: (idx: number) => void;
-  onEntryVisibilityChange?: (section: string, idx: number, field: string, value: boolean) => void;
-  onExperienceChange?: (idx: number, field: string, value: string) => void;
+  onEntryVisibilityChange?: (section: EntrySection, idx: number, field: string, value: boolean) => void;
+  onExperienceChange?: (idx: number, field: keyof ExperienceItem, value: string) => void;
 }
 
 export const DesignerExperienceSection: React.FC<DesignerExperienceSectionProps> = ({
@@ -45,7 +46,6 @@ export const DesignerExperienceSection: React.FC<DesignerExperienceSectionProps>
   H,
   FG,
   C_HEAD,
-  C_TITLE,
   C_COMPANY,
   dsec,
   entrySpacing,

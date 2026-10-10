@@ -386,7 +386,7 @@ describe('ResumeTemplates — BottomSections entry visibility', () => {
   it('navy: cert multiline desc renders as bullet list', async () => {
     const state: ResumeState = {
       ...DEFAULT_RESUME_STATE,
-      layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template: 'navy', bulletStyle: 'dash' },
+      layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template: 'navy', bulletStyle: 'dash', showProjectBullets:true },
       resumeCerts: [{
         title: 'Multi-line Cert',
         desc: 'First point\nSecond point',
@@ -395,7 +395,8 @@ describe('ResumeTemplates — BottomSections entry visibility', () => {
     const { container } = await renderResumeTemplate({ state: state });
     expect(container.textContent).toContain('First point');
     expect(container.textContent).toContain('Second point');
-    expect(container.textContent).toContain('—');
+    const cert=Array.from(container.querySelectorAll('section')).find(s=>s.textContent?.includes('Multi-line Cert'));
+    expect(cert?.querySelectorAll('li').length).toBeGreaterThanOrEqual(2);
   });
 
   it('serif: hides achievement desc when section showAchievementDesc=false', async () => {
@@ -533,5 +534,4 @@ describe('ResumeTemplates — design panel spacing settings applied to sheet', (
     expect(getByTestId('designer-column-grid').style.gap).toBe('28px');
   });
 });
-
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import React, { createRef, Suspense } from 'react';
 import { EditorLayout } from '../components/layout/EditorLayout';
@@ -96,7 +96,8 @@ describe('EditorLayout — smoke tests', () => {
         </Suspense>
       );
     });
-    // CoverLetterForm renders something different than the resume form
-    expect(screen.queryByText('Contact Details')).toBeNull();
+    // Both document types share contact details; target position identifies the letter form.
+    expect(screen.getByText('Target Position')).toBeInTheDocument();
+    expect(screen.queryByText('Work History')).toBeNull();
   });
 });

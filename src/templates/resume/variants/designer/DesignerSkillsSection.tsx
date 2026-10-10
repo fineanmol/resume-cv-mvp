@@ -1,3 +1,4 @@
+import type { LayoutSettings } from '../../../../types';
 import React from 'react';
 import { SkillsEditor } from '../../../shared/SkillsEditor';
 import { DraggableSection, SectionWrapper } from '../../shared';
@@ -7,7 +8,7 @@ export interface DesignerSkillsSectionProps {
   resumeSkills: string | undefined;
   isEditable: boolean;
   dragProps: DesignerDragProps;
-  skillsStyle: string;
+  skillsStyle: NonNullable<LayoutSettings["skillsStyle"]>;
   onLayoutSettingsChange?: (patch: Partial<import('../../../../types').ResumeLayoutSettings>) => void;
   ec: string;
   ef: (field: keyof import('../../../../types').ResumeState) => (v: string) => void;
@@ -54,7 +55,7 @@ export const DesignerSkillsSection: React.FC<DesignerSkillsSectionProps> = ({
         <section style={dsec}>
           <h3 className={H} style={{ ...FG.section, borderColor: C_HEAD, color: C_HEAD }}>Skills</h3>
           <SkillsEditor
-            value={resumeSkills}
+            value={resumeSkills || ''}
             isEditable={isEditable}
             ec={ec}
             onSave={ef('resumeSkills')}

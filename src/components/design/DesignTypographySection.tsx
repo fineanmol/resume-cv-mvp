@@ -67,7 +67,7 @@ interface Props {
 }
 
 const DesignTypographySection: React.FC<Props> = ({ layout, onChange, openSection, onToggle, docType = 'resume' }) => {
-  const isDesigner = (layout.template ?? 'navy') === 'designer';
+  const isDesigner = ['designer','hybrid'].includes(layout.template ?? 'navy');
   const isCoverLetter = docType === 'coverletter';
 
   return (

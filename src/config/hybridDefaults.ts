@@ -1,0 +1,2 @@
+import type { LayoutSettings } from '../types';
+export const HYBRID_STYLE_DEFAULTS:Partial<LayoutSettings>={template:'hybrid',fontSize:10.5,lineHeight:1.25,fontFamily:'open-sans',headingFont:'raleway',titleFont:'raleway',accentFont:'open-sans',brandColor:'#26343c',accentColor2:'#008f9e',bodyTextColor:'#30383d',titleColor:'#26343c',skillsStyle:'grouped',paddingTopBottom:10,paddingLeftRight:11,sectionSpacing:10,entrySpacing:6,columnGap:26,headerStyle:'left'};

@@ -6,11 +6,12 @@ import { createServer, type ViteDevServer } from 'vite';
 import type { CoverLetterState, ResumeState } from '../../src/types';
 import { contentDensityReport } from '../contentGuard';
 import { sanitizeCoverLetterForExport, sanitizeResumeForExport } from '../sanitize';
+import type { Profile } from '../../src/studio/model';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 /** Restore Sakshi master headshot if tailor/composer cleared avatar. */
-async function ensurePhoto<T extends { avatar?: string; layoutSettings?: Record<string, unknown> }>(
+async function ensurePhoto<T extends { avatar?: string; layoutSettings?: { showPhoto?: boolean } }>(
   doc: T,
   masterPath: string,
 ): Promise<T> {
@@ -42,6 +43,7 @@ async function ensurePhoto<T extends { avatar?: string; layoutSettings?: Record<
 }
 
 type PrintPayload =
+  | { type: 'hybrid'; profile: Profile }
   | { type: 'resume'; state: ResumeState }
   | { type: 'coverLetter'; state: CoverLetterState };
 
@@ -56,7 +58,8 @@ async function getPrintServer(): Promise<string> {
     sharedServer = await createServer({
       root: ROOT,
       configFile: path.join(ROOT, 'vite.config.ts'),
-      server: { port: 5199, strictPort: false, host: '127.0.0.1' },
+      // Print jobs must not reload halfway through export when the editor changes.
+      server: { port: 5199, strictPort: false, host: '127.0.0.1',hmr:false,watch:null },
       logLevel: 'error',
     });
     await sharedServer.listen();
@@ -67,7 +70,7 @@ async function getPrintServer(): Promise<string> {
 
 async function getBrowser(): Promise<Browser> {
   if (!sharedBrowser) {
-    sharedBrowser = await chromium.launch({ headless: true });
+    sharedBrowser = await chromium.launch({ headless: true, ...(process.env.CHROME_EXECUTABLE ? { executablePath: process.env.CHROME_EXECUTABLE } : {}) });
   }
   return sharedBrowser;
 }
@@ -130,7 +133,11 @@ async function prepareSheetForPdf(page: import('playwright').Page): Promise<void
   });
 }
 
-async function renderSitePdf(payload: PrintPayload, outPath: string): Promise<void> {
+export async function renderSitePdf(payload: PrintPayload, outPath: string, legacy = true): Promise<void> {
+  if (!legacy && payload.type !== 'hybrid' && !payload.state.avatar) {
+    payload=structuredClone(payload);
+    payload.state.layoutSettings.showPhoto=false;
+  }
   const base = await getPrintServer();
   const browser = await getBrowser();
   const page = await browser.newPage({
@@ -158,8 +165,24 @@ async function renderSitePdf(payload: PrintPayload, outPath: string): Promise<vo
       await page.waitForTimeout(250);
     }
 
-    await prepareSheetForPdf(page);
+    if (legacy) await prepareSheetForPdf(page);
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await Promise.all(Array.from(document.images).map(img => img.decode().catch(() => undefined)));
+      // Keep ordinary entries together, but an entry taller than an A4 content
+      // area must fragment. Otherwise Chrome wastes a page trying to move it.
+      const usableHeight=(297-20)*96/25.4;
+      document.querySelectorAll<HTMLElement>('.resume-entry,.hybrid-entry,[data-entry-section],.hybrid-skills').forEach(el=>{
+        if(el.getBoundingClientRect().height>usableHeight){
+          el.style.setProperty('break-inside','auto','important');
+          el.style.setProperty('page-break-inside','auto','important');
+        }
+      });
+    });
     await page.waitForTimeout(100);
+
+    const hasContent=await page.evaluate(()=>!!document.querySelector('.pdf-sheet')?.textContent?.trim());
+    if(!hasContent)throw new Error('PDF render lost its document; refusing to export a blank PDF. Retry after the preview is ready.');
 
     await mkdir(path.dirname(outPath), { recursive: true });
     await page.pdf({
@@ -167,6 +190,7 @@ async function renderSitePdf(payload: PrintPayload, outPath: string): Promise<vo
       width: '210mm',
       height: '297mm',
       printBackground: true,
+      displayHeaderFooter: false,
       margin: { top: '0', right: '0', bottom: '0', left: '0' },
       preferCSSPageSize: false,
     });

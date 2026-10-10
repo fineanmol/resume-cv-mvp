@@ -5,8 +5,11 @@ import type { CoverLetterState, ResumeState } from './types';
 import { ResumeTemplateRenderer } from './templates/resume/ResumeTemplateRenderer';
 import { CoverLetterTemplateRenderer } from './templates/CoverLetterTemplates';
 import { buildPrintHtml } from './services/pdf/buildPrintHtml';
+import { ProfileResumePreview } from './studio/ProfileResumePreview';
+import type { Profile } from './studio/model';
 
 type PrintPayload =
+  | { type: 'hybrid'; profile: Profile }
   | { type: 'resume'; state: ResumeState }
   | { type: 'coverLetter'; state: CoverLetterState };
 
@@ -42,10 +45,8 @@ function PrintApp() {
       await document.fonts.ready;
       const deadline = Date.now() + 15000;
       while (!cancelled && Date.now() < deadline) {
-        const sheet = document.querySelector('.pdf-sheet');
-        const gridReady =
-          payload.type !== 'resume' ||
-          !!document.querySelector('[data-testid="designer-column-grid"]');
+        const sheet = document.querySelector('.pdf-sheet, .hybrid-sheet');
+        const gridReady = true;
         if (sheet instanceof HTMLElement && gridReady) {
           window.__getPrintHtml__ = (title = 'Resume') => buildPrintHtml(sheet, title);
           await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -70,6 +71,7 @@ function PrintApp() {
   }
 
   // Wrapper must NOT use .pdf-sheet — templates already render one.
+  if (payload.type === 'hybrid') return <ProfileResumePreview profile={payload.profile} />;
   // Nesting two .pdf-sheet nodes doubles CSS padding (40/50px + layout mm) and
   // breaks margins vs the website Download path.
   if (payload.type === 'resume') {

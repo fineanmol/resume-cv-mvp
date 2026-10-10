@@ -23,6 +23,7 @@ export interface ItemWrapperProps {
   showLogo?: boolean;
   /** @deprecated */
   placeholderIcon?: React.ReactNode;
+  placeholderIconName?: string;
   brandColor?: string;
 }
 
@@ -50,7 +51,7 @@ export const ItemWrapper = React.memo<ItemWrapperProps>(function ItemWrapper({
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [showSettings, context]);
 
-  if (!isEditable) return <>{children}</>;
+  if (!isEditable) return <div className="resume-entry">{children}</div>;
 
   const handleMoveUp = onMoveUp ?? (context?.handleMoveItemUpDown ? () => context.handleMoveItemUpDown(sectionId, index, 'up') : undefined);
   const handleMoveDown = onMoveDown ?? (context?.handleMoveItemUpDown ? () => context.handleMoveItemUpDown(sectionId, index, 'down') : undefined);

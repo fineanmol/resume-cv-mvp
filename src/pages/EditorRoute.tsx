@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { PublicationBar } from '../components/ReviewedPublicationBar';
+import { HYBRID_STYLE_DEFAULTS } from '../config/hybridDefaults';
 import { EditorHeader } from '../components/EditorHeader';
 import { AddSectionModal } from '../components/AddSectionModal';
 import { RearrangeSectionsModal } from '../components/RearrangeSectionsModal';
@@ -140,13 +142,16 @@ export function EditorRoute({
         ? `${cl.state.name.replace(/\s+/g, '_')}_${clCompanySlug}_Cover_Letter.pdf`
         : `${cl.state.name.replace(/\s+/g, '_')}_Cover_Letter.pdf`;
 
-    toast.info('Opening print dialog — choose "Save as PDF", set Margins to None, and uncheck Headers & footers.');
+    toast.info('Generating a clean PDF…');
     try {
-      const { PdfService } = await import('../services/pdf');
-      await PdfService.downloadPdf(sheetRef.current, filename);
-      toast.success('Print dialog opened. Select "Save as PDF" → Margins: None → uncheck Headers & footers → Save.');
+      const response=await fetch('/api/v2/workspace/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:activeDocType==='resume'?'resume':'coverletter',state:activeDocType==='resume'?resume.state:cl.state})});
+      if(!response.ok)throw new Error('PDF export failed');
+      const url=URL.createObjectURL(await response.blob());
+      const anchor=document.createElement('a');anchor.href=url;anchor.download=filename;anchor.click();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      toast.success('PDF downloaded without browser headers or footers.');
     } catch {
-      toast.error('PDF download failed. Please try again.');
+      toast.error('PDF download failed. Check that the local API server is running and try again.');
     }
   };
 
@@ -203,6 +208,7 @@ export function EditorRoute({
           designPanelActive={rightPanelOpen && rightTab === 'design'}
         />
 
+        {(isResume?resume.state.profileId:cl.state.profileId)&&<PublicationBar key={activeDocId} profileId={(isResume?resume.state.profileId:cl.state.profileId)!} kind={activeDocType} state={isResume?resume.state:cl.state}/>}
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <EditorLayout
             doc={{
@@ -301,7 +307,7 @@ export function EditorRoute({
               if (isResume) {
                 resume.set(p => ({
                   ...p,
-                  layoutSettings: { ...p.layoutSettings, template: templateId },
+                  layoutSettings: { ...p.layoutSettings, ...(templateId==='hybrid'?HYBRID_STYLE_DEFAULTS:{}), template: templateId },
                 }), true);
               } else {
                 cl.set(p => ({

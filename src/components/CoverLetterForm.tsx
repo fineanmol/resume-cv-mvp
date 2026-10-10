@@ -1,6 +1,6 @@
 import React, { useCallback, useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { CoverLetterState, LayoutSettings, CustomContactField, ContactIconType } from '../types';
+import type { CoverLetterState, CustomContactField, ContactIconType } from '../types';
 import type { UndoRedoSetter } from '../hooks/useUndoRedo';
 import { AccordionSection } from './ui/AccordionSection';
 import { ContactIconPicker } from './ui/ContactIconPicker';
@@ -43,11 +43,6 @@ export const CoverLetterForm: React.FC<CoverLetterFormProps> = ({ state, onChang
 
   const setDiscrete = (partial: Partial<CoverLetterState>) =>
     handleChange(p => ({ ...p, ...partial }));
-
-  const onLayoutSettingsChange = useCallback((patch: Partial<LayoutSettings>) =>
-    handleChange(p => ({ ...p, layoutSettings: { ...p.layoutSettings, ...patch } }), true),
-    [handleChange]
-  );
 
   const moveHighlight = (index: number, dir: 'up' | 'down') => {
     const list = [...state.highlights];

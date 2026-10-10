@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GripVertical } from 'lucide-react';
 import { EditableText } from './EditableText';
 import { formatMarkdownInline } from '../../utils/markdown';
+import { SkillGroupsContext, reconcileGroups, type SkillGroup } from './SkillGroupsContext';
 
 export const SkillsEditor = React.memo<{
   value: string;
+  groups?: SkillGroup[];
   isEditable: boolean;
   ec: string;
   onSave: (v: string) => void;
   badgeStyle: () => React.CSSProperties;
   defaultBadgeStyle?: React.CSSProperties;
   className?: string;
-  skillsStyle?: 'chips' | 'normal' | 'grid';
+  skillsStyle?: 'chips' | 'normal' | 'grid' | 'grouped';
   /** Font scale factor (fontSize / 10). Used by grid mode to scale skill text size. */
   fontScale?: number;
   /** Font family for grid mode (defaults to Open Sans). Responds to Body Font picker. */
@@ -22,10 +24,14 @@ export const SkillsEditor = React.memo<{
   chipFontFamily?: string;
   /** Text color for chips mode. When set, overrides default slate-600. */
   chipTextColor?: string;
-}>(function SkillsEditor({ value, isEditable, ec, onSave, badgeStyle, defaultBadgeStyle, className = '', skillsStyle = 'chips', fontScale = 1, gridFontFamily, gridTextColor = '#3E3E3E', chipFontFamily, chipTextColor }) {
+}>(function SkillsEditor({ value, groups: suppliedGroups, isEditable, ec, onSave, badgeStyle, defaultBadgeStyle, className = '', skillsStyle = 'chips', fontScale = 1, gridFontFamily, gridTextColor = '#3E3E3E', chipFontFamily, chipTextColor }) {
   const [focusedSkillIdx, setFocusedSkillIdx] = useState<number | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
+  const rootRef=useRef<HTMLDivElement>(null);
+  const skipBlurRef=useRef(false);
+  const pendingFocusRef=useRef<number|null>(null);
+  const groupContext = React.useContext(SkillGroupsContext);
   const skillsList = value
     ? value
         .split(',')
@@ -36,9 +42,10 @@ export const SkillsEditor = React.memo<{
   useEffect(() => {
     if (!isEditable) return;
     const list = value ? value.split(',').map(s => s.trim()).filter(Boolean) : [];
-    const idx = list.length - 1;
+    const idx = pendingFocusRef.current ?? list.length - 1;
+    pendingFocusRef.current=null;
     if (idx >= 0 && list[idx] === 'New Skill') {
-      const el = document.querySelector(`[data-skill-index="${idx}"]`) as HTMLElement | null;
+      const el = rootRef.current?.querySelector(`[data-skill-index="${idx}"]`) as HTMLElement | null;
       if (el) {
         el.focus();
         try {
@@ -136,46 +143,53 @@ export const SkillsEditor = React.memo<{
     return 'opacity-70';
   };
 
-  if (skillsStyle === 'normal') {
-    if (!isEditable) {
-      return (
-        <p
-          className={`text-xs text-slate-700 leading-relaxed ${className}`}
-          dangerouslySetInnerHTML={{ __html: formatMarkdownInline(value) }}
-        />
-      );
-    }
-    return (
-      <EditableText
-        tag="p"
-        value={value}
-        isEditable={true}
-        editableClass={ec}
-        className={`text-xs text-slate-700 leading-relaxed w-full ${className}`}
-        onSave={onSave}
-      />
-    );
+  if (skillsStyle === 'grouped') {
+    const groups = reconcileGroups(value, suppliedGroups ?? groupContext.groups);
+    const save = (next: SkillGroup[]) => {
+      if (groupContext.save) groupContext.save(next);
+      else onSave(next.flatMap(g => g.items).join(', '));
+    };
+    return <div className={className} data-skills-grouped style={{fontFamily: gridFontFamily, color: gridTextColor, fontSize: gridFontFamily ? `${7.61 * fontScale}pt` : undefined}}>
+      {groups.map((g, i) => <div key={i} className="hybrid-skills group/skillgroup relative" style={{marginBottom: '0.65em', breakInside: 'avoid'}}>
+        <EditableText tag="strong" value={g.category} isEditable={isEditable} editableClass={ec} onSave={category => save(groups.map((x,j) => j===i ? {...x, category} : x))}/>
+        <EditableText tag="p" value={g.items.join(' · ')} placeholder="Add skills separated by dots or commas" style={{lineHeight: 1.5, overflowWrap:'anywhere'}} isEditable={isEditable} editableClass={ec} onSave={text => save(groups.map((x,j) => j===i ? {...x, items: text.split(/[,·]/).map(s=>s.trim()).filter(Boolean)} : x))}/>
+        {isEditable && <div className="edit-only absolute right-0 -top-4 z-10 flex gap-2 bg-white text-[10px] text-slate-500 opacity-0 group-hover/skillgroup:opacity-100 focus-within:opacity-100">
+          <button type="button" aria-label={`Move ${g.category} up`} disabled={i===0} onClick={() => {const next=[...groups]; [next[i-1],next[i]]=[next[i],next[i-1]]; save(next);}}>Move up</button>
+          <button type="button" aria-label={`Remove ${g.category}`} onClick={() => save(groups.filter((_,j)=>i!==j))}>Remove group</button>
+        </div>}
+      </div>)}
+      {isEditable && <button type="button" className="edit-only text-xs text-teal-600" onClick={()=>save([...groups,{category:'New category',items:[]}])}>+ Add category</button>}
+    </div>;
   }
 
-  // ── Grid style: justified underline rows (match master Product Resume) ─────
+  if (skillsStyle === 'normal') {
+    return <div className={className} style={{fontFamily: gridFontFamily, color: gridTextColor, fontSize:gridFontFamily ? `${7.61 * fontScale}pt` : undefined}}>
+      <ul data-skills-list style={{display:'flex',flexWrap:'wrap',columnGap:'1.4em',paddingLeft:'1.15em', margin:0, lineHeight:1.65}}>{skillsList.map((skill,i)=><li key={i} style={{breakInside:'avoid',overflowWrap:'anywhere',maxWidth:'100%',margin:0,padding:0}}><EditableText value={skill} isEditable={isEditable} editableClass={ec} onSave={text=>onSave(skillsList.flatMap((s,j)=>j===i ? text.split(',').map(x=>x.trim()).filter(Boolean) : [s]).join(', '))}/></li>)}</ul>
+      {isEditable && <button type="button" className="edit-only text-xs text-teal-600" onClick={()=>onSave([...skillsList,'New Skill'].join(', '))}>+ Add skill</button>}
+    </div>;
+  }
+
+  // Aligned columns with wrapping cells; the print stylesheet uses the same geometry.
   if (skillsStyle === 'grid') {
-    // Match master Product Resume: fixed ~18pt gutters, natural wrap (no flex-grow orphans).
+    // minmax(0, 1fr) keeps long labels within a narrow résumé sidebar.
     const gridStyle: React.CSSProperties = {
-      display: 'flex',
-      flexWrap: 'wrap',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
       justifyContent: 'flex-start',
-      columnGap: '17.8pt',
-      rowGap: '8.5pt',
+      columnGap: '12pt',
+      rowGap: '5pt',
       width: '100%',
       maxWidth: '100%',
     };
     const itemStyle: React.CSSProperties = {
       fontFamily: gridFontFamily ?? "'Open Sans', sans-serif",
       fontSize: `${(8.25 * fontScale).toFixed(2)}pt`,
-      fontWeight: 700,
+      fontWeight: 500,
       color: gridTextColor,
       flex: '0 0 auto',
       maxWidth: '100%',
+      whiteSpace: 'normal',
+      overflowWrap: 'anywhere',
       textAlign: 'left',
     };
     if (!isEditable) {
@@ -195,7 +209,7 @@ export const SkillsEditor = React.memo<{
     }
     // Editable grid: each cell is a contenteditable span, same keyboard contract as chips
     return (
-      <div className={`w-full max-w-full ${className}`}>
+      <div ref={rootRef} className={`w-full max-w-full ${className}`}>
         <div data-skills-grid className="w-full max-w-full" style={gridStyle}>
           {skillsList.map((s, i) => (
             <span
@@ -208,6 +222,7 @@ export const SkillsEditor = React.memo<{
               style={itemStyle}
               onFocus={() => setFocusedSkillIdx(i)}
               onBlur={(e) => {
+                  if(skipBlurRef.current){skipBlurRef.current=false;return;}
                 setFocusedSkillIdx(null);
                 const text = e.currentTarget.textContent?.trim() || '';
                 const list = [...skillsList];
@@ -221,17 +236,19 @@ export const SkillsEditor = React.memo<{
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
+                  skipBlurRef.current=true;pendingFocusRef.current=i+1;
                   const text = e.currentTarget.textContent?.trim() || '';
                   const list = [...skillsList];
                   if (text !== '') list[i] = text;
                   list.splice(i + 1, 0, 'New Skill');
                   onSave(list.join(', '));
                   setTimeout(() => {
-                    const next = document.querySelector(`[data-skill-index="${i + 1}"]`) as HTMLElement | null;
+                    const next = rootRef.current?.querySelector(`[data-skill-index="${i + 1}"]`) as HTMLElement | null;
                     if (next) { next.focus(); selectAll(next); }
                   }, 50);
                 } else if (e.key === 'Backspace' && !e.currentTarget.textContent?.trim()) {
                   e.preventDefault();
+                  skipBlurRef.current=true;
                   const list = [...skillsList];
                   list.splice(i, 1);
                   onSave(list.join(', '));
@@ -246,10 +263,18 @@ export const SkillsEditor = React.memo<{
         <button
           type="button"
           onClick={() => {
-            const list = [...skillsList, 'New Skill'];
+            const list = [...skillsList];
+            const active=document.activeElement as HTMLElement|null;
+            if(active&&rootRef.current?.contains(active)&&active.dataset.skillIndex!==undefined){
+              const index=Number(active.dataset.skillIndex);list[index]=active.textContent?.trim()||'';
+              skipBlurRef.current=true;
+            }
+            pendingFocusRef.current=list.filter(Boolean).length;
+            list.push('New Skill');
             onSave(list.join(', '));
           }}
           className="edit-only mt-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 hover:bg-teal-100 text-slate-400 hover:text-teal-600 border border-dashed border-slate-300 hover:border-teal-400 transition-colors cursor-pointer text-[11px] font-bold shrink-0"
+          onMouseDown={e=>e.preventDefault()}
           title="Add skill"
         >
           +
@@ -295,7 +320,7 @@ export const SkillsEditor = React.memo<{
   }
 
   return (
-    <div className={`w-full ${className}`}>
+    <div ref={rootRef} className={`w-full ${className}`}>
       <div className="flex flex-wrap items-center gap-1.5">
         {skillsList.map((s, i) => {
           const baseStyle = getChipStyle();
@@ -317,8 +342,8 @@ export const SkillsEditor = React.memo<{
                 onDragEnd={resetDrag}
                 aria-label="Drag to reorder skill"
                 title="Drag to reorder"
-                className={`edit-only absolute -top-1.5 -left-1.5 z-10 w-3.5 h-3.5 rounded border border-slate-200 bg-white flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 touch-none select-none shadow-sm pointer-events-none transition-opacity duration-150 ${
-                  isFocused ? 'opacity-100 pointer-events-auto' : 'opacity-0 group-hover/chip:opacity-100 group-hover/chip:pointer-events-auto'
+                className={`edit-only absolute -top-1.5 -left-1.5 z-10 w-3.5 h-3.5 rounded border border-slate-200 bg-white flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 touch-none select-none shadow-sm transition-opacity duration-150 ${
+                  isFocused ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover/chip:opacity-100 group-hover/chip:pointer-events-auto'
                 }`}
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
@@ -332,6 +357,7 @@ export const SkillsEditor = React.memo<{
                 style={chipInlineStyle}
                 onFocus={() => setFocusedSkillIdx(i)}
                 onBlur={(e) => {
+                  if(skipBlurRef.current){skipBlurRef.current=false;return;}
                   setFocusedSkillIdx(null);
                   const text = e.currentTarget.textContent?.trim() || '';
                   const list = [...skillsList];
@@ -345,6 +371,7 @@ export const SkillsEditor = React.memo<{
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
+                    skipBlurRef.current=true;pendingFocusRef.current=i+1;
                     const text = e.currentTarget.textContent?.trim() || '';
                     const list = [...skillsList];
                     if (text === '') {
@@ -355,7 +382,7 @@ export const SkillsEditor = React.memo<{
                     list.splice(i + 1, 0, 'New Skill');
                     onSave(list.join(', '));
                     setTimeout(() => {
-                      const nextEl = document.querySelector(`[data-skill-index="${i + 1}"]`) as HTMLElement | null;
+                      const nextEl = rootRef.current?.querySelector(`[data-skill-index="${i + 1}"]`) as HTMLElement | null;
                       if (nextEl) {
                         nextEl.focus();
                         try {
@@ -374,6 +401,7 @@ export const SkillsEditor = React.memo<{
                     if (text === '') {
                       e.preventDefault();
                       const list = [...skillsList];
+                      skipBlurRef.current=true;
                       list.splice(i, 1);
                       onSave(list.join(', '));
                     }
@@ -385,14 +413,17 @@ export const SkillsEditor = React.memo<{
                 {s}
               </span>
               <button
+                onMouseDown={e=>e.preventDefault()}
                 onClick={(e) => {
                   e.stopPropagation();
+                  const active=document.activeElement as HTMLElement|null;
+                  if(active&&rootRef.current?.contains(active)&&active.isContentEditable){skipBlurRef.current=true;active.blur();}
                   const list = [...skillsList];
                   list.splice(i, 1);
                   onSave(list.join(', '));
                 }}
-                className={`edit-only absolute -top-1.5 -right-1.5 z-10 w-3.5 h-3.5 rounded-full border border-slate-200 bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 shadow-sm flex items-center justify-center font-bold text-[9px] leading-none cursor-pointer pointer-events-none transition-opacity duration-150 ${
-                  isFocused ? 'opacity-100 pointer-events-auto' : 'opacity-0 group-hover/chip:opacity-100 group-hover/chip:pointer-events-auto'
+                className={`edit-only absolute -top-1.5 -right-1.5 z-10 w-3.5 h-3.5 rounded-full border border-slate-200 bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 shadow-sm flex items-center justify-center font-bold text-[9px] leading-none cursor-pointer transition-opacity duration-150 ${
+                  isFocused ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover/chip:opacity-100 group-hover/chip:pointer-events-auto'
                 }`}
                 title="Remove skill"
                 type="button"
@@ -421,10 +452,18 @@ export const SkillsEditor = React.memo<{
         <button
           type="button"
           onClick={() => {
-            const list = [...skillsList, 'New Skill'];
+            const list = [...skillsList];
+            const active=document.activeElement as HTMLElement|null;
+            if(active&&rootRef.current?.contains(active)&&active.dataset.skillIndex!==undefined){
+              const index=Number(active.dataset.skillIndex);list[index]=active.textContent?.trim()||'';
+              skipBlurRef.current=true;
+            }
+            pendingFocusRef.current=list.filter(Boolean).length;
+            list.push('New Skill');
             onSave(list.join(', '));
           }}
           className="edit-only inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 hover:bg-teal-100 text-slate-400 hover:text-teal-600 border border-dashed border-slate-300 hover:border-teal-400 transition-colors cursor-pointer text-[11px] font-bold shrink-0"
+          onMouseDown={e=>e.preventDefault()}
           title="Add skill"
         >
           +

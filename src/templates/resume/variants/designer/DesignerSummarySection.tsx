@@ -1,3 +1,4 @@
+import type { LayoutSettings } from '../../../../types';
 import React from 'react';
 import { SummaryContent } from '../../../shared/SummaryContent';
 import { DraggableSection, SectionWrapper } from '../../shared';
@@ -7,7 +8,7 @@ export interface DesignerSummarySectionProps {
   resumeSummary: string | undefined;
   isEditable: boolean;
   dragProps: DesignerDragProps;
-  summaryAlign: string;
+  summaryAlign: NonNullable<LayoutSettings["summaryAlign"]>;
   onLayoutSettingsChange?: (patch: Partial<DesignerLayoutSettings>) => void;
   layoutSettings: DesignerLayoutSettings;
   ec: string;
@@ -16,7 +17,7 @@ export interface DesignerSummarySectionProps {
   FG: DesignerFG;
   C_HEAD: string;
   dsec: React.CSSProperties;
-  bulletStyle: string;
+  bulletStyle: NonNullable<LayoutSettings["bulletStyle"]>;
   showSummaryBullets: boolean;
 }
 

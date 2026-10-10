@@ -106,12 +106,12 @@ export function makeParagraphEl(
     text: string,
     field: 'p1' | 'p2' | 'p3' | 'p4',
     className?: string,
-  ): JSX.Element {
+  ): React.JSX.Element {
     return (
       <EditableText
         tag="p"
         value={text}
-        className={className}
+        className={`${className||''} ${field==='p4'?'cl-closing-paragraph':''}`}
         isEditable={isEditable}
         editableClass={editableClass}
         onSave={(val) => onFieldChange?.(field, val)}
@@ -129,7 +129,7 @@ export function makeHlText(
   editableClass: string,
   onHighlightChange: CoverLetterTemplateProps['onHighlightChange'],
 ) {
-  return function hlText(text: string, idx: number, className: string): JSX.Element {
+  return function hlText(text: string, idx: number, className: string): React.JSX.Element {
     if (isEditable) {
       return (
         <span

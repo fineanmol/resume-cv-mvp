@@ -1,0 +1,57 @@
+import {LanguageBubbles} from '../templates/shared/LanguageBubbles';
+import {getLanguageBubbleCount,getLanguageLevelFromBubbleCount} from '../utils/languageLevel';
+import {DraggableSection} from '../templates/shared/DraggableSection';
+import {ContactRow} from '../templates/shared/ContactRow';
+import {HeaderWrapper} from '../templates/shared/HeaderWrapper';
+import {AvatarCircleEditable} from '../templates/shared/AvatarCircleEditable';
+import {ResumeEntryControls} from '../templates/shared/ResumeEntryControls';
+import {EntryIconPicker} from '../templates/shared/EntryIconPicker';
+import { BriefcaseBusiness, GraduationCap, Trophy, FolderGit2, Languages, UserRound, Code2 } from 'lucide-react';
+import { documentSchema } from './documentSettings';
+import type { Profile } from './model';
+import './hybrid.css';
+import type { CSSProperties } from 'react';
+import type { ResumeLayoutSettings } from '../types';
+import { EditableText } from '../templates/shared/EditableText';
+import { BulletList } from '../templates/shared/BulletList';
+import type { TemplateRenderContext } from '../templates/resume/useTemplateSetup';
+import { SectionWrapper } from '../templates/shared/SectionWrapper';
+import { HybridEvidence } from './HybridEvidence';
+import { SkillsEditor } from '../templates/shared/SkillsEditor';
+export function HybridResume({profile:p,layout,fonts,editor}:{editor?:TemplateRenderContext;profile:Profile;layout?:ResumeLayoutSettings;fonts?:{body:string;heading:string;title:string;accent:string}}) {
+ const editable=!!editor?.isEditable;
+ const text=(value:string,save?:(value:string)=>void)=><EditableText value={value} isEditable={editable} editableClass={editor?.ec||''} onSave={save||(()=>{})}/>;
+ const field=(key:'name'|'subtitle'|'phone'|'email'|'location'|'linkedin',value:string)=>text(value,editor?.ef(key));
+ const d=documentSchema.parse(p.document||{});const link=(url?:string,onSave?:(value:string)=>void)=><HybridEvidence url={url} editable={editable} onSave={onSave}/>;
+ const l:ResumeLayoutSettings=layout||d.layout;
+ const vars={fontSize:`${l.fontSize*9.1/11}pt`,lineHeight:l.lineHeight,padding:`${l.paddingTopBottom}mm ${l.paddingLeftRight}mm`,fontFamily:fonts?.body,
+ '--hybrid-heading':l.brandColor,'--hybrid-accent':layout?.accentColor2||'#008f9e','--hybrid-body':layout?.bodyTextColor||'#30383d','--hybrid-title':layout?.titleColor||'#26343c',
+ '--hybrid-heading-font':fonts?.heading,'--hybrid-title-font':fonts?.title,'--hybrid-accent-font':fonts?.accent,'--hybrid-scale':l.fontSize/11,'--hybrid-section-gap':`${l.sectionSpacing}px`,'--hybrid-entry-gap':`${l.entrySpacing||8}px`,'--hybrid-column-gap':`${l.columnGap||20}px`} as CSSProperties;
+ const sections={experience:(<section data-section="experience"><h3><BriefcaseBusiness/>Experience</h3>{p.experience.map((e,i)=><ResumeEntryControls section="experience" index={i} editor={editor} key={i}><div className="hybrid-entry"><h4>{l.showExperienceLogo!==false&&e.logo&&<img className="hybrid-entry-logo" src={e.logo} alt=""/>}{text(e.title,v=>editor?.onExperienceChange?.(i,'title',v))}</h4><div className="hybrid-company">{text(e.company,v=>editor?.onExperienceChange?.(i,'company',v))} {link(e.url,v=>editor?.onExperienceChange?.(i,'url',v))}</div><div className="hybrid-meta">{text(e.dates,v=>editor?.onExperienceChange?.(i,'dates',v))} · {text(e.location,v=>editor?.onExperienceChange?.(i,'location',v))}</div><BulletList bullets={e.bullets} isEditable={editable} editableClass={editor?.ec||''} onBulletChange={v=>editor?.onExperienceChange?.(i,'bullets',v)} bulletStyle={l.bulletStyle} align={l.experienceAlign}/></div></ResumeEntryControls>)}</section>),
+education:(<section data-section="education"><h3><GraduationCap/>Education</h3>{p.education.map((e,i)=><ResumeEntryControls section="education" index={i} editor={editor} key={i}><div className="hybrid-entry"><h4>{l.showEducationLogo!==false&&e.logo&&<img className="hybrid-entry-logo" src={e.logo} alt=""/>}{text(e.degree,v=>editor?.onEducationChange?.(i,'degree',v))} {link(e.url,v=>editor?.onEducationChange?.(i,'url',v))}</h4><div className="hybrid-company">{text(e.school,v=>editor?.onEducationChange?.(i,'school',v))}</div><div className="hybrid-meta">{text(e.dates,v=>editor?.onEducationChange?.(i,'dates',v))}{e.location&&<> · {text(e.location,v=>editor?.onEducationChange?.(i,'location',v))}</>}{<> · {text(e.bullets,v=>editor?.onEducationChange?.(i,'bullets',v))}</>}</div></div></ResumeEntryControls>)}</section>),
+summary:(<section data-section="summary"><h3><UserRound/>Profile</h3>{l.showSummaryBullets?<BulletList bullets={p.summary} isEditable={editable} editableClass={editor?.ec||''} onBulletChange={editor?.ef('resumeSummary')||(()=>{})} align={l.summaryAlign}/>:<p style={{textAlign:l.summaryAlign}}>{text(p.summary,editor?.ef('resumeSummary'))}</p>}</section>),
+skills:(<section data-section="skills"><h3><Code2/>Skills</h3><SkillsEditor groups={editor ? undefined : p.skills} value={editor?.resumeSkills ?? p.skills.flatMap(g=>g.items).join(', ')} isEditable={editable} ec={editor?.ec||''} onSave={editor?.ef('resumeSkills')||(()=>{})} badgeStyle={()=>({color:'var(--hybrid-body)',borderColor:'#dae2e4'})} skillsStyle={l.skillsStyle} fontScale={l.fontSize/11} gridFontFamily={fonts?.body} chipFontFamily={fonts?.body} gridTextColor="var(--hybrid-body)" chipTextColor="var(--hybrid-body)"/></section>),
+achievements:(<section data-section="achievements"><h3><Trophy/>Achievements</h3>{p.achievements.map((a,i)=><ResumeEntryControls section="achievements" index={i} editor={editor} key={i}><div className="hybrid-entry"><h5>{l.showAchievementIcons!==false&&a.visibility?.icon!==false&&<EntryIconPicker variant="achievement" currentIcon={editor?.resumeAchievements[i]?.icon||'trophy'} isEditable={editable} onChange={v=>editor?.onAchievementChange?.(i,'icon',v)} wrapperClassName="hybrid-entry-icon" iconClassName="hybrid-entry-icon"/>}{text(a.title,v=>editor?.onAchievementChange?.(i,'title',v))} {link(a.url,v=>editor?.onAchievementChange?.(i,'url',v))}</h5>{l.showAchievementBullets?<BulletList bullets={a.desc} isEditable={editable} editableClass={editor?.ec||''} onBulletChange={v=>editor?.onAchievementChange?.(i,'desc',v)} align={l.achievementsAlign}/>:<p style={{textAlign:l.achievementsAlign}}>{text(a.desc,v=>editor?.onAchievementChange?.(i,'desc',v))}</p>}</div></ResumeEntryControls>)}</section>),
+certs:(<section data-section="certs"><h3><FolderGit2/>Projects</h3>{p.projects.map((a,i)=><ResumeEntryControls section="certs" index={i} editor={editor} key={i}><div className="hybrid-entry"><h5>{l.showProjectIcons!==false&&a.visibility?.icon!==false&&<EntryIconPicker variant="project" currentIcon={editor?.resumeCerts[i]?.icon||'briefcase'} isEditable={editable} onChange={v=>editor?.onCertChange?.(i,'icon',v)} wrapperClassName="hybrid-entry-icon" iconClassName="hybrid-entry-icon"/>}{text(a.title,v=>editor?.onCertChange?.(i,'title',v))} {link(a.url,v=>editor?.onCertChange?.(i,'url',v))}</h5>{l.showProjectBullets?<BulletList bullets={a.desc} isEditable={editable} editableClass={editor?.ec||''} onBulletChange={v=>editor?.onCertChange?.(i,'desc',v)} align={l.certsAlign}/>:<p style={{textAlign:l.certsAlign}}>{text(a.desc,v=>editor?.onCertChange?.(i,'desc',v))}</p>}</div></ResumeEntryControls>)}</section>),
+languages:(<section data-section="languages"><h3><Languages/>Languages</h3>{p.languages.map((l,i)=><ResumeEntryControls section="languages" index={i} editor={editor} key={i}><div className="hybrid-language"><strong>{text(l.name,v=>editor?.onLanguageChange?.(i,'name',v))}</strong><span>{text(l.level,v=>editor?.onLanguageChange?.(i,'level',v))}{l.visibility?.slider!==false&&<LanguageBubbles count={getLanguageBubbleCount(editor?.resumeLanguages[i]?.level||l.level)} activeColor="var(--hybrid-accent)" isEditable={editable} onCountChange={n=>editor?.onLanguageChange?.(i,'level',getLanguageLevelFromBubbleCount(n))}/>}</span></div></ResumeEntryControls>)}</section>),};
+ const renderSectionContent=(id:string)=>{
+  if(d.hiddenSections.includes(id as never)||!sections[id as keyof typeof sections])return null;
+  const content=sections[id as keyof typeof sections];
+  if(id==='skills')return <SectionWrapper key={id} id="skills" title="Skills" isEditable={editable} align={undefined} skillsStyle={l.skillsStyle} onSkillsStyleChange={skillsStyle=>editor?.handleLayoutSettingsPatch({skillsStyle})} onSkillsValueChange={editor?.ef('resumeSkills')} onAddEntry={()=>editor?.ef('resumeSkills')([editor?.resumeSkills || p.skills.flatMap(g=>g.items).join(', '),'New Skill'].filter(Boolean).join(', '))}>{content}</SectionWrapper>;
+  const alignKey=({experience:'experienceAlign',education:'educationAlign',summary:'summaryAlign',certs:'certsAlign',achievements:'achievementsAlign'} as const)[id as 'experience'|'education'|'summary'|'certs'|'achievements'];
+  const add=({experience:editor?.onAddExperience,education:editor?.onAddEducation,certs:editor?.onAddCert,achievements:editor?.onAddAchievement,languages:editor?.onAddLanguage})[id as 'experience'|'education'|'certs'|'achievements'|'languages'];
+  return <SectionWrapper key={id} id={id} title={id==='certs'?'Projects':id==='summary'?'Profile':id} isEditable={editable} align={alignKey?l[alignKey]:undefined} onAlignChange={alignKey?value=>editor?.handleLayoutSettingsPatch({[alignKey]:value}):undefined} onAddEntry={add} layoutSettings={l} onLayoutSettingsChange={editor?.handleLayoutSettingsPatch}>{content}</SectionWrapper>;
+ };
+ const renderSection=(id:string)=>editor?<DraggableSection key={id} id={id} {...editor.dragProps}>{renderSectionContent(id)}</DraggableSection>:renderSectionContent(id);
+ return <article className="hybrid-sheet pdf-sheet" data-resume-ready="true" data-icons={d.showIcons} data-header-style={l.headerStyle} data-bullet-style={l.bulletStyle} style={vars}>
+  <HeaderWrapper className="hybrid-header" isEditable={editable} layoutSettings={l} onLayoutSettingsChange={editor?.handleLayoutSettingsPatch} showTitle={l.showTitle}>
+   <div className="hybrid-identity"><h1 style={{textTransform:l.uppercaseName===false?'none':'uppercase'}}>{field('name',p.name)}</h1>{l.showTitle!==false&&<h2>{field('subtitle',p.subtitle)}</h2>}
+    <ContactRow phone={{value:p.phone,onSave:editor?.ef('phone')||(()=>{})}} email={{value:p.email,onSave:editor?.ef('email')||(()=>{})}} location={{value:p.location,onSave:editor?.ef('location')||(()=>{})}} linkedin={{value:p.linkedin,onSave:editor?.ef('linkedin')||(()=>{})}} isEditable={editable} ec={editor?.ec||''} cls="hybrid-contact" layoutSettings={l} customContacts={editor?.customContacts??p.customContacts}/>
+   </div>
+   {l.showPhoto!==false&&(p.avatar||editable)&&<div className="hybrid-photo"><AvatarCircleEditable src={p.avatar} name={p.name} size="w-[24mm] h-[24mm]" isEditable={editable} layoutSettings={l} onAvatarChange={editor?.headerProps.onAvatarChange} onLayoutSettingsChange={editor?.handleLayoutSettingsPatch}/></div>}
+   <div className="hybrid-art" aria-hidden="true"/>
+  </HeaderWrapper>
+  <div className="hybrid-columns"><main onDragOver={editor?.handleSectionDragOver} onDrop={e=>editor?.handleColumnDrop(e,'left')}>{(l.designerLeftSections||['experience','education']).map(renderSection)}</main><aside onDragOver={editor?.handleSectionDragOver} onDrop={e=>editor?.handleColumnDrop(e,'right')}>{(l.designerRightSections||['summary','skills','achievements','certs','languages']).map(renderSection)}</aside></div>
+
+ </article>;
+}

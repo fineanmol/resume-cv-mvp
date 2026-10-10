@@ -1,0 +1,12 @@
+{
+  "name": "Profile Resume Studio - generate from JD",
+  "active": false,
+  "nodes": [
+    {"id":"manual","name":"Test workflow","type":"n8n-nodes-base.manualTrigger","typeVersion":1,"position":[0,0],"parameters":{}},
+    {"id":"job","name":"Profile and job","type":"n8n-nodes-base.set","typeVersion":3.4,"position":[220,0],"parameters":{"assignments":{"assignments":[{"id":"p","name":"profileId","type":"string","value":"anmol"},{"id":"c","name":"company","type":"string","value":"Example GmbH"},{"id":"r","name":"role","type":"string","value":"Frontend Engineer"},{"id":"j","name":"jobDescription","type":"string","value":"We are looking for a frontend engineer with Vue 3, TypeScript, Storybook, Jest, REST APIs and CI/CD experience."},{"id":"t","name":"template","type":"string","value":"hybrid"}]}}},
+    {"id":"generate","name":"Generate resume","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[440,0],"parameters":{"method":"POST","url":"http://host.docker.internal:8794/api/v2/generate","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify($json) }}","options":{"timeout":180000}}},
+    {"id":"pdf","name":"Download PDF","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[660,0],"parameters":{"url":"={{ 'http://host.docker.internal:8794' + $json.pdfUrl }}","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","options":{"response":{"response":{"responseFormat":"file","outputPropertyName":"resume"}}}}}
+  ],
+  "connections":{"Test workflow":{"main":[[{"node":"Profile and job","type":"main","index":0}]]},"Profile and job":{"main":[[{"node":"Generate resume","type":"main","index":0}]]},"Generate resume":{"main":[[{"node":"Download PDF","type":"main","index":0}]]}},
+  "settings":{"executionOrder":"v1"}
+}

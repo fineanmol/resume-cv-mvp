@@ -1,5 +1,5 @@
+import { EvidenceLink } from '../../shared/EvidenceLink';
 import React from 'react';
-import { Building2, GraduationCap } from 'lucide-react';
 import { EditableText as E } from '../../shared/EditableText';
 import { BulletList } from '../../shared/BulletList';
 import { SummaryContent } from '../../shared/SummaryContent';
@@ -219,7 +219,7 @@ export const TechTemplate: React.FC = () => {
                         )}
                       </div>
                       {edu.school && (
-                        <E value={edu.school} isEditable={isEditable} editableClass={ec} className="text-[11px] font-mono text-slate-500 mb-1 block" onSave={v => onEducationChange?.(idx, 'school', v)} />
+                        <><E value={edu.school} isEditable={isEditable} editableClass={ec} className="text-[11px] font-mono text-slate-500 mb-1 block" onSave={v => onEducationChange?.(idx, 'school', v)} /><EvidenceLink url={edu.url}/></>
                       )}
                       {showLocation && (
                         <E value={edu.location} isEditable={isEditable} editableClass={ec} className="text-[11px] font-mono text-slate-500 mb-1 block" onSave={v => onEducationChange?.(idx, 'location', v)} />

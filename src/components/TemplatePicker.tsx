@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, CheckCircle2, Sparkles } from 'lucide-react';
 import type { TemplateId } from '../types';
-import { TEMPLATE_CATALOG } from '../config/templates';
+import { getTemplatesForDocType } from '../config/templates';
 import { TemplateLayoutPreview } from './TemplateLayoutPreview';
 
 interface TemplatePickerProps {
@@ -21,13 +21,14 @@ const SLIDE = {
 };
 
 export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose, onSelect, docType, startIndex }) => {
+  const templates=useMemo(()=>getTemplatesForDocType(docType),[docType]);
   const [idx, setIdx]       = useState(startIndex ?? 0);
   const [dir, setDir]       = useState(0);
 
   const go = useCallback((step: number) => {
     setDir(step);
-    setIdx(i => (i + step + TEMPLATE_CATALOG.length) % TEMPLATE_CATALOG.length);
-  }, []);
+    setIdx(i => (i + step + templates.length) % templates.length);
+  }, [templates]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -36,7 +37,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
       if (e.key === 'ArrowLeft')  go(-1);
       if (e.key === 'ArrowRight') go(1);
       if (e.key === 'Escape')     onClose();
-      if (e.key === 'Enter')      { onSelect(TEMPLATE_CATALOG[idx].id); onClose(); }
+      if (e.key === 'Enter')      { onSelect(templates[idx].id); onClose(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -46,7 +47,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
 
   if (!isOpen) return null;
 
-  const tpl = TEMPLATE_CATALOG[idx];
+  const tpl = templates[idx];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
@@ -69,7 +70,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
           <div className="flex items-center gap-4">
             {/* Dot indicators */}
             <div className="flex gap-1.5">
-              {TEMPLATE_CATALOG.map((t, i) => (
+              {templates.map((t, i) => (
                 <button
                   key={t.id}
                   onClick={() => { setDir(i > idx ? 1 : -1); setIdx(i); }}
@@ -83,7 +84,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
                 </button>
               ))}
             </div>
-            <span className="text-[11px] text-text-muted font-mono">{idx + 1} / {TEMPLATE_CATALOG.length}</span>
+            <span className="text-[11px] text-text-muted font-mono">{idx + 1} / {templates.length}</span>
             <button
               onClick={onClose}
               className="p-1.5 text-text-muted hover:text-text-main hover:bg-card border border-transparent hover:border-border-color rounded-lg transition cursor-pointer"
@@ -165,7 +166,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ isOpen, onClose,
 
                 {/* Template thumbnails strip */}
                 <div className="flex gap-1.5 flex-wrap">
-                  {TEMPLATE_CATALOG.map((t, i) => (
+                  {templates.map((t, i) => (
                     <button
                       key={t.id}
                       onClick={() => { setDir(i > idx ? 1 : -1); setIdx(i); }}

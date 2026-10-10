@@ -1,9 +1,10 @@
+import { SkillsLayoutOptions } from '../../components/design/SkillsLayoutOptions';
 import React, { useEffect, useRef, useContext } from 'react';
 import {
   Plus, Settings, Trash2, ArrowLeft, ArrowRight,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
 } from 'lucide-react';
-import { ToggleSwitch } from '../../components/ui/ToggleSwitch';
+import { SectionVisibilityOptions } from '../../components/design/SectionVisibilityOptions';
 import { ActiveSectionContext } from './ActiveSectionContext';
 import type { LayoutSettings } from '../../types';
 
@@ -22,8 +23,8 @@ export interface SectionWrapperProps {
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   children: React.ReactNode;
-  skillsStyle?: 'chips' | 'normal' | 'grid';
-  onSkillsStyleChange?: (style: 'chips' | 'normal' | 'grid') => void;
+  skillsStyle?: 'chips' | 'normal' | 'grid' | 'grouped';
+  onSkillsStyleChange?: (style: 'chips' | 'normal' | 'grid' | 'grouped') => void;
   skillsValue?: string;
   onSkillsValueChange?: (val: string) => void;
   layoutSettings?: LayoutSettings;
@@ -69,29 +70,13 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
     (isSkills && !!onSkillsStyleChange && !!onSkillsValueChange) ||
     (!!layoutSettings && !!onLayoutSettingsChange && ['achievements', 'certs', 'experience', 'education', 'languages', 'summary'].includes(id));
 
-  const popoverClass = 'absolute right-0 top-full mt-1 z-[210] bg-white border border-slate-200 shadow-lg rounded-md p-2 flex flex-col gap-1.5 edit-only w-[172px]';
+  const popoverClass = `absolute right-0 top-full mt-1 z-[210] bg-white border border-slate-200 shadow-lg rounded-md p-2 flex flex-col gap-1.5 edit-only ${isSkills ? 'w-[240px]' : 'w-[172px]'}`;
   const sectionLabelClass = 'text-[9px] font-semibold text-slate-400 uppercase tracking-wide select-none leading-none';
 
-  const visibilityToggles = (
-    rows: { key: keyof LayoutSettings; label: string }[],
-  ) => (
-    <div className="flex flex-col gap-1">
-      {rows.map(({ key, label }) => (
-        <ToggleSwitch
-          key={key}
-          id={`${id}-${key}`}
-          label={label}
-          checked={(layoutSettings?.[key] as boolean | undefined) ?? true}
-          onChange={(checked) => onLayoutSettingsChange?.({ [key]: checked })}
-          variant="teal"
-          compact
-        />
-      ))}
-    </div>
-  );
 
   return (
     <div
+      data-section-wrapper={id}
       onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
       className={`relative group/section rounded overflow-visible border border-dashed border-transparent ${
         isActive
@@ -195,88 +180,11 @@ export const SectionWrapper = React.memo<SectionWrapperProps>(function SectionWr
                 {isSkills && onSkillsStyleChange && (
                   <div className="flex flex-col gap-1">
                     <span className={sectionLabelClass}>Layout</span>
-                    <div className="flex gap-1">
-                      {(['chips', 'normal', 'grid'] as const).map(style => (
-                        <button key={style} type="button"
-                          onClick={(e) => { e.stopPropagation(); onSkillsStyleChange(style); }}
-                          className={`flex-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border cursor-pointer transition ${skillsStyle === style ? 'bg-teal-500 text-white border-teal-500' : 'text-slate-500 border-slate-200 hover:border-slate-400'}`}
-                        >
-                          {style === 'chips' ? 'Chips' : style === 'grid' ? 'Grid' : 'List'}
-                        </button>
-                      ))}
-                    </div>
+                    <SkillsLayoutOptions compact value={skillsStyle} onChange={onSkillsStyleChange}/>
                   </div>
                 )}
 
-                {layoutSettings && onLayoutSettingsChange && id === 'experience' && (
-                  <>
-                    {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
-                    <span className={sectionLabelClass}>Visibility</span>
-                    {visibilityToggles([
-                      { key: 'showExperienceDates', label: 'Dates' },
-                      { key: 'showExperienceCompany', label: 'Company' },
-                      { key: 'showExperienceLocation', label: 'Location' },
-                      { key: 'showExperienceLogo', label: 'Logo' },
-                    ])}
-                  </>
-                )}
-
-                {layoutSettings && onLayoutSettingsChange && id === 'education' && (
-                  <>
-                    {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
-                    <span className={sectionLabelClass}>Visibility</span>
-                    {visibilityToggles([
-                      { key: 'showEducationDates', label: 'Dates' },
-                      { key: 'showEducationLocation', label: 'Location' },
-                      { key: 'showEducationGpa', label: 'GPA' },
-                      { key: 'showEducationLogo', label: 'Logo' },
-                    ])}
-                  </>
-                )}
-
-                {layoutSettings && onLayoutSettingsChange && id === 'summary' && (
-                  <>
-                    {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
-                    <span className={sectionLabelClass}>Visibility</span>
-                    {visibilityToggles([
-                      { key: 'showSummaryBullets', label: 'Show Bullets' },
-                    ])}
-                  </>
-                )}
-
-                {layoutSettings && onLayoutSettingsChange && id === 'certs' && (
-                  <>
-                    {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
-                    <span className={sectionLabelClass}>Visibility</span>
-                    {visibilityToggles([
-                      { key: 'showProjectIcons', label: 'Show Icons' },
-                      { key: 'showProjectDesc', label: 'Show Description' },
-                      { key: 'showProjectBullets', label: 'Show Bullets' },
-                    ])}
-                  </>
-                )}
-
-                {layoutSettings && onLayoutSettingsChange && id === 'achievements' && (
-                  <>
-                    {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
-                    <span className={sectionLabelClass}>Visibility</span>
-                    {visibilityToggles([
-                      { key: 'showAchievementIcons', label: 'Show Icons' },
-                      { key: 'showAchievementDesc', label: 'Show Description' },
-                      { key: 'showAchievementBullets', label: 'Show Bullets' },
-                    ])}
-                  </>
-                )}
-
-                {layoutSettings && onLayoutSettingsChange && id === 'languages' && (
-                  <>
-                    {onAlignChange && <div className="border-t border-slate-100 pt-1" />}
-                    <span className={sectionLabelClass}>Visibility</span>
-                    {visibilityToggles([
-                      { key: 'showLanguageLevel', label: 'Proficiency' },
-                    ])}
-                  </>
-                )}
+                {layoutSettings&&onLayoutSettingsChange&&<SectionVisibilityOptions section={id} layout={layoutSettings} onChange={onLayoutSettingsChange} compact/>}
               </div>
             )}
           </div>

@@ -21,5 +21,5 @@ const HEADER_RENDERERS: Record<string, React.FC<TemplateHeaderProps>> = {
 
 export const TemplateHeader: React.FC<TemplateHeaderProps> = (props) => {
   const HeaderRenderer = HEADER_RENDERERS[props.headerStyle ?? 'centered'] ?? CenteredHeader;
-  return <HeaderRenderer {...props} />;
+  return <HeaderRenderer {...props}/>;
 };

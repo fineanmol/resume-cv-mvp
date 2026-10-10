@@ -12,7 +12,7 @@ import type { IDocumentStore } from './interfaces';
 
 export const dbService = {
   async listDrafts(userId: string): Promise<DocumentMetadata[]> {
-    if (db) {
+    if (db && !userId.startsWith('local-profile:')) {
       try {
         const resumesRef = collection(db, 'users', userId, 'resumes');
         const cvRef = collection(db, 'users', userId, 'coverletters');
@@ -62,7 +62,7 @@ export const dbService = {
     const updatedAt = Date.now();
     const docToSave = { ...state, id, updatedAt };
 
-    if (db) {
+    if (db && !userId.startsWith('local-profile:')) {
       try {
         const docRef = doc(db, 'users', userId, 'resumes', id);
         await setDoc(docRef, docToSave);
@@ -74,7 +74,7 @@ export const dbService = {
     }
 
     // LocalStorage fallback
-    localStorage.setItem(`LOCAL_RESUME_${id}`, JSON.stringify(docToSave));
+    localStorage.setItem((userId.startsWith('local-profile:') ? `LOCAL_RESUME_${userId}_${id}` : `LOCAL_RESUME_${id}`), JSON.stringify(docToSave));
     await this.updateLocalMetadataList(userId, id, 'resume', state.title || 'Untitled Resume', updatedAt);
   },
 
@@ -82,7 +82,7 @@ export const dbService = {
     const updatedAt = Date.now();
     const docToSave = { ...state, id, updatedAt };
 
-    if (db) {
+    if (db && !userId.startsWith('local-profile:')) {
       try {
         const docRef = doc(db, 'users', userId, 'coverletters', id);
         await setDoc(docRef, docToSave);
@@ -94,12 +94,12 @@ export const dbService = {
     }
 
     // LocalStorage fallback
-    localStorage.setItem(`LOCAL_CL_${id}`, JSON.stringify(docToSave));
+    localStorage.setItem((userId.startsWith('local-profile:') ? `LOCAL_CL_${userId}_${id}` : `LOCAL_CL_${id}`), JSON.stringify(docToSave));
     await this.updateLocalMetadataList(userId, id, 'coverletter', state.title || 'Untitled Cover Letter', updatedAt);
   },
 
   async getResume(userId: string, id: string): Promise<ResumeState | null> {
-    if (db) {
+    if (db && !userId.startsWith('local-profile:')) {
       try {
         const docRef = doc(db, 'users', userId, 'resumes', id);
         const snap = await getDoc(docRef);
@@ -111,12 +111,12 @@ export const dbService = {
       }
     }
 
-    const localRaw = localStorage.getItem(`LOCAL_RESUME_${id}`);
+    const localRaw = localStorage.getItem((userId.startsWith('local-profile:') ? `LOCAL_RESUME_${userId}_${id}` : `LOCAL_RESUME_${id}`)) || (!userId.startsWith('local-profile:') ? localStorage.getItem(`LOCAL_RESUME_${id}`) : null);
     return localRaw ? JSON.parse(localRaw) : null;
   },
 
   async getCoverLetter(userId: string, id: string): Promise<CoverLetterState | null> {
-    if (db) {
+    if (db && !userId.startsWith('local-profile:')) {
       try {
         const docRef = doc(db, 'users', userId, 'coverletters', id);
         const snap = await getDoc(docRef);
@@ -128,12 +128,12 @@ export const dbService = {
       }
     }
 
-    const localRaw = localStorage.getItem(`LOCAL_CL_${id}`);
+    const localRaw = localStorage.getItem((userId.startsWith('local-profile:') ? `LOCAL_CL_${userId}_${id}` : `LOCAL_CL_${id}`)) || (!userId.startsWith('local-profile:') ? localStorage.getItem(`LOCAL_CL_${id}`) : null);
     return localRaw ? JSON.parse(localRaw) : null;
   },
 
   async deleteDraft(userId: string, id: string, type: 'resume' | 'coverletter'): Promise<void> {
-    if (db) {
+    if (db && !userId.startsWith('local-profile:')) {
       try {
         const docRef = doc(db, 'users', userId, type === 'resume' ? 'resumes' : 'coverletters', id);
         await deleteDoc(docRef);
@@ -143,7 +143,7 @@ export const dbService = {
     }
 
     // LocalStorage delete
-    localStorage.removeItem(type === 'resume' ? `LOCAL_RESUME_${id}` : `LOCAL_CL_${id}`);
+    localStorage.removeItem(type === 'resume' ? (userId.startsWith('local-profile:') ? `LOCAL_RESUME_${userId}_${id}` : `LOCAL_RESUME_${id}`) : (userId.startsWith('local-profile:') ? `LOCAL_CL_${userId}_${id}` : `LOCAL_CL_${id}`));
     
     // Update metadata list
     const metaList = await this.listDrafts(userId);

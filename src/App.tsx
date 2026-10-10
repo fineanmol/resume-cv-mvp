@@ -1,6 +1,14 @@
+import { HYBRID_STYLE_DEFAULTS } from './config/hybridDefaults';
+import { DESIGNER_STYLE_DEFAULTS } from './config/designerDefaults';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { localApi,profileScope } from './services/workspace';
+import type { Application } from './services/workspace';
+import type { Profile } from './studio/model';
+import { toResume,toCoverLetter } from './studio/model';
+import { AutomationPanel } from './components/AutomationPanel';
+import { ProfileManager } from './components/ProfileManager';
 import { LandingPage } from './components/LandingPage';
 import { Dashboard } from './components/Dashboard';
 import { ToastContainer } from './components/ToastContainer';
@@ -29,10 +37,16 @@ export default function App() {
   const [user, setUser] = useState<AuthUser | null>(() => {
     if (isConfigured && auth) return null;
     const localUser = localStorage.getItem('LOCAL_USER');
-    return localUser ? ({ email: localUser, isLocal: true } as AuthUser) : null;
+    return localUser ? ({ email: localUser, isLocal: true } as AuthUser) : ({email:'local-workspace',isLocal:true} as AuthUser);
   });
 
-  const [activeDocId, setActiveDocId] = useState<string | null>(() => localStorage.getItem('ACTIVE_DOC_ID'));
+  const [profileId,setProfileId]=useState(()=>localStorage.getItem('WORKSPACE_PROFILE')||'anmol');
+  const [profiles,setProfiles]=useState<{id:string;name:string}[]>([]);
+  const [showAutomation,setShowAutomation]=useState(false);const [showProfiles,setShowProfiles]=useState(false);
+  const refreshProfiles=()=>localApi<typeof profiles>('/profiles').then(setProfiles).catch(e=>toast.error(e.message));
+  useEffect(()=>{void refreshProfiles();},[]);
+  const scopedUser:AuthUser|null=profileId?{email:profileScope(profileId),isLocal:true}:user;
+  const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [activeDocType, setActiveDocType] = useState<DocType | null>(() => localStorage.getItem('ACTIVE_DOC_TYPE') as DocType | null);
 
   const toast = useToast();
@@ -71,7 +85,7 @@ export default function App() {
     if (!user || !activeDocId || !activeDocType) return;
     let isMounted = true;
     const loadRestoredDoc = async () => {
-      const uid = userEmail(user);
+      const uid = userEmail(scopedUser!);
       if (activeDocType === 'resume') {
         const data = await dbService.getResume(uid, activeDocId);
         if (data && isMounted) resetResume(data);
@@ -82,11 +96,11 @@ export default function App() {
     };
     loadRestoredDoc();
     return () => { isMounted = false; };
-  }, [user, activeDocId, activeDocType, resetResume, resetCl]);
+  }, [user, profileId, activeDocId, activeDocType, resetResume, resetCl]);
 
   const handleSelectDocument = async (id: string, type: DocType) => {
     if (!user) return;
-    const uid = userEmail(user);
+    const uid = userEmail(scopedUser!);
     if (type === 'resume') {
       const data = await dbService.getResume(uid, id);
       if (data) resume.reset(data);
@@ -100,20 +114,24 @@ export default function App() {
 
   const handleCreateNew = async (type: DocType, template: TemplateId) => {
     if (!user) return;
-    const uid = userEmail(user);
+    const uid = userEmail(scopedUser!);
     const id = `${type}_${Date.now()}`;
     if (type === 'resume') {
-      const state = { ...DEFAULT_RESUME_STATE, id, title: `New Resume (${new Date().toLocaleDateString()})`, layoutSettings: { ...DEFAULT_RESUME_STATE.layoutSettings, template } };
+      const master=profileId?await localApi<Profile>('/profiles/'+profileId):null;
+      const source=master?toResume(master):DEFAULT_RESUME_STATE;
+      const state = { ...source, profileId:profileId||undefined,id, title: `New Resume (${new Date().toLocaleDateString()})`, layoutSettings: { ...source.layoutSettings, ...(template === 'hybrid' ? HYBRID_STYLE_DEFAULTS : template==='designer'?DESIGNER_STYLE_DEFAULTS:{}), template } };
       await dbService.saveResume(uid, id, state);
       resume.reset(state);
     } else {
+      const master=profileId?await localApi<Profile>('/profiles/'+profileId):null;
+      const source=master?toCoverLetter(master):DEFAULT_CL_STATE;
       const clLayoutSettings = {
-        ...DEFAULT_CL_STATE.layoutSettings,
+        ...source.layoutSettings,
         template,
         // Professional template uses the EnhancvHeader two-tone style by default
         ...(template === 'professional' && { headerStyle: 'enhancv' as const }),
       };
-      const state = { ...DEFAULT_CL_STATE, id, title: `New Cover Letter (${new Date().toLocaleDateString()})`, layoutSettings: clLayoutSettings };
+      const state = { ...source,profileId:profileId||undefined, id, title: `New Cover Letter (${new Date().toLocaleDateString()})`, layoutSettings: clLayoutSettings };
       await dbService.saveCoverLetter(uid, id, state);
       cl.reset(state);
     }
@@ -121,6 +139,7 @@ export default function App() {
     setActiveDocType(type);
   };
 
+  const editApplication=async(a:Application,type:DocType)=>{const id=type+'_'+crypto.randomUUID();const state={...(type==='resume'?a.resume:a.coverletter),id,profileId,title:a.company+' - '+type+' (review copy)'};const uid=profileScope(profileId);if(type==='resume'){await dbService.saveResume(uid,id,state as ResumeState);resume.reset(state as ResumeState);}else{await dbService.saveCoverLetter(uid,id,state as CoverLetterState);cl.reset(state as CoverLetterState);}setActiveDocId(id);setActiveDocType(type);setShowAutomation(false);};
   if (!user) {
     return (
       <>
@@ -136,20 +155,23 @@ export default function App() {
 
   if (!activeDocId) {
     return (
-      <>
-        <AnimatePresence mode="wait">
+      <div className="classic-shell">
+        <div className="workspace-bar"><span className="workspace-brand">Résumé workspace · local beta</span><label>Profile <select aria-label="Active profile" value={profileId} onChange={e=>{setProfileId(e.target.value);localStorage.setItem('WORKSPACE_PROFILE',e.target.value);}}><option value="">Legacy documents (unchanged)</option>{profiles.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><button onClick={()=>setShowProfiles(true)}>Master profiles</button><button disabled={!profileId} onClick={()=>setShowAutomation(true)}>Applications & automation</button></div>
+        <div className="classic-body"><AnimatePresence mode="wait">
           <motion.div key="dashboard" {...PAGE_ANIM} className="min-h-screen w-full">
             <Dashboard
-              userId={userEmail(user)}
-              isLocal={isLocalUser(user)}
+              userId={userEmail(scopedUser!)}
+              isLocal={isLocalUser(scopedUser!)}
               onSelectDocument={handleSelectDocument}
-              onCreateNew={handleCreateNew}
+              onCreateNew={(type,template)=>{void handleCreateNew(type,template).catch(e=>toast.error(e.message));}}
               onLogout={() => { setUser(null); setActiveDocId(null); setActiveDocType(null); }}
             />
           </motion.div>
-        </AnimatePresence>
+        </AnimatePresence></div>
+        {showProfiles&&<ProfileManager profileId={profileId} onClose={()=>setShowProfiles(false)} onSaved={id=>{setProfileId(id);localStorage.setItem('WORKSPACE_PROFILE',id);setShowProfiles(false);void refreshProfiles();}}/>}
+        {showAutomation&&<AutomationPanel profileId={profileId} onClose={()=>setShowAutomation(false)} onEdit={editApplication}/>}
         <ToastContainer toasts={toast.toasts} dismiss={toast.dismiss} />
-      </>
+      </div>
     );
   }
 
@@ -158,7 +180,7 @@ export default function App() {
       <AnimatePresence mode="wait">
         <Suspense fallback={<div className="min-h-screen bg-editor flex items-center justify-center text-text-muted">Loading editor…</div>}>
           <EditorRoute
-            user={user}
+            user={scopedUser!}
             activeDocId={activeDocId}
             activeDocType={activeDocType!}
             onBack={() => setActiveDocId(null)}

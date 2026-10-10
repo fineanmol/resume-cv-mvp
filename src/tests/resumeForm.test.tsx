@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { ResumeForm } from '../components/ResumeForm';
 import { DEFAULT_RESUME_STATE } from '../config/defaultResume';
 

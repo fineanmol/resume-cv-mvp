@@ -4,14 +4,22 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "studio": "node scripts/studio-dev.mjs",
+    "studio:api": "tsx server/studio.ts",
+    "studio:n8n-bridge": "node scripts/n8n-bridge.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:interactions": "vitest run src/tests/interactionContract.test.tsx src/tests/templateParity.test.tsx",
+    "test:pdf-render": "node --import tsx scripts/validate-templates.ts",
     "preview": "vite preview",
     "api": "tsx server/index.ts",
     "mcp": "tsx server/mcp.ts",
-    "generate": "tsx server/cli.ts"
+    "generate": "tsx server/cli.ts",
+    "workspace:mcp": "node --import tsx server/workspace-mcp.ts",
+    "test:templates": "node scripts/mcp-smoke.mjs --templates",
+    "test:mcp": "node scripts/mcp-smoke.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.1",
@@ -22,6 +30,7 @@
     "hono": "^4.9.0",
     "html2pdf.js": "^0.14.0",
     "lucide-react": "^1.21.0",
+    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.0.227",
     "playwright": "^1.54.0",
     "react": "^19.2.6",

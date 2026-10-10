@@ -1,3 +1,5 @@
+import { EvidenceLink } from '../../../shared/EvidenceLink';
+import type { LayoutSettings, EntrySection, EducationItem } from '../../../../types';
 import React from 'react';
 import { EditableText as E } from '../../../shared/EditableText';
 import { DateRangePicker } from '../../../shared/DateRangePicker';
@@ -12,7 +14,7 @@ export interface DesignerEducationSectionProps {
   resumeEducation: ResumeState['resumeEducation'];
   isEditable: boolean;
   dragProps: DesignerDragProps;
-  educationAlign: string;
+  educationAlign: NonNullable<LayoutSettings["educationAlign"]>;
   onLayoutSettingsChange?: (patch: Partial<DesignerLayoutSettings>) => void;
   layoutSettings: DesignerLayoutSettings;
   onAddEducation?: () => void;
@@ -27,13 +29,13 @@ export interface DesignerEducationSectionProps {
   /** Preferred gap between Masters/Bachelors; falls back to entrySpacing + 6. */
   educationEntrySpacing?: number;
   brandColor: string | undefined;
-  bulletStyle: string;
+  bulletStyle: NonNullable<LayoutSettings["bulletStyle"]>;
   showEdu: (edu: ResumeState['resumeEducation'][number], field: keyof NonNullable<ResumeState['resumeEducation'][number]['visibility']>) => boolean;
   onDeleteEducation?: (idx: number) => void;
   onDuplicateEducation?: (idx: number) => void;
   onAddSimilarEducation?: (idx: number) => void;
-  onEntryVisibilityChange?: (section: string, idx: number, field: string, value: boolean) => void;
-  onEducationChange?: (idx: number, field: string, value: string) => void;
+  onEntryVisibilityChange?: (section: EntrySection, idx: number, field: string, value: boolean) => void;
+  onEducationChange?: (idx: number, field: keyof EducationItem, value: string) => void;
 }
 
 export const DesignerEducationSection: React.FC<DesignerEducationSectionProps> = ({
@@ -48,7 +50,6 @@ export const DesignerEducationSection: React.FC<DesignerEducationSectionProps> =
   H,
   FG,
   C_HEAD,
-  C_TITLE,
   C_COMPANY,
   dsec,
   entrySpacing,
@@ -131,7 +132,7 @@ export const DesignerEducationSection: React.FC<DesignerEducationSectionProps> =
                         </div>
                         {(edu.school || isEditable) && (
                           <div className="flex justify-between leading-snug">
-                            <E field="education.school" value={edu.school} isEditable={isEditable} editableClass={ec} style={{ ...FG.company, color: C_COMPANY }} onSave={v => onEducationChange?.(idx, 'school', v)} />
+                            <><E field="education.school" value={edu.school} isEditable={isEditable} editableClass={ec} style={{ ...FG.company, color: C_COMPANY }} onSave={v => onEducationChange?.(idx, 'school', v)} /><EvidenceLink url={edu.url}/></>
                           </div>
                         )}
                         {(showDates || showLocation) && (

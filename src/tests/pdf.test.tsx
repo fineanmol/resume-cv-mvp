@@ -249,7 +249,7 @@ describe('PdfService.downloadPdf — designer layout clone', () => {
   it('strips background-color and box-shadow from avatar container', async () => {
     const sheet = makeSheet(`
       <div class="group/avatar">
-        <div class="bg-slate-100 shadow-sm" style="">Avatar</div>
+        <div class="bg-slate-100 shadow-sm" style=""><img src="data:image/png;base64,AA==" alt="Avatar" /></div>
       </div>
     `);
     await PdfService.downloadPdf(sheet, 'test.pdf');

@@ -76,6 +76,7 @@ export const DEFAULT_RESUME_STATE: ResumeState = {
 
   layoutSettings: {
     ...DESIGNER_STYLE_DEFAULTS,
+    fontSize: 9.5, lineHeight: 1.35, paddingTopBottom: 10, paddingLeftRight: 10, sectionSpacing: 8, columnGap: 16,
     headerStyle: 'centered',
     showPhoto: true,
     roundPhoto: true,

@@ -63,7 +63,7 @@ describe('DesignPanel — template and style controls', () => {
     const onChange = vi.fn();
     render(<DesignPanel layout={layout} onChange={onChange} docType="resume" />);
     openSection('Header Style');
-    fireEvent.click(screen.getByText('Photo Right'));
+    fireEvent.click(screen.getByText('Left Align'));
     expect(onChange).toHaveBeenCalledWith({ headerStyle: 'left' });
   });
 
@@ -71,8 +71,10 @@ describe('DesignPanel — template and style controls', () => {
     const onChange = vi.fn();
     render(<DesignPanel layout={layout} onChange={onChange} docType="resume" />);
     openSection('Skills Style');
-    fireEvent.click(screen.getByText('Plain Text'));
+    fireEvent.click(screen.getByText('List'));
     expect(onChange).toHaveBeenCalledWith({ skillsStyle: 'normal' });
+    fireEvent.click(screen.getByText('Grouped'));
+    expect(onChange).toHaveBeenCalledWith({ skillsStyle: 'grouped' });
   });
 
   it('layout outlines toggle calls onChange with showLayoutBounds', () => {

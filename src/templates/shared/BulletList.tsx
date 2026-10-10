@@ -10,6 +10,7 @@ import type { EditableFieldKey } from '../../config/fieldPlaceholders';
 import { getFieldPlaceholder } from '../../config/fieldPlaceholders';
 import { isEditableEmpty } from '../../utils/editableText';
 import { ActiveItemContext } from './ActiveItemContext';
+import { BulletStyleContext } from './BulletStyleContext';
 
 export function BulletList({
   bullets,
@@ -17,7 +18,7 @@ export function BulletList({
   editableClass,
   onBulletChange,
   className = '',
-  bulletStyle = 'disc',
+  bulletStyle: explicitBulletStyle,
   brandColor,
   align = 'left',
   prefixId = 'bullet',
@@ -36,6 +37,8 @@ export function BulletList({
   field?: EditableFieldKey;
   placeholder?: string;
 }) {
+  const inheritedBulletStyle=useContext(BulletStyleContext);
+  const bulletStyle=explicitBulletStyle??inheritedBulletStyle;
   const resolvedPlaceholder = placeholder ?? (field ? getFieldPlaceholder(field) : undefined);
   const isParentItemActive = useContext(ActiveItemContext);
   const lines = isEditable ? parseEditableBullets(bullets) : splitIntoBullets(bullets);
@@ -118,7 +121,7 @@ export function BulletList({
   const hasCustomMarker = bulletStyle !== 'none';
 
   return (
-    <ul className={`list-none pl-0 space-y-1 ${className}`}>
+    <ul data-bullet-style={bulletStyle} className={`list-none pl-0 space-y-1 ${className}`}>
       {lines.map((bullet, bIdx) => {
         const isEmpty = !bullet.trim();
         // In read-only / PDF mode, skip blank bullets entirely

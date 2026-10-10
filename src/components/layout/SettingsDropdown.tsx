@@ -11,10 +11,10 @@ export const SettingsDropdown: React.FC<SettingsDropdownProps> = ({ geminiKey, o
   <div className="absolute right-20 top-16 z-50 w-80 bg-sidebar border border-brand-accent/30 rounded-xl p-4 shadow-xl">
     <form onSubmit={onSave} className="space-y-3">
       <div className="text-xs font-bold text-brand-accent flex items-center gap-1">
-        <Sparkles className="w-4 h-4" /> Gemini API Key
+        <Sparkles className="w-4 h-4" /> Legacy editor tools · Gemini
       </div>
       <p className="text-[10px] text-text-muted leading-relaxed">
-        Provide your Gemini API Key to enable AI tailoring, keyword injection, and bullet improvers.
+        These existing manual editor tools use Gemini and save the key in this browser. For OpenAI, Claude or Gemini with reviewed, locked designs, use Applications & automation from the dashboard. Those keys are not saved in browser storage.
       </p>
       <input
         type="password"

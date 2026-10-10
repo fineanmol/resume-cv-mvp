@@ -83,6 +83,7 @@ export const TemplateLayoutPreview: React.FC<{
       header = headerLeft;
       body = bodySidebar;
       break;
+    case 'hybrid':
     case 'designer':
       header = headerDesigner;
       body = bodyTwoCol;

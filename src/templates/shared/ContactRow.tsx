@@ -1,11 +1,9 @@
 import React from 'react';
-import { Mail, Phone, MapPin, Star } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
 import type { CustomContactField, LayoutSettings } from '../../types';
 import { EditableText } from './EditableText';
-import { LI } from './LinkedInIcon';
-import { formatLinkedinUrl } from '../../utils/linkedin';
-import { formatContactUrl } from '../../utils/contactUrl';
-import { CONTACT_ICON_MAP } from '../../components/ui/ContactIconPicker';
+import { LinkedInContact } from './LinkedInContact';
+import { ExtraContactFields } from './ExtraContactFields';
 import type { EditField } from '../header/types';
 
 export type { EditField };
@@ -56,24 +54,10 @@ export const ContactRow: React.FC<{
       )}
       {hasLinkedin && (
         <span className={`flex items-center gap-1 ${itemCls ?? ''}`}>
-          <LI />
-          <EditableText value={linkedin.value} onSave={linkedin.onSave} isEditable={isEditable} editableClass={ec} href={formatLinkedinUrl(linkedin.value)} />
+          <LinkedInContact value={linkedin.value}/>
         </span>
       )}
-      {visibleCustom.map((field) => {
-        // Fallback to Star icon guards against unknown icon values from stale/migrated data.
-        const Icon = CONTACT_ICON_MAP[field.icon] ?? Star;
-        const href = formatContactUrl(field.value);
-        return (
-          <span key={field.id} className={`flex items-center gap-1 ${itemCls ?? ''}`}>
-            {/* size={12} sets width/height attributes directly so react-icons SVGs render at 12px reliably */}
-            <Icon size={12} className="flex-shrink-0 mt-[1px]" />
-            <a href={href} target="_blank" rel="noopener noreferrer" className="hover:underline cursor-pointer" data-href={href}>
-              {field.value}
-            </a>
-          </span>
-        );
-      })}
+      <ExtraContactFields fields={visibleCustom}/>
     </div>
   );
 };

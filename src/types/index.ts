@@ -69,10 +69,10 @@ export interface SectionVisibilitySettings {
 }
 
 export interface DesignerLayoutSettings {
-  template?: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer' | 'professional';
+  template?: 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer' | 'hybrid' | 'professional';
   headerStyle?: HeaderStyle;  // layout variant for the name/contact block
   bulletStyle?: 'disc' | 'circle' | 'square' | 'dash' | 'arrow' | 'number' | 'none';
-  skillsStyle?: 'chips' | 'normal' | 'grid';
+  skillsStyle?: 'chips' | 'normal' | 'grid' | 'grouped';
   designerLeftSections?: string[];
   designerRightSections?: string[];
 }
@@ -110,6 +110,7 @@ export interface CustomContactField {
 // ── Phase 1c: shared document identity fields ─────────────────────────────────
 
 export interface DocumentBase {
+  profileId?: string;
   id?: string;
   title?: string;
   name: string;
@@ -188,6 +189,7 @@ export interface ExperienceItem {
 }
 
 export interface EducationItem {
+  url?: string;
   degree: string;
   school: string;
   dates: string;
@@ -222,6 +224,7 @@ export interface LanguageItem {
 export interface ResumeState extends DocumentBase {
   resumeSummary: string;
   resumeSkills: string;
+  resumeSkillGroups?: { category: string; items: string[] }[];
   resumeExperience: ExperienceItem[];
   resumeEducation: EducationItem[];
   resumeCerts: CertItem[];
@@ -237,7 +240,7 @@ export interface DocumentMetadata {
   updatedAt: number;
 }
 
-export type TemplateId = 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer' | 'professional';
+export type TemplateId = 'navy' | 'serif' | 'sidebar' | 'tech' | 'ats' | 'executive' | 'designer' | 'hybrid' | 'professional';
 
 export type DocType = 'resume' | 'coverletter';
 

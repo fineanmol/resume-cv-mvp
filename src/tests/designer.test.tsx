@@ -22,7 +22,7 @@ describe('DesignerTemplate — functional regression', () => {
       state: resumeWith({ entrySpacing: 14 }),
       isEditable: false,
     });
-    expect(container.querySelector('.pdf-sheet')?.style.getPropertyValue('--entry-gap')).toBe('14px');
+    expect(container.querySelector<HTMLElement>('.pdf-sheet')?.style.getPropertyValue('--entry-gap')).toBe('14px');
   });
 
   it('sets --section-gap CSS variable on the sheet', async () => {
@@ -30,7 +30,7 @@ describe('DesignerTemplate — functional regression', () => {
       state: resumeWith({ sectionSpacing: 10 }),
       isEditable: false,
     });
-    expect(container.querySelector('.pdf-sheet')?.style.getPropertyValue('--section-gap')).toBe('10px');
+    expect(container.querySelector<HTMLElement>('.pdf-sheet')?.style.getPropertyValue('--section-gap')).toBe('10px');
   });
 
   it('column gap is applied as grid gap on the column container', async () => {
@@ -38,7 +38,7 @@ describe('DesignerTemplate — functional regression', () => {
       state: resumeWith({ columnGap: 20 }),
       isEditable: false,
     });
-    expect(container.querySelector('[data-testid="designer-column-grid"]')?.style.gap).toBe('20px');
+    expect(container.querySelector<HTMLElement>('[data-testid="designer-column-grid"]')?.style.gap).toBe('20px');
   });
 
   // ── Two-column section placement ──────────────────────────────────────────
@@ -82,8 +82,8 @@ describe('DesignerTemplate — functional regression', () => {
     );
     expect(summaryHeading).toBeTruthy();
     const summarySection = summaryHeading!.closest('section');
-    expect(summarySection?.querySelector('ul')).toBeNull();
-    expect(summarySection?.querySelector('p')?.textContent).toContain('Innovative and results-driven');
+    expect(summarySection?.querySelector<HTMLElement>('ul')).toBeNull();
+    expect(summarySection?.querySelector<HTMLElement>('p')?.textContent).toContain('Innovative and results-driven');
   });
 
   it('showLanguageLevel: false hides language proficiency bubbles', async () => {
@@ -97,11 +97,8 @@ describe('DesignerTemplate — functional regression', () => {
     expect(languagesHeading).toBeTruthy();
     const languagesSection = languagesHeading!.closest('section');
     expect(languagesSection?.textContent).not.toMatch(/Native|Conversational/);
-    const languageRows = languagesSection?.querySelectorAll('.flex.justify-between.items-start.gap-1');
-    languageRows?.forEach((row) => {
-      const levelParagraphs = row.querySelector('div')?.querySelectorAll('p') ?? [];
-      expect(levelParagraphs.length).toBe(1);
-    });
+    expect(languagesSection?.textContent).toContain('English');
+    expect(languagesSection?.querySelectorAll('button[aria-label^="Proficiency"]').length).toBe(0);
   });
 
   it('showProjectIcons: false hides project icons', async () => {
@@ -124,7 +121,7 @@ describe('DesignerTemplate — functional regression', () => {
       state: resumeWith({ headerStyle: 'centered' }),
       isEditable: false,
     });
-    const header = container.querySelector('header');
+    const header = container.querySelector<HTMLElement>('header');
     expect(header).toBeTruthy();
     const className = header!.className;
     expect(className.includes('items-center') || className.includes('text-center')).toBe(true);
@@ -135,10 +132,10 @@ describe('DesignerTemplate — functional regression', () => {
       state: resumeWith({ headerStyle: 'minimal', showPhoto: true }),
       isEditable: false,
     });
-    const header = container.querySelector('header');
+    const header = container.querySelector<HTMLElement>('header');
     expect(header).toBeTruthy();
-    expect(header!.querySelector('[class*="group/avatar"]')).toBeNull();
-    expect(header!.querySelector('img[alt="Jonathan Doe"]')).toBeNull();
+    expect(header!.querySelector<HTMLElement>('[class*="group/avatar"]')).toBeNull();
+    expect(header!.querySelector<HTMLElement>('img[alt="Jonathan Doe"]')).toBeNull();
   });
 
   // ── Photo container ───────────────────────────────────────────────────────
@@ -157,8 +154,8 @@ describe('DesignerTemplate — functional regression', () => {
       },
       isEditable: false,
     });
-    expect(container.querySelector('[class*="group/avatar"]')).toBeNull();
-    const avatarInner = container.querySelector('header img[alt="Jonathan Doe"]')?.parentElement;
+    expect(container.querySelector<HTMLElement>('[class*="group/avatar"]')).toBeNull();
+    const avatarInner = container.querySelector<HTMLElement>('header img[alt="Jonathan Doe"]')?.parentElement;
     expect(avatarInner).toBeTruthy();
     expect(avatarInner!.className).not.toMatch(/\bbg-slate-100\b/);
   });

@@ -114,6 +114,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
               />
             </div>
 
+            <label className="block text-xs text-text-muted">Supporting document link<input type="url" value={edu.url||''} placeholder="https://…" className={inputCls} onChange={e=>updEdu(idx,'url',e.target.value)} onBlur={onCommit}/></label>
             {openSettingsIdx === idx && (
               <div className="p-3 bg-slate-50/5 rounded-lg border border-border-color/50 space-y-2.5">
                 <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">

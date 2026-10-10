@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import type { ResumeState, LayoutSettings } from '../types';
+import type { ResumeState, ResumeLayoutSettings } from '../types';
 import {
   EDITOR_CLEAR_FOCUS_EVENT,
   shouldKeepEditorFocus,
@@ -7,7 +7,7 @@ import {
 
 interface UseTemplateFocusParams {
   isEditable: boolean;
-  layoutSettings: LayoutSettings;
+  layoutSettings: ResumeLayoutSettings;
   designerLeftSections: string[];
   designerRightSections: string[];
   resumeExperience: ResumeState['resumeExperience'];
