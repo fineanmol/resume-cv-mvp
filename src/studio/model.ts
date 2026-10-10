@@ -37,6 +37,10 @@ export function toResume(p: Profile): ResumeState {
   if(hidden.includes('certs'))result.resumeCerts=[];if(hidden.includes('achievements'))result.resumeAchievements=[];if(hidden.includes('languages'))result.resumeLanguages=[];
   return result;
 }
+/** Keep optional resume fields visible so exported JSON can be completed before import. */
+export function resumeDataForExport(state:ResumeState):ResumeState {
+  return {...structuredClone(state),customContacts:state.customContacts||[],resumeExperience:state.resumeExperience.map(entry=>({...entry,url:entry.url||'',logo:entry.logo||'',visibility:entry.visibility||{}})),resumeEducation:state.resumeEducation.map(entry=>({...entry,url:entry.url||'',logo:entry.logo||'',visibility:entry.visibility||{}})),resumeCerts:state.resumeCerts.map(entry=>({...entry,url:entry.url||'',icon:entry.icon||'',visibility:entry.visibility||{}})),resumeAchievements:state.resumeAchievements.map(entry=>({...entry,url:entry.url||'',icon:entry.icon||'',visibility:entry.visibility||{}})),resumeLanguages:state.resumeLanguages.map(entry=>({...entry,visibility:entry.visibility||{}}))};
+}
 export function toCoverLetter(p:Profile,company='',role=''):CoverLetterState {
  const c=coverSchema.parse(p.coverLetter||{});
  const fill=(text:string)=>text.replace(/{{summary}}/g,p.summary).replace(/{{name}}/g,p.name);

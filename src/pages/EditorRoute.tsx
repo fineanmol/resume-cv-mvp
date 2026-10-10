@@ -20,6 +20,7 @@ import { useResumeMutations } from '../hooks/useResumeMutations';
 import { useCoverLetterMutations } from '../hooks/useCoverLetterMutations';
 
 import { dispatchClearEditorFocus } from '../utils/editorFocus';
+import { resumeDataForExport } from '../studio/model';
 
 import type { ResumeState, CoverLetterState, AuthUser, DocType, SaveStatus } from '../types';
 import type { ToastAPI } from '../hooks/useToast';
@@ -158,10 +159,10 @@ export function EditorRoute({
   const handleExportResumeJson = () => {
     if (!isResume) return;
     const filename=`${resume.state.name.trim().replace(/[^a-z0-9]+/gi,'_')||'resume'}_data.json`;
-    const url=URL.createObjectURL(new Blob([JSON.stringify(resume.state,null,2)],{type:'application/json'}));
+    const url=URL.createObjectURL(new Blob([JSON.stringify(resumeDataForExport(resume.state),null,2)],{type:'application/json'}));
     const anchor=document.createElement('a');anchor.href=url;anchor.download=filename;anchor.click();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
-    toast.success('Complete resume data exported as JSON. Import it into Master profiles to update your profile.');
+    toast.success('Complete, fillable resume data exported as JSON. Empty links and optional fields are included.');
   };
 
   const getDocumentText = () =>
