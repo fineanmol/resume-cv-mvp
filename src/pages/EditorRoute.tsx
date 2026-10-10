@@ -145,13 +145,13 @@ export function EditorRoute({
     toast.info('Generating a clean PDF…');
     try {
       const response=await fetch('/api/v2/workspace/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:activeDocType==='resume'?'resume':'coverletter',state:activeDocType==='resume'?resume.state:cl.state})});
-      if(!response.ok)throw new Error('PDF export failed');
+      if(!response.ok){const raw=await response.text();let message=`PDF export failed (${response.status})`;try{const data=JSON.parse(raw);if(typeof data?.error==='string')message=data.error;}catch{/* preserve the useful status when the server returned non-JSON */}throw new Error(message);}
       const url=URL.createObjectURL(await response.blob());
       const anchor=document.createElement('a');anchor.href=url;anchor.download=filename;anchor.click();
       setTimeout(()=>URL.revokeObjectURL(url),60000);
       toast.success('PDF downloaded without browser headers or footers.');
-    } catch {
-      toast.error('PDF download failed. Check that the local API server is running and try again.');
+    } catch (error) {
+      toast.error(`PDF download failed: ${error instanceof Error ? error.message : 'check that the local API server is running and try again.'}`);
     }
   };
 
